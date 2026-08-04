@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "App Template",
+    "slug": "app-template",
+    "scheme": "apptemplate",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.praxis.apptemplate",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.praxis.apptemplate"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "static",
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router"],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
+  }
+}

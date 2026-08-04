@@ -1,0 +1,32 @@
+{
+  "name": "app-template-server",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "tsx index.ts",
+    "dev": "tsx watch index.ts",
+    "lint": "eslint \"**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.3.0",
+    "eslint": "^10.6.0",
+    "eslint-plugin-unused-imports": "^4.4.1",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.62.1"
+  }
+}

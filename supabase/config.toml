@@ -1,0 +1,91 @@
+# For detailed configuration reference documentation, visit:
+# https://supabase.com/docs/guides/local-development/cli/config
+project_id = "expo-app-template"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.migrations]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+[local_smtp]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+# The base URL of your website in production. Used as an allow-list for redirects and to build
+# links in auth emails. Update this once you've picked a real domain (see docs/RENAME_CHECKLIST.md).
+site_url = "http://localhost:8081"
+# Exact URLs that OAuth providers (Google, Apple) are permitted to redirect to after sign-in.
+# Add every environment you actually use — local Expo web, deployed web build, etc.
+additional_redirect_urls = [
+  "http://localhost:8081",
+  "http://127.0.0.1:8081",
+  "https://myapp.com",
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+secure_password_change = false
+
+[auth.sms]
+enable_signup = false
+
+# Google and Apple sign-in, both delegated to Supabase Auth's built-in OAuth support so the app
+# and server never have to verify third-party tokens themselves — see docs/SETUP_GOOGLE_OAUTH.md
+# and docs/SETUP_APPLE_SIGNIN.md for how to obtain these values.
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+# DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+url = ""
+# Required for native (mobile SDK) Google sign-in: the native SDK generates its own internal
+# nonce that can't be reproduced client-side, so Supabase can't verify it against a passed nonce.
+skip_nonce_check = true
+email_optional = false
+
+[auth.external.apple]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_APPLE_CLIENT_ID)"
+# DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
+secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+email_optional = false
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+
+[analytics]
+enabled = false
