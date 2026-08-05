@@ -1,22 +1,25 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { useAuth } from "../../src/context/AuthContext";
-import { COLORS, SPACING } from "../../src/theme";
+import { headingProps } from "../../src/lib/heading";
+import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function HomeScreen() {
+  const { colors, spacing, typography } = useTheme();
   const { user } = useAuth();
   const display_name = (user?.user_metadata?.display_name as string | undefined) || user?.email || "there";
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome, {display_name}</Text>
-      <Text style={styles.body}>This is the Home tab — replace with your app's actual content.</Text>
+    <View style={{ flex: 1, backgroundColor: colors.background, padding: spacing.lg, gap: spacing.sm }}>
+      <Text
+        {...headingProps(1)}
+        style={{ fontFamily: typography.h2.fontFamily, fontSize: typography.h2.fontSize, color: colors.textPrimary }}
+      >
+        Welcome, {display_name}
+      </Text>
+      <Text style={{ fontFamily: typography.body.fontFamily, fontSize: 15, color: colors.textSecondary }}>
+        This is the Home tab — replace with your app&apos;s actual content.
+      </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, padding: SPACING.lg, gap: SPACING.sm },
-  title: { fontSize: 22, fontWeight: "700", color: COLORS.textPrimary },
-  body: { fontSize: 15, color: COLORS.textSecondary },
-});

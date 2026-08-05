@@ -62,10 +62,6 @@ improve:
   `Appearance` value in that mode; `"class"` pins to a manually-toggled class and never auto-syncs
   (silently breaks dark mode, since this app has no manual light/dark toggle UI). Don't switch to
   `"class"` without adding one.
-  `app/src/theme.ts` (the file, not the directory) is a **legacy compatibility shim** re-exporting
-  the light palette as `COLORS`/`SPACING` for the `(app)/` authenticated screens (`home.tsx`,
-  `profile.tsx`, `(app)/_layout.tsx`), which were not part of the design refresh — don't delete it
-  without migrating those screens too.
 - **Fonts**: Fredoka (headings, `@expo-google-fonts/fredoka`) + Manrope (body/UI,
   `@expo-google-fonts/manrope`), loaded via `expo-font`'s `useFonts` in `app/app/_layout.tsx`.
   Chosen for a bold/playful-but-highly-legible game aesthetic — do not fall back to system fonts
@@ -79,8 +75,7 @@ improve:
 
 ## Scope note
 
-The design refresh covers the landing page (`app/app/index.tsx`) and the four `(auth)/` screens
-(sign-in, sign-up, forgot-password, reset-password). `(app)/home.tsx`, `(app)/profile.tsx`, and
-`(app)/_layout.tsx` (the authenticated product) are still on the legacy `theme.ts`
-shim/`StyleSheet` pattern — migrate them deliberately, not incidentally, when they're next in
-scope.
+The design refresh covers the whole app: the landing page (`app/app/index.tsx`), the four
+`(auth)/` screens (sign-in, sign-up, forgot-password, reset-password), and the `(app)/`
+authenticated screens (`home.tsx`, `profile.tsx`, `(app)/_layout.tsx`) all run on the design
+system described above — there is no separate legacy theme file anymore.

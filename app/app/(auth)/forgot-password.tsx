@@ -3,7 +3,7 @@ import Head from "expo-router/head";
 import React, { useState } from "react";
 import { Text } from "react-native";
 import { AuthCard } from "../../src/components/auth/AuthCard";
-import { TextField } from "../../src/components/auth/TextField";
+import { TextField } from "../../src/components/ui/TextField";
 import { Button } from "../../src/components/ui/Button";
 import { useAuth } from "../../src/context/AuthContext";
 import { useTheme } from "../../src/theme/ThemeProvider";

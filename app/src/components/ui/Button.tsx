@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, Text, type PressableProps, type StyleProp
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useTheme } from "../../theme/ThemeProvider";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 type ButtonProps = Omit<PressableProps, "children" | "style"> & {
   label: string;
@@ -35,6 +35,7 @@ export function Button({
     primary: { backgroundColor: colors.primary, textColor: colors.primaryText, borderColor: "transparent" },
     secondary: { backgroundColor: colors.secondary, textColor: colors.secondaryText, borderColor: "transparent" },
     ghost: { backgroundColor: "transparent", textColor: colors.textPrimary, borderColor: colors.border },
+    danger: { backgroundColor: "transparent", textColor: colors.danger, borderColor: colors.danger },
   }[variant];
 
   return (
@@ -53,7 +54,7 @@ export function Button({
         {
           backgroundColor: variantStyle.backgroundColor,
           borderColor: variantStyle.borderColor,
-          borderWidth: variant === "ghost" ? 2 : 0,
+          borderWidth: variant === "ghost" || variant === "danger" ? 2 : 0,
           borderRadius: radii.pill,
           paddingVertical: spacing.md,
           paddingHorizontal: spacing.xl,
