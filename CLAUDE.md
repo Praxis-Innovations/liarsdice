@@ -1,5 +1,20 @@
 # CLAUDE.md
 
+## Early-stage product: prefer rewrites over legacy support
+
+This app has no production users yet — there is no back-compat burden. When a change touches
+existing code, default to **rewriting it outright** rather than layering a compatibility
+shim/adapter to keep the old version working alongside the new one. Concretely:
+
+- Don't keep an old implementation "just in case" behind a flag, a re-exported alias, or a
+  parallel code path once something replaces it.
+- Don't add migration shims for internal code (types, components, config) unless something
+  external depends on the old shape (e.g. a deployed API contract, external callers).
+- If a change is large enough that a full rewrite feels risky or out of scope for the moment, say
+  so and ask rather than silently defaulting to a compatibility layer.
+- This does **not** apply to genuinely external contracts (the deployed REST API in `server/`,
+  the Supabase schema/migrations, OAuth redirect URIs) — those still need real migrations.
+
 ## SEO is always top priority
 
 Every change to `app/app/index.tsx` and any other publicly crawlable route must preserve or

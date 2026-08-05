@@ -4,6 +4,7 @@ import { View } from "react-native";
 import Svg, { Circle, Rect } from "react-native-svg";
 
 const DIE_SIZE = 100;
+const DIE_RADIUS = 24;
 const PIP_RADIUS = 8;
 const GRID = [22, 50, 78];
 
@@ -45,7 +46,7 @@ const FACES: Record<number, [number, number][]> = {
 function Die({ face, color, pipColor }: { face: number; color: string; pipColor: string }) {
   return (
     <Svg width={DIE_SIZE} height={DIE_SIZE} viewBox={`0 0 ${DIE_SIZE} ${DIE_SIZE}`}>
-      <Rect width={DIE_SIZE} height={DIE_SIZE} rx={24} ry={24} fill={color} />
+      <Rect width={DIE_SIZE} height={DIE_SIZE} rx={DIE_RADIUS} ry={DIE_RADIUS} fill={color} />
       {FACES[face].map(([col, row], i) => (
         <Circle key={i} cx={GRID[col]} cy={GRID[row]} r={PIP_RADIUS} fill={pipColor} />
       ))}
@@ -74,6 +75,9 @@ export default function AnimatedDiceGroup({ dice, pipColor }: { dice: DieConfig[
             translateY: { type: "timing", duration: 2600, loop: true, delay: 650 + index * 220 },
           }}
           style={{
+            width: DIE_SIZE,
+            height: DIE_SIZE,
+            borderRadius: DIE_RADIUS,
             shadowColor: "#000",
             shadowOpacity: 0.25,
             shadowRadius: 16,
