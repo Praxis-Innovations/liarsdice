@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Platform, TouchableOpacity, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useAuth } from "../context/AuthContext";
-import { COLORS } from "../theme";
+import { useTheme } from "../theme/ThemeProvider";
 
 /** Google's official multi-color "G" logomark, required by Google's sign-in button branding guidelines. */
 function GoogleGlyph() {
@@ -28,9 +28,20 @@ function SocialButton({
   onPress: () => void;
   disabled?: boolean;
 }) {
+  const { colors, radii } = useTheme();
   return (
     <TouchableOpacity
-      style={[styles.button, disabled ? styles.button_disabled : null]}
+      style={{
+        width: 52,
+        height: 52,
+        borderRadius: radii.md,
+        borderWidth: 2,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: disabled ? 0.5 : 1,
+      }}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.85}
@@ -51,6 +62,7 @@ export interface SocialSignInButtonsProps {
  * OAuth redirect); there is no native Apple sign-in experience on Android, so it's hidden there.
  */
 export default function SocialSignInButtons({ onError }: SocialSignInButtonsProps) {
+  const { colors } = useTheme();
   const { signInWithGoogle, signInWithApple } = useAuth();
   const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
@@ -80,10 +92,10 @@ export default function SocialSignInButtons({ onError }: SocialSignInButtonsProp
   };
 
   return (
-    <View style={styles.row}>
+    <View style={{ flexDirection: "row", gap: 12 }}>
       {appleAvailable ? (
         <SocialButton
-          icon={<Ionicons name="logo-apple" size={22} color={COLORS.textPrimary} />}
+          icon={<Ionicons name="logo-apple" size={22} color={colors.textPrimary} />}
           label="Sign in with Apple"
           onPress={() => void handleApple()}
           disabled={busy}
@@ -93,18 +105,3 @@ export default function SocialSignInButtons({ onError }: SocialSignInButtonsProp
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 8 },
-  button: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  button_disabled: { opacity: 0.5 },
-});

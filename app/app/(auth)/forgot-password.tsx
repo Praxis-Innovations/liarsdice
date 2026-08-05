@@ -1,10 +1,15 @@
 import { Link } from "expo-router";
+import Head from "expo-router/head";
 import React, { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Text } from "react-native";
+import { AuthCard } from "../../src/components/auth/AuthCard";
+import { TextField } from "../../src/components/auth/TextField";
+import { Button } from "../../src/components/ui/Button";
 import { useAuth } from "../../src/context/AuthContext";
-import { COLORS, SPACING } from "../../src/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function ForgotPasswordScreen() {
+  const { colors, typography } = useTheme();
   const { resetPasswordForEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,68 +29,52 @@ export default function ForgotPasswordScreen() {
     }
   };
 
+  const head = (
+    <Head>
+      <title>Reset password — Liar&apos;s Dice</title>
+      <meta name="description" content="Reset the password for your Liar's Dice account." />
+    </Head>
+  );
+
   if (sent) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Check your email</Text>
-        <Text style={styles.body}>We sent a password reset link to {email.trim()}.</Text>
-        <Link href="/sign-in" style={styles.link}>
-          Back to sign in
-        </Link>
-      </View>
+      <>
+        {head}
+        <AuthCard title="Check your email">
+          <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 15, lineHeight: 22 }}>
+            We sent a password reset link to {email.trim()}.
+          </Text>
+          <Link href="/sign-in" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 14 }}>
+            Back to sign in
+          </Link>
+        </AuthCard>
+      </>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Reset password</Text>
-      <Text style={styles.body}>Enter your email and we'll send you a reset link.</Text>
+    <>
+      {head}
+      <AuthCard title="Reset password" subtitle="Enter your email and we'll send you a reset link.">
+        {error ? (
+          <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 14 }}>{error}</Text>
+        ) : null}
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        <TextField
+          placeholder="Email"
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor={COLORS.textSecondary}
-        autoCapitalize="none"
-        autoComplete="email"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
+        <Button label="Send reset link" fullWidth loading={submitting} onPress={() => void handleSubmit()} />
 
-      <Pressable
-        style={[styles.button, styles.primaryButton, submitting ? styles.buttonDisabled : null]}
-        onPress={() => void handleSubmit()}
-        disabled={submitting}
-      >
-        {submitting ? <ActivityIndicator color={COLORS.primaryText} /> : <Text style={styles.primaryButtonText}>Send reset link</Text>}
-      </Pressable>
-
-      <Link href="/sign-in" style={styles.link}>
-        Back to sign in
-      </Link>
-    </View>
+        <Link href="/sign-in" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 14 }}>
+          Back to sign in
+        </Link>
+      </AuthCard>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, padding: SPACING.lg, justifyContent: "center", gap: SPACING.sm },
-  title: { fontSize: 28, fontWeight: "700", color: COLORS.textPrimary, marginBottom: SPACING.sm },
-  body: { fontSize: 15, color: COLORS.textSecondary, marginBottom: SPACING.md },
-  error: { color: COLORS.danger, marginBottom: SPACING.sm },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    padding: SPACING.md,
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.surface,
-  },
-  button: { paddingVertical: SPACING.md, borderRadius: 10, alignItems: "center", marginTop: SPACING.sm },
-  buttonDisabled: { opacity: 0.6 },
-  primaryButton: { backgroundColor: COLORS.primary },
-  primaryButtonText: { fontSize: 16, fontWeight: "600", color: COLORS.primaryText },
-  link: { color: COLORS.primary, fontSize: 14, marginTop: SPACING.md },
-});
