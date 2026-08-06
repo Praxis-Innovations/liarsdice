@@ -2,12 +2,17 @@
 // session on arrival (PASSWORD_RECOVERY event, see AuthContext) which lets updateUser() set a
 // new password without asking for the old one.
 import { router } from "expo-router";
+import Head from "expo-router/head";
 import React, { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Text } from "react-native";
+import { AuthCard } from "../../src/components/auth/AuthCard";
+import { TextField } from "../../src/components/ui/TextField";
+import { Button } from "../../src/components/ui/Button";
 import { supabase } from "../../src/lib/supabase";
-import { COLORS, SPACING } from "../../src/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function ResetPasswordScreen() {
+  const { colors, typography } = useTheme();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -30,58 +35,36 @@ export default function ResetPasswordScreen() {
     }
   };
 
+  const head = (
+    <Head>
+      <title>Set a new password — Liar&apos;s Dice</title>
+      <meta name="description" content="Set a new password for your Liar's Dice account." />
+    </Head>
+  );
+
   if (done) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Password updated</Text>
-        <Pressable style={[styles.button, styles.primaryButton]} onPress={() => router.replace("/home")}>
-          <Text style={styles.primaryButtonText}>Continue</Text>
-        </Pressable>
-      </View>
+      <>
+        {head}
+        <AuthCard title="Password updated">
+          <Button label="Continue" fullWidth onPress={() => router.replace("/home")} />
+        </AuthCard>
+      </>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Set a new password</Text>
+    <>
+      {head}
+      <AuthCard title="Set a new password">
+        {error ? (
+          <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 14 }}>{error}</Text>
+        ) : null}
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        <TextField placeholder="New password" secureTextEntry value={password} onChangeText={setPassword} />
 
-      <TextInput
-        style={styles.input}
-        placeholder="New password"
-        placeholderTextColor={COLORS.textSecondary}
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-
-      <Pressable
-        style={[styles.button, styles.primaryButton, submitting ? styles.buttonDisabled : null]}
-        onPress={() => void handleSubmit()}
-        disabled={submitting}
-      >
-        {submitting ? <ActivityIndicator color={COLORS.primaryText} /> : <Text style={styles.primaryButtonText}>Update password</Text>}
-      </Pressable>
-    </View>
+        <Button label="Update password" fullWidth loading={submitting} onPress={() => void handleSubmit()} />
+      </AuthCard>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, padding: SPACING.lg, justifyContent: "center", gap: SPACING.sm },
-  title: { fontSize: 28, fontWeight: "700", color: COLORS.textPrimary, marginBottom: SPACING.md },
-  error: { color: COLORS.danger, marginBottom: SPACING.sm },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    padding: SPACING.md,
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.surface,
-  },
-  button: { paddingVertical: SPACING.md, borderRadius: 10, alignItems: "center", marginTop: SPACING.sm },
-  buttonDisabled: { opacity: 0.6 },
-  primaryButton: { backgroundColor: COLORS.primary },
-  primaryButtonText: { fontSize: 16, fontWeight: "600", color: COLORS.primaryText },
-});

@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
+import { Button } from "../../src/components/ui/Button";
+import { TextField } from "../../src/components/ui/TextField";
 import { useAuth } from "../../src/context/AuthContext";
 import { fetchMe, updateMe } from "../../src/lib/api";
 import type { Profile } from "../../src/shared/types";
-import { COLORS, SPACING } from "../../src/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function ProfileScreen() {
+  const { colors, spacing, typography } = useTheme();
   const { user, accessToken, signOut } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -48,62 +51,38 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator />
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Email</Text>
-      <Text style={styles.value}>{user?.email}</Text>
+    <View style={{ flex: 1, backgroundColor: colors.background, padding: spacing.lg, gap: spacing.xs }}>
+      <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: spacing.md, fontFamily: typography.caption.fontFamily }}>
+        Email
+      </Text>
+      <Text style={{ fontSize: 16, color: colors.textPrimary, fontFamily: typography.body.fontFamily }}>{user?.email}</Text>
 
-      <Text style={styles.label}>Display name</Text>
-      <TextInput
-        style={styles.input}
-        value={displayName}
-        onChangeText={setDisplayName}
-        placeholder="Display name"
-        placeholderTextColor={COLORS.textSecondary}
+      <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: spacing.md, fontFamily: typography.caption.fontFamily }}>
+        Display name
+      </Text>
+      <TextField value={displayName} onChangeText={setDisplayName} placeholder="Display name" />
+
+      {error ? (
+        <Text style={{ color: colors.danger, marginTop: spacing.sm, fontFamily: typography.bodyMedium.fontFamily }}>{error}</Text>
+      ) : null}
+
+      <Button
+        label="Save changes"
+        loading={saving}
+        disabled={displayName === profile?.displayName}
+        onPress={() => void handleSave()}
+        fullWidth
+        style={{ marginTop: spacing.lg }}
       />
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <Pressable
-        style={[styles.button, styles.primaryButton, saving || displayName === profile?.displayName ? styles.buttonDisabled : null]}
-        onPress={() => void handleSave()}
-        disabled={saving || displayName === profile?.displayName}
-      >
-        {saving ? <ActivityIndicator color={COLORS.primaryText} /> : <Text style={styles.primaryButtonText}>Save changes</Text>}
-      </Pressable>
-
-      <Pressable style={[styles.button, styles.dangerButton]} onPress={() => void signOut()}>
-        <Text style={styles.dangerButtonText}>Sign out</Text>
-      </Pressable>
+      <Button label="Sign out" variant="danger" onPress={() => void signOut()} fullWidth style={{ marginTop: spacing.sm }} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: COLORS.background },
-  container: { flex: 1, backgroundColor: COLORS.background, padding: SPACING.lg, gap: SPACING.xs },
-  label: { fontSize: 13, color: COLORS.textSecondary, marginTop: SPACING.md },
-  value: { fontSize: 16, color: COLORS.textPrimary },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    padding: SPACING.md,
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.surface,
-  },
-  error: { color: COLORS.danger, marginTop: SPACING.sm },
-  button: { paddingVertical: SPACING.md, borderRadius: 10, alignItems: "center", marginTop: SPACING.lg },
-  buttonDisabled: { opacity: 0.5 },
-  primaryButton: { backgroundColor: COLORS.primary },
-  primaryButtonText: { fontSize: 16, fontWeight: "600", color: COLORS.primaryText },
-  dangerButton: { borderWidth: 1, borderColor: COLORS.danger, marginTop: SPACING.sm },
-  dangerButtonText: { fontSize: 16, fontWeight: "600", color: COLORS.danger },
-});
