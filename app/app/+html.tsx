@@ -8,7 +8,7 @@ const SITE_URL = "https://liarsdice.example.com";
 const SITE_NAME = "Liar's Dice";
 const SITE_TITLE = "Liar's Dice — Bluff Your Way to Victory";
 const SITE_DESCRIPTION =
-  "Play Liar's Dice online with friends: bid boldly, call bluffs, and outwit the table in this classic dice game — free, in the browser, no download.";
+  "Play Liar's Dice online free, instantly — no download, no account required. Bid boldly, call bluffs, and outwit AI opponents in this classic dice game.";
 const OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 // Expo Router's static web export bakes this file's markup into every

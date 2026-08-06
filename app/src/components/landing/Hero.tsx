@@ -103,11 +103,11 @@ export function Hero() {
             className="flex-row flex-wrap"
             style={{ gap: spacing.md, marginTop: spacing.xl, justifyContent: isNarrow ? "center" : "flex-start" }}
           >
-            <Link href="/sign-up" asChild>
+            <Link href="/play" asChild>
               <Button label="Play now — it's free" variant="primary" />
             </Link>
-            <Link href="/sign-in" asChild>
-              <Button label="Sign in" variant="ghost" />
+            <Link href="/sign-up" asChild>
+              <Button label="Create account" variant="ghost" />
             </Link>
           </View>
         </MotiView>

@@ -45,10 +45,10 @@ export function CTAFooter() {
             maxWidth: 440,
           }}
         >
-          Create a free account and start a table in under a minute.
+          Jump into a free game right now — no account needed.
         </Text>
-        <Link href="/sign-up" asChild>
-          <Button label="Create account" variant="primary" />
+        <Link href="/play" asChild>
+          <Button label="Play now" variant="primary" />
         </Link>
       </View>
 
@@ -59,7 +59,16 @@ export function CTAFooter() {
         <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
           © {new Date().getFullYear()} Liar&apos;s Dice
         </Text>
-        <View className="flex-row" style={{ gap: spacing.lg }}>
+        <View className="flex-row flex-wrap" style={{ gap: spacing.lg }}>
+          <Link href="/play" style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
+            Play
+          </Link>
+          <Link href="/how-to-play" style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
+            How to Play
+          </Link>
+          <Link href="/rules" style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
+            Rules
+          </Link>
           <Link href="/sign-in" style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
             Sign in
           </Link>

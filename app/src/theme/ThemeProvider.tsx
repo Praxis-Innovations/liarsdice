@@ -1,5 +1,5 @@
-import { useColorScheme } from "nativewind";
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useColorScheme } from "react-native";
 import { RADII, SPACING, TYPOGRAPHY, ThemeColors, darkColors, lightColors } from "./tokens";
 
 type ThemeContextValue = {
@@ -13,11 +13,23 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // NativeWind syncs this with the OS scheme by default (app.json sets
-  // userInterfaceStyle: "automatic"), so this is the single source of truth
-  // that both `dark:` className utilities and this context read from.
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const liveColorScheme = useColorScheme();
+
+  // This is a static export with no real server, so the pre-built HTML always
+  // bakes in the light theme (no browser to read a real preference at build
+  // time). If the very first CLIENT render read the OS preference directly it
+  // would often disagree with that static HTML, and relying on React to patch
+  // up the resulting hydration mismatch is a real race in practice: on some
+  // routes/viewports the mismatch is large enough that React defers the fix to
+  // an async recovery pass, which can still be pending when the page is first
+  // interactive. So instead, first render deliberately mirrors the static
+  // HTML (light, matching exactly => no mismatch at all), and only after
+  // mount (guaranteed post-hydration) do we switch to the real scheme, via a
+  // plain client-side re-render rather than a hydration patch.
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    setIsDark(liveColorScheme === "dark");
+  }, [liveColorScheme]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
