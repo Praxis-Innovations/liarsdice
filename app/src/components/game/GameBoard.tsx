@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGameStore } from "../../engine/gameStore";
+import type { DieValue } from "../../engine/types";
 import { getBreakpoint } from "../../lib/breakpoints";
 import { useTheme } from "../../theme/ThemeProvider";
 import { useHeaderOffset } from "../shared/Header";
@@ -89,7 +90,7 @@ export function GameBoard() {
       if (ref.current) {
         ref.current.measureInWindow((x, y, w, h) => {
           if (w > 0 && h > 0) {
-            newMeasurements[key] = { x, y, width: w, height: h };
+            newMeasurements[key as TutorialTargetRef] = { x, y, width: w, height: h };
           }
           pending--;
           if (pending === 0) {
@@ -218,11 +219,11 @@ export function GameBoard() {
 
   // Count toward the bid: face value, plus wild ones when applicable.
   const resultBid = gameState.lastRoundResult?.currentBid ?? gameState.currentBid;
-  const highlightValues =
+  const highlightValues: DieValue[] | undefined =
     showingResult && resultBid
       ? gameState.onesWild && resultBid.faceValue !== 1
-        ? ([resultBid.faceValue, 1] as const)
-        : ([resultBid.faceValue] as const)
+        ? [resultBid.faceValue, 1]
+        : [resultBid.faceValue]
       : undefined;
 
   // Tiny equal air; bottom also clears the home-indicator inset when present.

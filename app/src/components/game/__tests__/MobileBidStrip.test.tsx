@@ -6,7 +6,7 @@ import { makeGameState, makePlayer } from "../testing/gameTestFixtures";
 jest.mock("../../../theme/ThemeProvider", () => {
   const tokens = require("../../../theme/tokens");
   return {
-    ThemeProvider: ({ children }) => children,
+    ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
     useTheme: () => ({
       colors: tokens.lightColors,
       spacing: tokens.SPACING,

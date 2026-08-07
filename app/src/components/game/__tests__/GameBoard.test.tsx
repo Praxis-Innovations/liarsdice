@@ -6,16 +6,16 @@ import { ThemeProvider } from "../../../theme/ThemeProvider";
 import { GameBoard } from "../GameBoard";
 import { makeGameState } from "../testing/gameTestFixtures";
 
-const mockGameSetup = jest.fn(() => null);
-const mockGameOver = jest.fn(() => null);
-const mockPlayTopBar = jest.fn(() => null);
-const mockGameTable = jest.fn(() => null);
-const mockBidPanel = jest.fn(() => null);
-const mockActionBar = jest.fn(() => null);
-const mockMobileBidStrip = jest.fn(() => null);
-const mockRoundResult = jest.fn(() => null);
-const mockTableBidCenter = jest.fn(() => null);
-const mockTutorialWelcome = jest.fn(() => null);
+const mockGameSetup = jest.fn((_props: Record<string, unknown>) => null);
+const mockGameOver = jest.fn((_props: Record<string, unknown>) => null);
+const mockPlayTopBar = jest.fn((_props: Record<string, unknown>) => null);
+const mockGameTable = jest.fn((_props: Record<string, unknown>) => null);
+const mockBidPanel = jest.fn((_props: Record<string, unknown>) => null);
+const mockActionBar = jest.fn((_props: Record<string, unknown>) => null);
+const mockMobileBidStrip = jest.fn((_props: Record<string, unknown>) => null);
+const mockRoundResult = jest.fn((_props: Record<string, unknown>) => null);
+const mockTableBidCenter = jest.fn((_props: Record<string, unknown>) => null);
+const mockTutorialWelcome = jest.fn((_props: Record<string, unknown>) => null);
 const mockSetMeasurements = jest.fn();
 const mockClearMeasurements = jest.fn();
 
@@ -29,24 +29,24 @@ jest.mock("react-native-safe-area-context", () => ({
 }));
 
 jest.mock("../../tutorial/tutorialHighlightStore", () => ({
-  useTutorialHighlightStore: (sel) =>
+  useTutorialHighlightStore: (sel: (s: Record<string, unknown>) => unknown) =>
     sel({
       setMeasurements: mockSetMeasurements,
       clearMeasurements: mockClearMeasurements,
     }),
 }));
 
-jest.mock("../GameSetup", () => ({ GameSetup: (props) => mockGameSetup(props) }));
-jest.mock("../GameOver", () => ({ GameOver: (props) => mockGameOver(props) }));
-jest.mock("../PlayTopBar", () => ({ PlayTopBar: (props) => mockPlayTopBar(props) }));
-jest.mock("../GameTable", () => ({ GameTable: (props) => mockGameTable(props) }));
-jest.mock("../BidPanel", () => ({ BidPanel: (props) => mockBidPanel(props) }));
-jest.mock("../ActionBar", () => ({ ActionBar: (props) => mockActionBar(props) }));
-jest.mock("../MobileBidStrip", () => ({ MobileBidStrip: (props) => mockMobileBidStrip(props) }));
-jest.mock("../RoundResult", () => ({ RoundResult: (props) => mockRoundResult(props) }));
-jest.mock("../TableBidCenter", () => ({ TableBidCenter: (props) => mockTableBidCenter(props) }));
+jest.mock("../GameSetup", () => ({ GameSetup: (props: Record<string, unknown>) => mockGameSetup(props) }));
+jest.mock("../GameOver", () => ({ GameOver: (props: Record<string, unknown>) => mockGameOver(props) }));
+jest.mock("../PlayTopBar", () => ({ PlayTopBar: (props: Record<string, unknown>) => mockPlayTopBar(props) }));
+jest.mock("../GameTable", () => ({ GameTable: (props: Record<string, unknown>) => mockGameTable(props) }));
+jest.mock("../BidPanel", () => ({ BidPanel: (props: Record<string, unknown>) => mockBidPanel(props) }));
+jest.mock("../ActionBar", () => ({ ActionBar: (props: Record<string, unknown>) => mockActionBar(props) }));
+jest.mock("../MobileBidStrip", () => ({ MobileBidStrip: (props: Record<string, unknown>) => mockMobileBidStrip(props) }));
+jest.mock("../RoundResult", () => ({ RoundResult: (props: Record<string, unknown>) => mockRoundResult(props) }));
+jest.mock("../TableBidCenter", () => ({ TableBidCenter: (props: Record<string, unknown>) => mockTableBidCenter(props) }));
 jest.mock("../../tutorial/TutorialWelcome", () => ({
-  TutorialWelcome: (props) => mockTutorialWelcome(props),
+  TutorialWelcome: (props: Record<string, unknown>) => mockTutorialWelcome(props),
 }));
 
 jest.mock("../../../engine/gameStore", () => ({
@@ -123,7 +123,7 @@ describe("GameBoard", () => {
       </ThemeProvider>,
     );
     await waitFor(() => expect(mockGameOver).toHaveBeenCalled());
-    expect(mockGameOver.mock.calls[0][0].state).toBe(state);
+    expect(mockGameOver.mock.calls[0]![0]).toHaveProperty("state", state);
     expect(mockGameSetup).not.toHaveBeenCalled();
   });
 
