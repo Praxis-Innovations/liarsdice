@@ -19,7 +19,7 @@ export function GameStatus({ state, phase }: GameStatusProps) {
   const mode = state.isPalificoRound ? "Palifico" : state.onesWild ? "Aces wild" : "No wilds";
 
   return (
-    <View style={{ gap: spacing.xs, marginBottom: spacing.md }}>
+    <View style={{ gap: spacing.xs, marginBottom: spacing.sm }}>
       <View className="flex-row flex-wrap items-center justify-between" style={{ gap: spacing.sm }}>
         <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>
           {meta}

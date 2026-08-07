@@ -2,7 +2,6 @@ import { MotiView } from "moti";
 import React from "react";
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useTheme } from "../../theme/ThemeProvider";
-import { Button } from "../ui/Button";
 import { TUTORIAL_STEPS, type TutorialStep } from "./tutorialSteps";
 
 export interface MeasuredRect {
@@ -22,24 +21,49 @@ interface TutorialOverlayProps {
 
 const BACKDROP_COLOR = "rgba(0,0,0,0.55)";
 const CUTOUT_PAD = 6;
-const TOOLTIP_MARGIN = 12;
+const TOOLTIP_MARGIN = 10;
 
 function StepDots({ current, total }: { current: number; total: number }) {
   const { colors } = useTheme();
   return (
-    <View className="flex-row items-center justify-center" style={{ gap: 5, marginTop: 4 }}>
+    <View className="flex-row items-center justify-center" style={{ gap: 4, marginTop: 2 }}>
       {Array.from({ length: total }, (_, i) => (
         <View
           key={i}
           style={{
-            width: i === current ? 7 : 5,
-            height: i === current ? 7 : 5,
-            borderRadius: 4,
+            width: i === current ? 6 : 4,
+            height: i === current ? 6 : 4,
+            borderRadius: 3,
             backgroundColor: i === current ? colors.accent : colors.border,
           }}
         />
       ))}
     </View>
+  );
+}
+
+function CompactButton({ label, onPress, colors, typography }: {
+  label: string;
+  onPress: () => void;
+  colors: ReturnType<typeof useTheme>["colors"];
+  typography: ReturnType<typeof useTheme>["typography"];
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        backgroundColor: colors.primary,
+        borderRadius: 999,
+        paddingVertical: 8,
+        paddingHorizontal: 24,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text style={{ color: colors.primaryText, fontFamily: typography.button.fontFamily, fontSize: 14 }}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -140,7 +164,7 @@ function getTooltipPosition(
 
   if (step.position === "above") return "top";
   if (step.position === "below") return "bottom";
-  return spaceBelow >= 140 ? "bottom" : "top";
+  return spaceBelow >= 120 ? "bottom" : "top";
 }
 
 export function TutorialOverlay({ stepIndex, measurements, containerOffset, onNext, onSkip }: TutorialOverlayProps) {
@@ -175,18 +199,18 @@ export function TutorialOverlay({ stepIndex, measurements, containerOffset, onNe
         <View pointerEvents="auto" style={[StyleSheet.absoluteFill, { backgroundColor: BACKDROP_COLOR, justifyContent: "center", alignItems: "center" }]}>
           <MotiView
             key={step.id}
-            from={{ opacity: 0, translateY: 12 }}
+            from={{ opacity: 0, translateY: 10 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 250 }}
-            style={{ width: "100%", maxWidth: 360, paddingHorizontal: spacing.md }}
+            transition={{ type: "timing", duration: 220 }}
+            style={{ width: "100%", maxWidth: 320, paddingHorizontal: spacing.md }}
             pointerEvents="auto"
           >
             <View
               style={{
                 backgroundColor: colors.surfaceRaised,
-                borderRadius: radii.lg,
-                padding: compact ? spacing.md : spacing.lg,
-                gap: spacing.sm,
+                borderRadius: radii.md,
+                padding: compact ? spacing.sm : spacing.md,
+                gap: 6,
                 borderWidth: 1,
                 borderColor: colors.border,
               }}
@@ -194,8 +218,8 @@ export function TutorialOverlay({ stepIndex, measurements, containerOffset, onNe
               <Text
                 style={{
                   color: colors.accent,
-                  fontFamily: typography.h3.fontFamily,
-                  fontSize: compact ? 17 : typography.h3.fontSize,
+                  fontFamily: typography.bodySemibold.fontFamily,
+                  fontSize: compact ? 16 : 17,
                   textAlign: "center",
                 }}
               >
@@ -205,25 +229,24 @@ export function TutorialOverlay({ stepIndex, measurements, containerOffset, onNe
                 style={{
                   color: colors.textSecondary,
                   fontFamily: typography.body.fontFamily,
-                  fontSize: compact ? 13 : 14,
-                  lineHeight: compact ? 18 : 20,
+                  fontSize: compact ? 12 : 13,
+                  lineHeight: compact ? 16 : 18,
                   textAlign: "center",
                 }}
               >
                 {step.body}
               </Text>
 
-              {showNextButton ? (
-                <View style={{ marginTop: 4 }}>
-                  <Button label={buttonLabel} fullWidth onPress={onNext} />
-                </View>
-              ) : null}
-
-              <Pressable onPress={onSkip} hitSlop={8} style={{ alignSelf: "center", marginTop: 2 }}>
-                <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11, textDecorationLine: "underline" }}>
-                  Skip tutorial
-                </Text>
-              </Pressable>
+              <View className="flex-row items-center justify-center" style={{ gap: spacing.sm, marginTop: 2 }}>
+                {showNextButton ? (
+                  <CompactButton label={buttonLabel} onPress={onNext} colors={colors} typography={typography} />
+                ) : null}
+                <Pressable onPress={onSkip} hitSlop={8}>
+                  <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11, textDecorationLine: "underline" }}>
+                    Skip
+                  </Text>
+                </Pressable>
+              </View>
 
               <StepDots current={stepIndex} total={TUTORIAL_STEPS.length} />
             </View>
@@ -248,15 +271,15 @@ export function TutorialOverlay({ stepIndex, measurements, containerOffset, onNe
 
       <MotiView
         key={step.id}
-        from={{ opacity: 0, translateY: tooltipSide === "top" ? -10 : 10 }}
+        from={{ opacity: 0, translateY: tooltipSide === "top" ? -8 : 8 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 250 }}
+        transition={{ type: "timing", duration: 220 }}
         style={{
           position: "absolute",
           ...tooltipStyle,
           left: TOOLTIP_MARGIN,
           right: TOOLTIP_MARGIN,
-          maxWidth: 380,
+          maxWidth: 340,
           alignSelf: "center",
         }}
         pointerEvents="auto"
@@ -265,9 +288,9 @@ export function TutorialOverlay({ stepIndex, measurements, containerOffset, onNe
           style={{
             backgroundColor: colors.surfaceRaised,
             borderRadius: radii.md,
-            paddingVertical: compact ? 10 : 14,
-            paddingHorizontal: compact ? 14 : 18,
-            gap: compact ? 6 : 8,
+            paddingVertical: compact ? 8 : 10,
+            paddingHorizontal: compact ? 12 : 16,
+            gap: compact ? 4 : 6,
             borderWidth: 1,
             borderColor: colors.border,
             shadowColor: "#000",
@@ -281,7 +304,7 @@ export function TutorialOverlay({ stepIndex, measurements, containerOffset, onNe
             style={{
               color: colors.accent,
               fontFamily: typography.bodySemibold.fontFamily,
-              fontSize: compact ? 15 : 16,
+              fontSize: compact ? 14 : 15,
               textAlign: "center",
             }}
           >
@@ -291,8 +314,8 @@ export function TutorialOverlay({ stepIndex, measurements, containerOffset, onNe
             style={{
               color: colors.textSecondary,
               fontFamily: typography.body.fontFamily,
-              fontSize: compact ? 12 : 13,
-              lineHeight: compact ? 17 : 19,
+              fontSize: compact ? 11 : 12,
+              lineHeight: compact ? 15 : 17,
               textAlign: "center",
             }}
           >
@@ -301,9 +324,7 @@ export function TutorialOverlay({ stepIndex, measurements, containerOffset, onNe
 
           <View className="flex-row items-center justify-center" style={{ gap: spacing.sm, marginTop: 2 }}>
             {showNextButton ? (
-              <View style={{ flex: 1, maxWidth: 160 }}>
-                <Button label={buttonLabel} fullWidth onPress={onNext} />
-              </View>
+              <CompactButton label={buttonLabel} onPress={onNext} colors={colors} typography={typography} />
             ) : null}
             <Pressable onPress={onSkip} hitSlop={8}>
               <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11, textDecorationLine: "underline" }}>

@@ -73,6 +73,15 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     allowInteraction: false,
   },
   {
+    id: "opponent-bid",
+    targetRef: "bidHistory",
+    title: "What They Bid",
+    body: "Your opponent raised the bid! The bid history shows every bid this round. Now you decide — raise higher or call their bluff.",
+    position: "above",
+    action: "tap-continue",
+    allowInteraction: false,
+  },
+  {
     id: "call-or-raise",
     targetRef: "actionControls",
     title: "Call or Raise",

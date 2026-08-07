@@ -61,6 +61,7 @@ export function GameBoard() {
   const gameStatusRef = useRef<View>(null) as React.RefObject<View>;
   const humanPanelRef = useRef<View>(null) as React.RefObject<View>;
   const opponentPanelsRef = useRef<View>(null) as React.RefObject<View>;
+  const bidHistoryRef = useRef<View>(null) as React.RefObject<View>;
   const bidPanelRef = useRef<View>(null) as React.RefObject<View>;
   const actionControlsRef = useRef<View>(null) as React.RefObject<View>;
   const scrollViewRef = useRef<ScrollView>(null) as React.RefObject<ScrollView>;
@@ -79,6 +80,7 @@ export function GameBoard() {
       gameStatus: gameStatusRef,
       humanPanel: humanPanelRef,
       opponentPanels: opponentPanelsRef,
+      bidHistory: bidHistoryRef,
       bidPanel: bidPanelRef,
       actionControls: actionControlsRef,
     };
@@ -291,7 +293,7 @@ export function GameBoard() {
           animating={animatingReveal}
         />
       ) : (
-        <View style={{ gap: compact ? 6 : spacing.sm, flex: 1 }}>
+        <View style={{ gap: compact ? 6 : spacing.sm, flex: 1, justifyContent: tutorialMode ? "space-between" : undefined }}>
           <View ref={opponentPanelsRef} collapsable={false} className="flex-row flex-wrap" style={{ gap: seatGap }}>
             {opponents.map((player) => (
               <PlayerPanel
@@ -322,7 +324,9 @@ export function GameBoard() {
             </View>
           ) : null}
 
-          <BidHistory state={gameState} />
+          <View ref={bidHistoryRef} collapsable={false}>
+            <BidHistory state={gameState} />
+          </View>
 
           {showBidPanel ? (
             <View
