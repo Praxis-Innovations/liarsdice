@@ -8,6 +8,8 @@ import { DICE_PER_PLAYER } from "../../engine/constants";
 /** Phone stays tight; tablet/desktop use larger seat + dock chrome. */
 export type PlaySizeTier = "compact" | "regular" | "roomy";
 
+export type OutwardAlign = "left" | "right" | "center";
+
 export type SeatLayout = {
   x: number;
   y: number;
@@ -17,6 +19,7 @@ export type SeatLayout = {
   playerIndex: number;
   isHuman: boolean;
   diceColumns: number;
+  outwardAlign: OutwardAlign;
 };
 
 export type FeltBounds = {
@@ -215,6 +218,14 @@ function seatMetricsForRim(
   });
 }
 
+function outwardAlignForAngle(angle: number, isHuman: boolean): OutwardAlign {
+  if (isHuman) return "center";
+  const cx = Math.cos(angle);
+  if (cx > 0.3) return "right";
+  if (cx < -0.3) return "left";
+  return "center";
+}
+
 function seatsOnScaledRim(
   arenaWidth: number,
   arenaHeight: number,
@@ -248,6 +259,7 @@ function seatsOnScaledRim(
       playerIndex: m.playerIndex,
       isHuman: m.isHuman,
       diceColumns: m.diceColumns,
+      outwardAlign: outwardAlignForAngle(m.angle, m.isHuman),
     });
   }
   return seats;
@@ -317,6 +329,7 @@ function placeOnRim(
       playerIndex: m.playerIndex,
       isHuman: m.isHuman,
       diceColumns: m.diceColumns,
+      outwardAlign: outwardAlignForAngle(m.angle, m.isHuman),
     };
   });
 }

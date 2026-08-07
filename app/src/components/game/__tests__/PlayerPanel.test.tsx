@@ -67,6 +67,16 @@ describe("PlayerPanel", () => {
     expect(getByText("TURN")).toBeTruthy();
   });
 
+  it("reverses avatar/name row when outwardAlign is right", async () => {
+    const { getByText } = await renderPanel(bot, {
+      isHuman: false,
+      showDice: false,
+      outwardAlign: "right",
+    });
+    expect(getByText("Silver Fox")).toBeTruthy();
+    expect(getByText("S")).toBeTruthy();
+  });
+
   it("renders eliminated state", async () => {
     const { getByText } = await renderPanel(
       { ...bot, isEliminated: true, diceCount: 0, dice: [] },

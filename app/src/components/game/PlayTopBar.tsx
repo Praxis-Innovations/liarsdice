@@ -86,24 +86,21 @@ export function PlayTopBar({
     </IconButton>
   ) : null;
 
-  // Phone: two rows so chips/badges never collide.
+  // Phone: single row — mode badge hidden via compact, turn badge fits inline.
   if (compact) {
     return (
       <View
         ref={statusRef}
         collapsable={false}
-        style={{ gap: 4, marginBottom: dense ? 2 : spacing.xs, marginTop: 0 }}
+        className="flex-row items-center"
+        style={{ gap: 8, marginBottom: dense ? 2 : spacing.xs, marginTop: 0 }}
       >
-        <View className="flex-row items-center" style={{ gap: 8 }}>
-          {backBtn}
-          <RoundChip state={state} dense />
-          <View style={{ flex: 1 }} />
-          <DiceCountChip state={state} dense />
-          {hintsToggle}
-        </View>
-        <View className="flex-row items-center justify-center" style={{ minHeight: 28 }}>
-          <GameStatus state={state} phase={phase} dense />
-        </View>
+        {backBtn}
+        <RoundChip state={state} dense />
+        <View style={{ flex: 1 }} />
+        <GameStatus state={state} phase={phase} dense compact />
+        <DiceCountChip state={state} dense />
+        {hintsToggle}
       </View>
     );
   }

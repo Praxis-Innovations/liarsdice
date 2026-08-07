@@ -4,7 +4,7 @@ import { DICE_PER_PLAYER } from "../../engine/constants";
 import type { DieValue, Player } from "../../engine/types";
 import { useTheme } from "../../theme/ThemeProvider";
 import { DiceRow } from "./DiceDisplay";
-import { fitDieInSeat, type PlaySizeTier } from "./tableSeating";
+import { fitDieInSeat, type OutwardAlign, type PlaySizeTier } from "./tableSeating";
 
 interface PlayerPanelProps {
   player: Player;
@@ -20,6 +20,7 @@ interface PlayerPanelProps {
   compactSeat?: boolean;
   diceColumns?: number;
   sizeTier?: PlaySizeTier;
+  outwardAlign?: OutwardAlign;
 }
 
 export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function PlayerPanel(
@@ -36,6 +37,7 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
     compactSeat = false,
     diceColumns = 5,
     sizeTier = "compact",
+    outwardAlign = "center",
   },
   ref,
 ) {
@@ -129,8 +131,13 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
     >
       {compactSeat ? (
         <View
-          className="flex-row items-center"
-          style={{ gap: sizeTier === "compact" ? 6 : 8, width: "100%", minHeight: chip }}
+          style={{
+            flexDirection: outwardAlign === "right" ? "row-reverse" : "row",
+            alignItems: "center",
+            gap: sizeTier === "compact" ? 6 : 8,
+            width: "100%",
+            minHeight: chip,
+          }}
         >
           <View
             style={{

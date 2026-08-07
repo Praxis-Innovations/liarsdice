@@ -22,6 +22,17 @@ describe("GameStatus", () => {
     expect(view.queryByText(/Round 3/)).toBeNull();
   });
 
+  it("hides mode badge in compact but keeps turn badge", async () => {
+    const state = makeGameState({ onesWild: true, currentPlayerIndex: 0 });
+    const view = await render(
+      <ThemeProvider>
+        <GameStatus state={state} phase="playing" compact />
+      </ThemeProvider>,
+    );
+    await waitFor(() => expect(view.getByText("Your turn")).toBeTruthy());
+    expect(view.queryByText("Aces wild")).toBeNull();
+  });
+
   it("labels AI thinking and Palifico mode", async () => {
     const state = makeGameState({
       currentPlayerIndex: 1,

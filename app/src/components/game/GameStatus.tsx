@@ -7,6 +7,8 @@ interface GameStatusProps {
   state: GameState;
   phase: string;
   dense?: boolean;
+  /** Phone layout — hide mode badge to save horizontal space. */
+  compact?: boolean;
 }
 
 function StatusBadge({
@@ -74,7 +76,7 @@ function MetaChip({ label, dense }: { label: string; dense?: boolean }) {
 }
 
 /** Mode / turn badges for the play top bar (round + dice chips live beside these). */
-export function GameStatus({ state, phase, dense = false }: GameStatusProps) {
+export function GameStatus({ state, phase, dense = false, compact = false }: GameStatusProps) {
   const { colors } = useTheme();
   const currentPlayer = state.players[state.currentPlayerIndex];
 
@@ -93,12 +95,14 @@ export function GameStatus({ state, phase, dense = false }: GameStatusProps) {
 
   return (
     <View className="flex-row items-center" style={{ gap: 6 }}>
-      <StatusBadge
-        label={modeLabel}
-        color={modeColor}
-        fill={state.onesWild || state.isPalificoRound ? `${modeColor}22` : `${colors.border}88`}
-        large={!dense}
-      />
+      {!compact ? (
+        <StatusBadge
+          label={modeLabel}
+          color={modeColor}
+          fill={state.onesWild || state.isPalificoRound ? `${modeColor}22` : `${colors.border}88`}
+          large={!dense}
+        />
+      ) : null}
       {turnLabel ? (
         <StatusBadge label={turnLabel} color={colors.accent} fill={`${colors.accent}28`} large={!dense} />
       ) : null}

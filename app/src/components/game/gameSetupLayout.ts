@@ -9,11 +9,11 @@ export const GAME_SETUP_LAYOUT = {
   /** Form column max width by density tier (0/1 vs 2). */
   maxWidth: {
     comfortable: 475,
-    dense: 450,
+    dense: 400,
   },
   /** Compact name field — stays right-aligned, not full-bleed. */
   nameInput: {
-    width: 175,
+    width: { default: 175, dense: 155 },
     maxWidth: "48%",
   },
   /** Name + Players rows are horizontal label/control strips. */
@@ -26,13 +26,13 @@ export const GAME_SETUP_LAYOUT = {
   titleSize: {
     comfortable: 35,
     medium: 33,
-    dense: 28,
+    dense: 25,
   },
-  labelSize: 16,
-  bodySize: 17,
-  captionSize: 14,
-  chipLabelSize: 17,
-  playerCountSize: 25,
+  labelSize: { default: 16, dense: 14 },
+  bodySize: { default: 17, dense: 15 },
+  captionSize: { default: 14, dense: 13 },
+  chipLabelSize: { default: 17, dense: 15 },
+  playerCountSize: { default: 25, dense: 22 },
 } as const;
 
 export const GAME_SETUP_DIFFICULTIES: ReadonlyArray<{
