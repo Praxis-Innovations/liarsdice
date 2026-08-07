@@ -27,7 +27,7 @@ function RootInner() {
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </Head>
       {showHeader && <Header />}
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { flex: 1 } }} />
       <StatusBar style={isDark ? "light" : "dark"} />
     </View>
   );

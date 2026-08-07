@@ -34,7 +34,15 @@ export function Footer() {
   const isNarrow = isCompactWidth(width);
 
   return (
-    <View style={{ backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border }}>
+    <View
+      style={{
+        backgroundColor: colors.surface,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        width: "100%",
+        alignSelf: "stretch",
+      }}
+    >
       <DiceDivider colors={colors} />
 
       <View

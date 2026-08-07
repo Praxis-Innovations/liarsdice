@@ -13,55 +13,53 @@ export function GameStatus({ state, phase }: GameStatusProps) {
   const totalDice = state.players.reduce((sum, p) => sum + (p.isEliminated ? 0 : p.diceCount), 0);
   const activePlayers = state.players.filter((p) => !p.isEliminated).length;
   const currentPlayer = state.players[state.currentPlayerIndex];
+  const lastBidder = state.lastBidder ? state.players.find((p) => p.id === state.lastBidder) : null;
 
-  const badgeStyle = (bg: string) => ({
-    backgroundColor: bg,
-    borderRadius: 999,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-  });
+  const meta = `Round ${state.roundNumber} · ${activePlayers} players · ${totalDice} dice`;
+  const mode = state.isPalificoRound ? "Palifico" : state.onesWild ? "Aces wild" : "No wilds";
 
   return (
-    <View className="flex-row flex-wrap items-center justify-between" style={{ gap: spacing.sm, marginBottom: spacing.md }}>
-      <View className="flex-row" style={{ gap: spacing.md }}>
+    <View style={{ gap: spacing.xs, marginBottom: spacing.md }}>
+      <View className="flex-row flex-wrap items-center justify-between" style={{ gap: spacing.sm }}>
         <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>
-          Round {state.roundNumber}
+          {meta}
         </Text>
-        <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>
-          {activePlayers} players
-        </Text>
-        <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>
-          {totalDice} dice
+        <Text
+          style={{
+            color: state.isPalificoRound ? colors.danger : state.onesWild ? colors.secondary : colors.textSecondary,
+            fontFamily: typography.caption.fontFamily,
+            fontSize: 12,
+          }}
+        >
+          {mode}
         </Text>
       </View>
 
-      <View className="flex-row" style={{ gap: spacing.sm }}>
-        {state.isPalificoRound && (
-          <View style={badgeStyle(`${colors.danger}22`)}>
-            <Text style={{ color: colors.danger, fontFamily: typography.bodySemibold.fontFamily, fontSize: 11 }}>Palifico</Text>
-          </View>
-        )}
-        {state.onesWild && (
-          <View style={badgeStyle(`${colors.secondary}22`)}>
-            <Text style={{ color: colors.secondary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 11 }}>Aces Wild</Text>
-          </View>
-        )}
-        {!state.onesWild && !state.isPalificoRound && (
-          <View style={badgeStyle(colors.surface)}>
-            <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11 }}>No Wilds</Text>
-          </View>
-        )}
-      </View>
-
-      <View>
-        {phase === "ai-thinking" && (
-          <Text style={{ color: colors.accent, fontFamily: typography.bodyMedium.fontFamily, fontSize: 12 }}>
-            {currentPlayer.name} is thinking&hellip;
+      <View className="flex-row flex-wrap items-baseline justify-between" style={{ gap: spacing.sm }}>
+        {state.currentBid ? (
+          <Text style={{ color: colors.textPrimary, fontFamily: typography.h3.fontFamily, fontSize: 18 }}>
+            {state.currentBid.quantity} × {state.currentBid.faceValue}s
+            <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
+              {" "}
+              · {lastBidder?.name ?? "Unknown"}
+            </Text>
+          </Text>
+        ) : (
+          <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 14 }}>
+            No bid yet — open the round
           </Text>
         )}
-        {phase === "playing" && !currentPlayer.isAI && (
-          <Text style={{ color: colors.accent, fontFamily: typography.bodySemibold.fontFamily, fontSize: 12 }}>Your turn</Text>
-        )}
+
+        {phase === "ai-thinking" ? (
+          <Text style={{ color: colors.accent, fontFamily: typography.bodyMedium.fontFamily, fontSize: 13 }}>
+            {currentPlayer.name} is thinking…
+          </Text>
+        ) : null}
+        {phase === "playing" && !currentPlayer.isAI ? (
+          <Text style={{ color: colors.accent, fontFamily: typography.bodySemibold.fontFamily, fontSize: 13 }}>
+            Your turn
+          </Text>
+        ) : null}
       </View>
     </View>
   );

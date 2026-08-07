@@ -1,8 +1,9 @@
 import React from "react";
-import { View } from "react-native";
-import { canChallenge, canSpotOn } from "../../engine/rules";
+import { View, useWindowDimensions } from "react-native";
 import { probabilityAtLeastWithKnown } from "../../engine/probability";
+import { canChallenge, canSpotOn } from "../../engine/rules";
 import type { GameState } from "../../engine/types";
+import { getBreakpoint } from "../../lib/breakpoints";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Button } from "../ui/Button";
 
@@ -15,6 +16,8 @@ interface ActionBarProps {
 
 export function ActionBar({ state, onChallenge, onSpotOn, showHints }: ActionBarProps) {
   const { spacing } = useTheme();
+  const { width } = useWindowDimensions();
+  const compact = getBreakpoint(width) === "phone";
   const challengeEnabled = canChallenge(state);
   const spotOnEnabled = canSpotOn(state);
 
@@ -28,18 +31,29 @@ export function ActionBar({ state, onChallenge, onSpotOn, showHints }: ActionBar
       (d) => d === state.currentBid!.faceValue || (state.onesWild && d === 1 && state.currentBid!.faceValue !== 1),
     ).length;
 
-    const prob = probabilityAtLeastWithKnown(state.currentBid.quantity, state.currentBid.faceValue, unknownDice, ownMatches, state.onesWild);
-    const verdict = prob > 0.5 ? "likely true" : prob > 0.3 ? "uncertain" : "likely false";
-    challengeLabel = `Liar! (${verdict}, ${(prob * 100).toFixed(0)}%)`;
+    const prob = probabilityAtLeastWithKnown(
+      state.currentBid.quantity,
+      state.currentBid.faceValue,
+      unknownDice,
+      ownMatches,
+      state.onesWild,
+    );
+    // Keep the button short on phones so the row doesn't overflow.
+    challengeLabel = compact ? `Liar! (${(prob * 100).toFixed(0)}%)` : `Liar! (${prob > 0.5 ? "likely true" : prob > 0.3 ? "uncertain" : "likely false"}, ${(prob * 100).toFixed(0)}%)`;
   }
 
   return (
-    <View className="flex-row" style={{ gap: spacing.sm }}>
-      <View style={{ flex: 1 }}>
+    <View
+      style={{
+        flexDirection: compact ? "column" : "row",
+        gap: spacing.sm,
+      }}
+    >
+      <View style={{ flex: compact ? undefined : 1, width: compact ? "100%" : undefined }}>
         <Button label={challengeLabel} variant="danger" fullWidth disabled={!challengeEnabled} onPress={onChallenge} />
       </View>
       {state.settings.enableSpotOn ? (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: compact ? undefined : 1, width: compact ? "100%" : undefined }}>
           <Button label="Spot On!" variant="secondary" fullWidth disabled={!spotOnEnabled} onPress={onSpotOn} />
         </View>
       ) : null}
