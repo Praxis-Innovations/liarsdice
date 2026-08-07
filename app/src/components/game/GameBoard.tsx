@@ -53,10 +53,11 @@ export function GameBoard() {
   const { width, height: screenHeight } = useWindowDimensions();
   const bp = getBreakpoint(width);
   const compact = bp === "phone";
-  const pagePad = compact ? spacing.sm : spacing.md;
+  const pagePad = compact ? spacing.xs : spacing.md;
   const columnWidth = Math.min(width, 720);
   const scrollContent = { flexGrow: 1, width: "100%" as const };
 
+  const gameContainerRef = useRef<View>(null) as React.RefObject<View>;
   const gameStatusRef = useRef<View>(null) as React.RefObject<View>;
   const humanPanelRef = useRef<View>(null) as React.RefObject<View>;
   const opponentPanelsRef = useRef<View>(null) as React.RefObject<View>;
@@ -65,8 +66,15 @@ export function GameBoard() {
   const scrollViewRef = useRef<ScrollView>(null) as React.RefObject<ScrollView>;
 
   const [measurements, setMeasurements] = useState<Record<string, MeasuredRect>>({});
+  const [containerOffset, setContainerOffset] = useState({ x: 0, y: 0 });
 
   const measureAll = useCallback(() => {
+    if (gameContainerRef.current) {
+      gameContainerRef.current.measureInWindow((cx, cy) => {
+        setContainerOffset({ x: cx, y: cy });
+      });
+    }
+
     const refs: Record<string, React.RefObject<View>> = {
       gameStatus: gameStatusRef,
       humanPanel: humanPanelRef,
@@ -227,123 +235,127 @@ export function GameBoard() {
   const showBidPanel = isHumanTurn && phase === "playing";
   const showActionControls = isHumanTurn && phase === "playing" && gameState.currentBid;
 
+  const gameContent = (
+    <View
+      style={{
+        padding: pagePad,
+        width: columnWidth,
+        alignSelf: "center",
+        flex: 1,
+      }}
+    >
+      <View className="flex-row items-center justify-between" style={{ marginBottom: compact ? 4 : spacing.sm }}>
+        <Pressable onPress={tutorialMode ? handleTutorialSkip : resetGame} hitSlop={8}>
+          <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>
+            {tutorialMode ? "← Exit Tutorial" : "← New Game"}
+          </Text>
+        </Pressable>
+        {!tutorialMode ? (
+          <View className="flex-row" style={{ gap: spacing.xs }}>
+            <Pressable
+              onPress={toggleHints}
+              style={{
+                paddingHorizontal: spacing.sm,
+                paddingVertical: 4,
+                borderRadius: radii.sm,
+                backgroundColor: showHints ? `${colors.accent}22` : "transparent",
+              }}
+            >
+              <Text
+                style={{
+                  color: showHints ? colors.accent : colors.textSecondary,
+                  fontFamily: typography.caption.fontFamily,
+                  fontSize: 11,
+                }}
+              >
+                Hints
+              </Text>
+            </Pressable>
+            <Pressable onPress={toggleSound} style={{ paddingHorizontal: spacing.sm, paddingVertical: 4 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11 }}>
+                {soundEnabled ? "Sound" : "Muted"}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
+
+      <View ref={gameStatusRef} collapsable={false}>
+        <GameStatus state={gameState} phase={phase} />
+      </View>
+
+      {showingResult && gameState.lastRoundResult ? (
+        <RoundResult
+          state={gameState}
+          onContinue={gameState.gameOver ? resetGame : continueToNextRound}
+          animating={animatingReveal}
+        />
+      ) : (
+        <View style={{ gap: compact ? 6 : spacing.sm, flex: 1 }}>
+          <View ref={opponentPanelsRef} collapsable={false} className="flex-row flex-wrap" style={{ gap: seatGap }}>
+            {opponents.map((player) => (
+              <PlayerPanel
+                key={player.id}
+                player={player}
+                isCurrentTurn={gameState.players[gameState.currentPlayerIndex].id === player.id}
+                isHuman={false}
+                showDice={showingResult}
+                highlightValues={highlightValues}
+                onesWild={gameState.onesWild}
+                lastAction={lastActions.get(player.id)}
+                seatWidth={seatWidth}
+              />
+            ))}
+          </View>
+
+          {human && !human.isEliminated ? (
+            <View ref={humanPanelRef} collapsable={false}>
+              <PlayerPanel
+                player={human}
+                isCurrentTurn={isHumanTurn}
+                isHuman
+                showDice={false}
+                highlightValues={highlightValues}
+                onesWild={gameState.onesWild}
+                lastAction={lastActions.get(human.id)}
+              />
+            </View>
+          ) : null}
+
+          <BidHistory state={gameState} />
+
+          {showBidPanel ? (
+            <View
+              style={{
+                gap: compact ? 6 : spacing.sm,
+                paddingTop: compact ? 4 : spacing.sm,
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+              }}
+            >
+              <View ref={bidPanelRef} collapsable={false}>
+                <BidPanel state={gameState} onBid={placeBid} showHints={showHints} />
+              </View>
+              <View ref={actionControlsRef} collapsable={false}>
+                <ActionBar state={gameState} onChallenge={challenge} onSpotOn={spotOn} showHints={showHints} />
+              </View>
+            </View>
+          ) : null}
+        </View>
+      )}
+    </View>
+  );
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View ref={gameContainerRef} collapsable={false} style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         ref={scrollViewRef}
         style={{ flex: 1 }}
         contentContainerStyle={scrollContent}
         scrollEventThrottle={16}
       >
-        <View
-          style={{
-            padding: pagePad,
-            width: columnWidth,
-            alignSelf: "center",
-            flexGrow: 1,
-          }}
-        >
-          <View className="flex-row items-center justify-between" style={{ marginBottom: spacing.sm }}>
-            <Pressable onPress={tutorialMode ? handleTutorialSkip : resetGame} hitSlop={8}>
-              <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>
-                {tutorialMode ? "← Exit Tutorial" : "← New Game"}
-              </Text>
-            </Pressable>
-            {!tutorialMode ? (
-              <View className="flex-row" style={{ gap: spacing.xs }}>
-                <Pressable
-                  onPress={toggleHints}
-                  style={{
-                    paddingHorizontal: spacing.sm,
-                    paddingVertical: 4,
-                    borderRadius: radii.sm,
-                    backgroundColor: showHints ? `${colors.accent}22` : "transparent",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: showHints ? colors.accent : colors.textSecondary,
-                      fontFamily: typography.caption.fontFamily,
-                      fontSize: 11,
-                    }}
-                  >
-                    Hints
-                  </Text>
-                </Pressable>
-                <Pressable onPress={toggleSound} style={{ paddingHorizontal: spacing.sm, paddingVertical: 4 }}>
-                  <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11 }}>
-                    {soundEnabled ? "Sound" : "Muted"}
-                  </Text>
-                </Pressable>
-              </View>
-            ) : null}
-          </View>
-
-          <View ref={gameStatusRef} collapsable={false}>
-            <GameStatus state={gameState} phase={phase} />
-          </View>
-
-          {showingResult && gameState.lastRoundResult ? (
-            <RoundResult
-              state={gameState}
-              onContinue={gameState.gameOver ? resetGame : continueToNextRound}
-              animating={animatingReveal}
-            />
-          ) : (
-            <View style={{ gap: compact ? spacing.sm : spacing.md }}>
-              <View ref={opponentPanelsRef} collapsable={false} className="flex-row flex-wrap" style={{ gap: seatGap }}>
-                {opponents.map((player) => (
-                  <PlayerPanel
-                    key={player.id}
-                    player={player}
-                    isCurrentTurn={gameState.players[gameState.currentPlayerIndex].id === player.id}
-                    isHuman={false}
-                    showDice={showingResult}
-                    highlightValues={highlightValues}
-                    onesWild={gameState.onesWild}
-                    lastAction={lastActions.get(player.id)}
-                    seatWidth={seatWidth}
-                  />
-                ))}
-              </View>
-
-              {human && !human.isEliminated ? (
-                <View ref={humanPanelRef} collapsable={false}>
-                  <PlayerPanel
-                    player={human}
-                    isCurrentTurn={isHumanTurn}
-                    isHuman
-                    showDice={false}
-                    highlightValues={highlightValues}
-                    onesWild={gameState.onesWild}
-                    lastAction={lastActions.get(human.id)}
-                  />
-                </View>
-              ) : null}
-
-              <BidHistory state={gameState} />
-
-              {showBidPanel ? (
-                <View
-                  style={{
-                    gap: spacing.sm,
-                    paddingTop: spacing.sm,
-                    borderTopWidth: 1,
-                    borderTopColor: colors.border,
-                  }}
-                >
-                  <View ref={bidPanelRef} collapsable={false}>
-                    <BidPanel state={gameState} onBid={placeBid} showHints={showHints} />
-                  </View>
-                  <View ref={actionControlsRef} collapsable={false}>
-                    <ActionBar state={gameState} onChallenge={challenge} onSpotOn={spotOn} showHints={showHints} />
-                  </View>
-                </View>
-              ) : null}
-            </View>
-          )}
-        </View>
-        <Footer />
+        {gameContent}
+        {!tutorialMode ? <Footer /> : null}
       </ScrollView>
 
       {showTutorialPrompt ? (
@@ -354,6 +366,7 @@ export function GameBoard() {
         <TutorialOverlay
           stepIndex={tutorialStep}
           measurements={measurements}
+          containerOffset={containerOffset}
           onNext={handleTutorialNext}
           onSkip={handleTutorialSkip}
         />

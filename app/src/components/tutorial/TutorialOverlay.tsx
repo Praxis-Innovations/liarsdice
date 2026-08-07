@@ -15,25 +15,25 @@ export interface MeasuredRect {
 interface TutorialOverlayProps {
   stepIndex: number;
   measurements: Record<string, MeasuredRect>;
+  containerOffset: { x: number; y: number };
   onNext: () => void;
   onSkip: () => void;
 }
 
-const BACKDROP_COLOR = "rgba(0,0,0,0.6)";
-const CUTOUT_PAD = 8;
-const TOOLTIP_MARGIN = 16;
-const ESTIMATED_TOOLTIP_HEIGHT = 220;
+const BACKDROP_COLOR = "rgba(0,0,0,0.55)";
+const CUTOUT_PAD = 6;
+const TOOLTIP_MARGIN = 12;
 
 function StepDots({ current, total }: { current: number; total: number }) {
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
   return (
-    <View className="flex-row items-center justify-center" style={{ gap: 6, marginTop: spacing.sm }}>
+    <View className="flex-row items-center justify-center" style={{ gap: 5, marginTop: 4 }}>
       {Array.from({ length: total }, (_, i) => (
         <View
           key={i}
           style={{
-            width: i === current ? 8 : 6,
-            height: i === current ? 8 : 6,
+            width: i === current ? 7 : 5,
+            height: i === current ? 7 : 5,
             borderRadius: 4,
             backgroundColor: i === current ? colors.accent : colors.border,
           }}
@@ -45,11 +45,11 @@ function StepDots({ current, total }: { current: number; total: number }) {
 
 function CutoutBackdrop({
   rect,
-  screenHeight,
+  containerHeight,
   interactive,
 }: {
   rect: MeasuredRect;
-  screenHeight: number;
+  containerHeight: number;
   interactive: boolean;
 }) {
   const { colors } = useTheme();
@@ -99,7 +99,6 @@ function CutoutBackdrop({
           backgroundColor: BACKDROP_COLOR,
         }}
       />
-      {/* Transparent cutout — passthrough when interactive */}
       <View
         pointerEvents={interactive ? "none" : "auto"}
         style={{
@@ -110,7 +109,6 @@ function CutoutBackdrop({
           height: padded.height,
         }}
       />
-      {/* Highlight border */}
       <View
         pointerEvents="none"
         style={{
@@ -119,7 +117,7 @@ function CutoutBackdrop({
           left: padded.x,
           width: padded.width,
           height: padded.height,
-          borderRadius: 12,
+          borderRadius: 10,
           borderWidth: 2,
           borderColor: colors.accent,
         }}
@@ -128,66 +126,137 @@ function CutoutBackdrop({
   );
 }
 
-function getTooltipTop(
+function getTooltipPosition(
   step: TutorialStep,
   targetRect: MeasuredRect | null,
-  screenHeight: number,
-): number {
-  if (!targetRect) {
-    return Math.max(TOOLTIP_MARGIN, (screenHeight - ESTIMATED_TOOLTIP_HEIGHT) / 2);
-  }
+  containerHeight: number,
+): "top" | "bottom" {
+  if (!targetRect) return "bottom";
 
   const cutoutBottom = targetRect.y + targetRect.height + CUTOUT_PAD;
   const cutoutTop = targetRect.y - CUTOUT_PAD;
   const spaceAbove = cutoutTop;
-  const spaceBelow = screenHeight - cutoutBottom;
-  const needsAbove =
-    step.position === "above" ||
-    (step.position === "auto" && spaceBelow < ESTIMATED_TOOLTIP_HEIGHT + TOOLTIP_MARGIN * 2 && spaceAbove > spaceBelow);
+  const spaceBelow = containerHeight - cutoutBottom;
 
-  if (needsAbove) {
-    return Math.max(TOOLTIP_MARGIN, cutoutTop - ESTIMATED_TOOLTIP_HEIGHT - TOOLTIP_MARGIN);
-  }
-
-  return Math.min(cutoutBottom + TOOLTIP_MARGIN, screenHeight - ESTIMATED_TOOLTIP_HEIGHT - TOOLTIP_MARGIN);
+  if (step.position === "above") return "top";
+  if (step.position === "below") return "bottom";
+  return spaceBelow >= 140 ? "bottom" : "top";
 }
 
-export function TutorialOverlay({ stepIndex, measurements, onNext, onSkip }: TutorialOverlayProps) {
+export function TutorialOverlay({ stepIndex, measurements, containerOffset, onNext, onSkip }: TutorialOverlayProps) {
   const { colors, radii, spacing, typography } = useTheme();
-  const { height: screenHeight } = useWindowDimensions();
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
+  const containerHeight = screenHeight - containerOffset.y;
 
   if (stepIndex >= TUTORIAL_STEPS.length) return null;
 
   const step = TUTORIAL_STEPS[stepIndex];
-  const targetRect = step.targetRef ? measurements[step.targetRef] ?? null : null;
 
-  const tooltipTop = getTooltipTop(step, targetRect, screenHeight);
+  const rawRect = step.targetRef ? measurements[step.targetRef] ?? null : null;
+  const targetRect = rawRect
+    ? {
+        x: rawRect.x - containerOffset.x,
+        y: rawRect.y - containerOffset.y,
+        width: rawRect.width,
+        height: rawRect.height,
+      }
+    : null;
+
   const showNextButton = step.action === "tap-continue" || step.action === "celebrate";
   const buttonLabel = step.action === "celebrate" ? "Let's Play!" : "Next";
+  const isCentered = !targetRect;
+  const tooltipSide = getTooltipPosition(step, targetRect, containerHeight);
+
+  const compact = screenWidth < 480;
+
+  if (isCentered) {
+    return (
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <View pointerEvents="auto" style={[StyleSheet.absoluteFill, { backgroundColor: BACKDROP_COLOR, justifyContent: "center", alignItems: "center" }]}>
+          <MotiView
+            key={step.id}
+            from={{ opacity: 0, translateY: 12 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: "timing", duration: 250 }}
+            style={{ width: "100%", maxWidth: 360, paddingHorizontal: spacing.md }}
+            pointerEvents="auto"
+          >
+            <View
+              style={{
+                backgroundColor: colors.surfaceRaised,
+                borderRadius: radii.lg,
+                padding: compact ? spacing.md : spacing.lg,
+                gap: spacing.sm,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.accent,
+                  fontFamily: typography.h3.fontFamily,
+                  fontSize: compact ? 17 : typography.h3.fontSize,
+                  textAlign: "center",
+                }}
+              >
+                {step.title}
+              </Text>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontFamily: typography.body.fontFamily,
+                  fontSize: compact ? 13 : 14,
+                  lineHeight: compact ? 18 : 20,
+                  textAlign: "center",
+                }}
+              >
+                {step.body}
+              </Text>
+
+              {showNextButton ? (
+                <View style={{ marginTop: 4 }}>
+                  <Button label={buttonLabel} fullWidth onPress={onNext} />
+                </View>
+              ) : null}
+
+              <Pressable onPress={onSkip} hitSlop={8} style={{ alignSelf: "center", marginTop: 2 }}>
+                <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11, textDecorationLine: "underline" }}>
+                  Skip tutorial
+                </Text>
+              </Pressable>
+
+              <StepDots current={stepIndex} total={TUTORIAL_STEPS.length} />
+            </View>
+          </MotiView>
+        </View>
+      </View>
+    );
+  }
+
+  const tooltipStyle =
+    tooltipSide === "top"
+      ? { top: TOOLTIP_MARGIN }
+      : { bottom: TOOLTIP_MARGIN };
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {targetRect ? (
-        <CutoutBackdrop
-          rect={targetRect}
-          screenHeight={screenHeight}
-          interactive={step.allowInteraction}
-        />
-      ) : (
-        <View pointerEvents="auto" style={[StyleSheet.absoluteFill, { backgroundColor: BACKDROP_COLOR }]} />
-      )}
+      <CutoutBackdrop
+        rect={targetRect!}
+        containerHeight={containerHeight}
+        interactive={step.allowInteraction}
+      />
 
       <MotiView
         key={step.id}
-        from={{ opacity: 0, translateY: 12 }}
+        from={{ opacity: 0, translateY: tooltipSide === "top" ? -10 : 10 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 300 }}
+        transition={{ type: "timing", duration: 250 }}
         style={{
           position: "absolute",
-          top: tooltipTop,
+          ...tooltipStyle,
           left: TOOLTIP_MARGIN,
           right: TOOLTIP_MARGIN,
-          maxWidth: 400,
+          maxWidth: 380,
           alignSelf: "center",
         }}
         pointerEvents="auto"
@@ -195,23 +264,24 @@ export function TutorialOverlay({ stepIndex, measurements, onNext, onSkip }: Tut
         <View
           style={{
             backgroundColor: colors.surfaceRaised,
-            borderRadius: radii.lg,
-            padding: spacing.lg,
-            gap: spacing.sm,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 12,
-            elevation: 8,
+            borderRadius: radii.md,
+            paddingVertical: compact ? 10 : 14,
+            paddingHorizontal: compact ? 14 : 18,
+            gap: compact ? 6 : 8,
             borderWidth: 1,
             borderColor: colors.border,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 8,
+            elevation: 6,
           }}
         >
           <Text
             style={{
               color: colors.accent,
-              fontFamily: typography.h3.fontFamily,
-              fontSize: typography.h3.fontSize,
+              fontFamily: typography.bodySemibold.fontFamily,
+              fontSize: compact ? 15 : 16,
               textAlign: "center",
             }}
           >
@@ -221,32 +291,26 @@ export function TutorialOverlay({ stepIndex, measurements, onNext, onSkip }: Tut
             style={{
               color: colors.textSecondary,
               fontFamily: typography.body.fontFamily,
-              fontSize: 14,
-              lineHeight: 20,
+              fontSize: compact ? 12 : 13,
+              lineHeight: compact ? 17 : 19,
               textAlign: "center",
             }}
           >
             {step.body}
           </Text>
 
-          {showNextButton ? (
-            <View style={{ marginTop: spacing.xs }}>
-              <Button label={buttonLabel} fullWidth onPress={onNext} />
-            </View>
-          ) : null}
-
-          <Pressable onPress={onSkip} hitSlop={8} style={{ alignSelf: "center", marginTop: 4 }}>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontFamily: typography.caption.fontFamily,
-                fontSize: 12,
-                textDecorationLine: "underline",
-              }}
-            >
-              Skip tutorial
-            </Text>
-          </Pressable>
+          <View className="flex-row items-center justify-center" style={{ gap: spacing.sm, marginTop: 2 }}>
+            {showNextButton ? (
+              <View style={{ flex: 1, maxWidth: 160 }}>
+                <Button label={buttonLabel} fullWidth onPress={onNext} />
+              </View>
+            ) : null}
+            <Pressable onPress={onSkip} hitSlop={8}>
+              <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11, textDecorationLine: "underline" }}>
+                Skip
+              </Text>
+            </Pressable>
+          </View>
 
           <StepDots current={stepIndex} total={TUTORIAL_STEPS.length} />
         </View>

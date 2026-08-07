@@ -31,7 +31,7 @@ function seededRng(seed: number): RNGFunction {
 
 const TUTORIAL_SEED = 49;
 const TUTORIAL_AI_SEED = 777;
-const TUTORIAL_AI_DELAY = 1200;
+const TUTORIAL_AI_DELAY = 3500;
 
 const TUTORIAL_SETTINGS: GameSettings = {
   playerCount: 2,
