@@ -4,7 +4,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
 import { DataTable } from "../../src/components/content/DataTable";
-import { DiceExample, DiceDivider, GameScenario } from "../../src/components/content/DiceIllustration";
+import { DiceDivider, GameScenario } from "../../src/components/content/DiceIllustration";
 import { Callout, Paragraph, Section } from "../../src/components/content/Prose";
 import { headingProps } from "../../src/lib/heading";
 import { useTheme } from "../../src/theme/ThemeProvider";
@@ -232,7 +232,7 @@ export default function StrategyPage() {
         </Section>
 
         <View style={{ alignItems: "center", marginTop: spacing.lg, gap: spacing.sm }}>
-          <Text {...headingProps(2)} style={{ color: colors.textPrimary, fontFamily: typography.h2.fontFamily, fontSize: 22 }}>
+          <Text {...headingProps(2)} style={{ color: colors.textPrimary, fontFamily: typography.h2.fontFamily, fontSize: 25 }}>
             Put Your Strategy to the Test
           </Text>
           <Paragraph>Play against AI opponents online and apply the probability math, bluffing tactics, and reading skills.</Paragraph>

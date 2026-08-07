@@ -38,7 +38,7 @@ export default function SignInScreen() {
       </Head>
       <AuthCard title="Sign in" subtitle="Welcome back — pick up your last game.">
         {error ? (
-          <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 14 }}>{error}</Text>
+          <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 18 }}>{error}</Text>
         ) : null}
 
         <TextField
@@ -59,23 +59,23 @@ export default function SignInScreen() {
 
         <Button label="Sign in" fullWidth loading={submitting} onPress={() => void handleSubmit()} />
 
-        <Link href="/forgot-password" style={{ color: colors.primary, fontFamily: typography.bodyMedium.fontFamily, fontSize: 14 }}>
+        <Link href="/forgot-password" style={{ color: colors.primary, fontFamily: typography.bodyMedium.fontFamily, fontSize: 18 }}>
           Forgot password?
         </Link>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
           <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>or</Text>
+          <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 16 }}>or</Text>
           <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
         </View>
 
         <SocialSignInButtons onError={setError} />
 
         <View style={{ flexDirection: "row", justifyContent: "center", gap: spacing.xs, marginTop: spacing.sm }}>
-          <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 14 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 18 }}>
             Don&apos;t have an account?
           </Text>
-          <Link href="/sign-up" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 14 }}>
+          <Link href="/sign-up" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 18 }}>
             Create one
           </Link>
         </View>

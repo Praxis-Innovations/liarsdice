@@ -4,7 +4,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
 import { DiceDivider, DiceExample } from "../../src/components/content/DiceIllustration";
-import { Callout, Paragraph, Section } from "../../src/components/content/Prose";
+import { FaqItem, Paragraph, Section } from "../../src/components/content/Prose";
 import { headingProps } from "../../src/lib/heading";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { Button } from "../../src/components/ui/Button";
@@ -179,15 +179,15 @@ export default function FAQPage() {
           <React.Fragment key={category}>
             {index > 0 && <DiceDivider />}
             <Section title={CATEGORY_TITLES[category]}>
-              <View style={{ gap: spacing.sm }}>
-                {FAQ_ITEMS.filter((item) => item.category === category).map((item) => (
-                  <Callout key={item.question}>
-                    <Text style={{ color: colors.textPrimary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 15, marginBottom: 4 }}>
-                      {item.question}
-                    </Text>
-                    {"\n"}
+              <View>
+                {FAQ_ITEMS.filter((item) => item.category === category).map((item, i, items) => (
+                  <FaqItem
+                    key={item.question}
+                    question={item.question}
+                    showDivider={i < items.length - 1}
+                  >
                     {item.answer}
-                  </Callout>
+                  </FaqItem>
                 ))}
               </View>
             </Section>
@@ -195,7 +195,16 @@ export default function FAQPage() {
         ))}
 
         <View style={{ alignItems: "center", marginTop: spacing.lg, gap: spacing.sm }}>
-          <Text {...headingProps(2)} style={{ color: colors.textPrimary, fontFamily: typography.h2.fontFamily, fontSize: 22 }}>
+          <Text
+            {...headingProps(2)}
+            style={{
+              color: colors.textPrimary,
+              fontFamily: typography.h2.fontFamily,
+              fontSize: typography.h2.fontSize,
+              lineHeight: typography.h2.lineHeight,
+              textAlign: "center",
+            }}
+          >
             Ready to put your knowledge to the test?
           </Text>
           <Link href="/play" asChild>

@@ -1,6 +1,6 @@
 import { Link, usePathname } from "expo-router";
 import React from "react";
-import { ScrollView } from "react-native";
+import { View } from "react-native";
 import { useTheme } from "../../theme/ThemeProvider";
 
 const LINKS = [
@@ -19,7 +19,7 @@ export function ContentNav() {
   const pathname = usePathname();
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+    <View className="flex-row flex-wrap" style={{ gap: spacing.sm }}>
       {LINKS.map((link) => {
         const active = pathname === link.href;
         return (
@@ -33,7 +33,7 @@ export function ContentNav() {
               paddingVertical: 6,
               borderRadius: 999,
               fontFamily: typography.bodyMedium.fontFamily,
-              fontSize: 13,
+              fontSize: typography.caption.fontSize,
               overflow: "hidden",
             }}
           >
@@ -41,6 +41,6 @@ export function ContentNav() {
           </Link>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }

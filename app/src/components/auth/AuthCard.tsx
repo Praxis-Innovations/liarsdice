@@ -34,7 +34,7 @@ export function AuthCard({
           style={{
             color: colors.textPrimary,
             fontFamily: typography.h1.fontFamily,
-            fontSize: 30,
+            fontSize: 34,
           }}
         >
           {title}
@@ -44,8 +44,8 @@ export function AuthCard({
             style={{
               color: colors.textSecondary,
               fontFamily: typography.body.fontFamily,
-              fontSize: 15,
-              lineHeight: 22,
+              fontSize: 19,
+              lineHeight: 28,
               marginTop: -spacing.sm,
             }}
           >

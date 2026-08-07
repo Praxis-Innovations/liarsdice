@@ -41,7 +41,7 @@ export function DataTable({ columns, rows }: DataTableProps) {
               style={{
                 color: colors.accent,
                 fontFamily: typography.bodySemibold.fontFamily,
-                fontSize: 13,
+                fontSize: typography.caption.fontSize,
                 marginBottom: 2,
               }}
             >
@@ -64,7 +64,7 @@ export function DataTable({ columns, rows }: DataTableProps) {
                   style={{
                     color: colors.textSecondary,
                     fontFamily: typography.caption.fontFamily,
-                    fontSize: 12,
+                    fontSize: 15,
                     flexShrink: 1,
                   }}
                 >
@@ -74,7 +74,7 @@ export function DataTable({ columns, rows }: DataTableProps) {
                   style={{
                     color: colors.textPrimary,
                     fontFamily: typography.bodySemibold.fontFamily,
-                    fontSize: 13,
+                    fontSize: typography.caption.fontSize,
                   }}
                 >
                   {row[colIndex + 1] ?? "—"}
@@ -121,7 +121,7 @@ export function DataTable({ columns, rows }: DataTableProps) {
                   style={{
                     color: colors.accent,
                     fontFamily: typography.bodySemibold.fontFamily,
-                    fontSize: 12,
+                    fontSize: 15,
                     letterSpacing: 0.2,
                   }}
                 >
@@ -157,7 +157,7 @@ export function DataTable({ columns, rows }: DataTableProps) {
                         cellIndex === 0
                           ? typography.bodySemibold.fontFamily
                           : typography.body.fontFamily,
-                      fontSize: 13,
+                      fontSize: typography.caption.fontSize,
                     }}
                   >
                     {row[cellIndex] ?? "—"}

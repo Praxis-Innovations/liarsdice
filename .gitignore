@@ -8,6 +8,10 @@ web-build/
 .expo-shared/
 .next/
 out/
+
+# test coverage (Jest)
+coverage/
+app/coverage/
 # Accidental/legacy Next.js output — product web is Expo static export under app/
 /web/
 

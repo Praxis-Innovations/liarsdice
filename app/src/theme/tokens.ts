@@ -51,14 +51,19 @@ export const SPACING = {
   xxl: 48,
 };
 
+/**
+ * Site-wide type scale. Body/UI ~+25% from original for readability;
+ * Fredoka headings ~+12.5% so they stay lighter than a flat scale-up.
+ * Game / setup UI uses its own hardcoded sizes.
+ */
 export const TYPOGRAPHY = {
-  display: { fontFamily: "Fredoka_700Bold", fontSize: 48, lineHeight: 54 },
-  h1: { fontFamily: "Fredoka_700Bold", fontSize: 34, lineHeight: 40 },
-  h2: { fontFamily: "Fredoka_600SemiBold", fontSize: 24, lineHeight: 30 },
-  h3: { fontFamily: "Fredoka_600SemiBold", fontSize: 19, lineHeight: 25 },
-  body: { fontFamily: "Manrope_400Regular", fontSize: 16, lineHeight: 24 },
-  bodyMedium: { fontFamily: "Manrope_500Medium", fontSize: 16, lineHeight: 24 },
-  bodySemibold: { fontFamily: "Manrope_600SemiBold", fontSize: 16, lineHeight: 24 },
-  button: { fontFamily: "Manrope_700Bold", fontSize: 16, lineHeight: 20 },
-  caption: { fontFamily: "Manrope_500Medium", fontSize: 13, lineHeight: 18 },
+  display: { fontFamily: "Fredoka_700Bold", fontSize: 54, lineHeight: 61 },
+  h1: { fontFamily: "Fredoka_700Bold", fontSize: 38, lineHeight: 45 },
+  h2: { fontFamily: "Fredoka_600SemiBold", fontSize: 27, lineHeight: 34 },
+  h3: { fontFamily: "Fredoka_600SemiBold", fontSize: 21, lineHeight: 28 },
+  body: { fontFamily: "Manrope_400Regular", fontSize: 20, lineHeight: 30 },
+  bodyMedium: { fontFamily: "Manrope_500Medium", fontSize: 20, lineHeight: 30 },
+  bodySemibold: { fontFamily: "Manrope_600SemiBold", fontSize: 20, lineHeight: 30 },
+  button: { fontFamily: "Manrope_700Bold", fontSize: 20, lineHeight: 25 },
+  caption: { fontFamily: "Manrope_500Medium", fontSize: 16, lineHeight: 23 },
 };

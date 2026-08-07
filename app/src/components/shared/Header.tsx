@@ -109,7 +109,7 @@ export function Header() {
             <Text
               style={{
                 fontFamily: typography.h1.fontFamily,
-                fontSize: 22,
+                fontSize: 25,
                 color: colors.textPrimary,
               }}
             >
@@ -138,7 +138,7 @@ export function Header() {
                   <Text
                     style={{
                       fontFamily: typography.bodyMedium.fontFamily,
-                      fontSize: 14,
+                      fontSize: 18,
                       color: active ? onBrightText : colors.textSecondary,
                     }}
                   >
@@ -165,23 +165,26 @@ export function Header() {
               {isDark ? <SunIcon color={colors.accent} /> : <MoonIcon color={colors.textSecondary} />}
             </Pressable>
 
-            {/* Primary CTA at the end of the nav */}
+            {/* Primary CTA — matches Button primary (primaryText), sized to the nav row */}
             <Link
               href={PLAY_HREF}
               style={{
                 marginLeft: 8,
-                paddingHorizontal: 18,
-                paddingVertical: 10,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
                 borderRadius: 999,
                 backgroundColor: colors.primary,
                 overflow: "hidden",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               <Text
                 style={{
-                  fontFamily: typography.button.fontFamily,
-                  fontSize: 14,
-                  color: onBrightText,
+                  fontFamily: typography.bodySemibold.fontFamily,
+                  fontSize: 16,
+                  lineHeight: 20,
+                  color: colors.primaryText,
                 }}
               >
                 Play
@@ -271,7 +274,7 @@ export function Header() {
                   <Text
                     style={{
                       fontFamily: typography.bodyMedium.fontFamily,
-                      fontSize: 16,
+                      fontSize: typography.body.fontSize,
                       color: active ? onBrightText : colors.textPrimary,
                     }}
                   >
@@ -292,19 +295,21 @@ export function Header() {
               href={PLAY_HREF}
               onPress={() => setMenuOpen(false)}
               style={{
-                paddingVertical: 14,
+                paddingVertical: 12,
                 paddingHorizontal: spacing.md,
                 borderRadius: 12,
                 backgroundColor: colors.primary,
                 alignItems: "center",
+                justifyContent: "center",
                 overflow: "hidden",
               }}
             >
               <Text
                 style={{
-                  fontFamily: typography.button.fontFamily,
-                  fontSize: 16,
-                  color: onBrightText,
+                  fontFamily: typography.bodySemibold.fontFamily,
+                  fontSize: 18,
+                  lineHeight: 24,
+                  color: colors.primaryText,
                 }}
               >
                 Play

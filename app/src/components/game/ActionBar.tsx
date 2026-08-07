@@ -1,9 +1,9 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { View, useWindowDimensions } from "react-native";
+import { View } from "react-native";
 import { probabilityAtLeastWithKnown } from "../../engine/probability";
 import { canChallenge, canSpotOn } from "../../engine/rules";
 import type { GameState } from "../../engine/types";
-import { getBreakpoint } from "../../lib/breakpoints";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Button } from "../ui/Button";
 
@@ -12,14 +12,14 @@ interface ActionBarProps {
   onChallenge: () => void;
   onSpotOn: () => void;
   showHints: boolean;
+  /** When false, buttons stay visible but disabled. */
+  enabled?: boolean;
 }
 
-export function ActionBar({ state, onChallenge, onSpotOn, showHints }: ActionBarProps) {
-  const { spacing } = useTheme();
-  const { width } = useWindowDimensions();
-  const compact = getBreakpoint(width) === "phone";
-  const challengeEnabled = canChallenge(state);
-  const spotOnEnabled = canSpotOn(state);
+export function ActionBar({ state, onChallenge, onSpotOn, showHints, enabled = true }: ActionBarProps) {
+  const { colors, spacing } = useTheme();
+  const challengeEnabled = enabled && canChallenge(state);
+  const spotOnEnabled = enabled && canSpotOn(state);
 
   let challengeLabel = "Liar!";
 
@@ -38,23 +38,37 @@ export function ActionBar({ state, onChallenge, onSpotOn, showHints }: ActionBar
       ownMatches,
       state.onesWild,
     );
-    // Keep the button short on phones so the row doesn't overflow.
-    challengeLabel = compact ? `Liar! (${(prob * 100).toFixed(0)}%)` : `Liar! (${prob > 0.5 ? "likely true" : prob > 0.3 ? "uncertain" : "likely false"}, ${(prob * 100).toFixed(0)}%)`;
+    challengeLabel = `Liar! (${(prob * 100).toFixed(0)}%)`;
   }
 
+  const actionStyle = { paddingVertical: 12 };
+
   return (
-    <View
-      style={{
-        flexDirection: compact ? "column" : "row",
-        gap: spacing.sm,
-      }}
-    >
-      <View style={{ flex: compact ? undefined : 1, width: compact ? "100%" : undefined }}>
-        <Button label={challengeLabel} variant="danger" fullWidth disabled={!challengeEnabled} onPress={onChallenge} />
+    <View style={{ flexDirection: "row", gap: spacing.sm }}>
+      <View style={{ flex: 1 }}>
+        <Button
+          label={challengeLabel}
+          variant="danger"
+          fullWidth
+          compact
+          disabled={!challengeEnabled}
+          onPress={onChallenge}
+          style={actionStyle}
+          icon={<Ionicons name="flash" size={16} color={colors.danger} />}
+        />
       </View>
       {state.settings.enableSpotOn ? (
-        <View style={{ flex: compact ? undefined : 1, width: compact ? "100%" : undefined }}>
-          <Button label="Spot On!" variant="secondary" fullWidth disabled={!spotOnEnabled} onPress={onSpotOn} />
+        <View style={{ flex: 1 }}>
+          <Button
+            label="Spot On!"
+            variant="secondary"
+            fullWidth
+            compact
+            disabled={!spotOnEnabled}
+            onPress={onSpotOn}
+            style={actionStyle}
+            icon={<Ionicons name="checkmark-circle" size={16} color={colors.secondaryText} />}
+          />
         </View>
       ) : null}
     </View>

@@ -41,10 +41,10 @@ export default function ForgotPasswordScreen() {
       <>
         {head}
         <AuthCard title="Check your email">
-          <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 15, lineHeight: 22 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 19, lineHeight: 28 }}>
             We sent a password reset link to {email.trim()}.
           </Text>
-          <Link href="/sign-in" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 14 }}>
+          <Link href="/sign-in" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 18 }}>
             Back to sign in
           </Link>
         </AuthCard>
@@ -57,7 +57,7 @@ export default function ForgotPasswordScreen() {
       {head}
       <AuthCard title="Reset password" subtitle="Enter your email and we'll send you a reset link.">
         {error ? (
-          <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 14 }}>{error}</Text>
+          <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 18 }}>{error}</Text>
         ) : null}
 
         <TextField
@@ -71,7 +71,7 @@ export default function ForgotPasswordScreen() {
 
         <Button label="Send reset link" fullWidth loading={submitting} onPress={() => void handleSubmit()} />
 
-        <Link href="/sign-in" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 14 }}>
+        <Link href="/sign-in" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 18 }}>
           Back to sign in
         </Link>
       </AuthCard>

@@ -24,12 +24,15 @@
     "collectCoverageFrom": [
       "src/engine/**/*.{ts,tsx}",
       "src/components/landing/dicePlatformLayout.ts",
+      "src/components/game/**/*.{ts,tsx}",
+      "src/components/tutorial/tutorialSteps.ts",
       "src/lib/breakpoints.ts",
       "src/theme/ThemeProvider.tsx",
       "src/theme/tokens.ts",
       "!src/engine/gameStore.ts",
       "!src/engine/index.ts",
       "!src/engine/types.ts",
+      "!src/components/game/testing/**",
       "!**/__tests__/**"
     ],
     "coverageThreshold": {

@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Header } from "../src/components/shared/Header";
+import { TutorialHost } from "../src/components/tutorial/TutorialHost";
 import { AuthProvider } from "../src/context/AuthContext";
 import { fontsToLoad } from "../src/theme/fonts";
 import { ThemeProvider, useTheme } from "../src/theme/ThemeProvider";
@@ -18,16 +19,22 @@ const AUTH_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password", "/reset-passw
 
 function RootInner() {
   const pathname = usePathname();
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
   const showHeader = !AUTH_PREFIXES.some((p) => pathname.startsWith(p));
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </Head>
       {showHeader && <Header />}
-      <Stack screenOptions={{ headerShown: false, contentStyle: { flex: 1 } }} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { flex: 1, backgroundColor: colors.background },
+        }}
+      />
+      <TutorialHost />
       <StatusBar style={isDark ? "light" : "dark"} />
     </View>
   );

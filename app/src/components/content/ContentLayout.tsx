@@ -17,12 +17,17 @@ export function ContentLayout({ title, breadcrumb, children }: ContentLayoutProp
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={{ maxWidth: 760, width: "100%", alignSelf: "center", padding: spacing.lg, gap: spacing.lg, flex: 1 }}>
+      <View style={{ maxWidth: 900, width: "100%", alignSelf: "center", padding: spacing.lg, gap: spacing.lg, flex: 1 }}>
         <View style={{ gap: spacing.md }}>
           <Breadcrumb items={breadcrumb} />
           <Text
             {...headingProps(1)}
-            style={{ color: colors.textPrimary, fontFamily: typography.h1.fontFamily, fontSize: 34 }}
+            style={{
+              color: colors.textPrimary,
+              fontFamily: typography.h1.fontFamily,
+              fontSize: typography.h1.fontSize,
+              lineHeight: typography.h1.lineHeight,
+            }}
           >
             {title}
           </Text>
@@ -31,7 +36,14 @@ export function ContentLayout({ title, breadcrumb, children }: ContentLayoutProp
         {children}
 
         <View style={{ marginTop: spacing.lg, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.border }}>
-          <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12, marginBottom: spacing.sm }}>
+          <Text
+            style={{
+              color: colors.textSecondary,
+              fontFamily: typography.caption.fontFamily,
+              fontSize: typography.caption.fontSize,
+              marginBottom: spacing.sm,
+            }}
+          >
             Keep exploring
           </Text>
           <ContentNav />

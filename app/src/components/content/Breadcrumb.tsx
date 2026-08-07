@@ -19,14 +19,29 @@ export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
         return (
           <React.Fragment key={`${item.label}-${i}`}>
             {i > 0 ? (
-              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>/</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: typography.caption.fontSize }}>/</Text>
             ) : null}
             {item.href && !isLast ? (
-              <Link href={item.href} style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>
+              <Link
+                href={item.href}
+                style={{
+                  color: colors.textSecondary,
+                  fontFamily: typography.caption.fontFamily,
+                  fontSize: typography.caption.fontSize,
+                }}
+              >
                 {item.label}
               </Link>
             ) : (
-              <Text style={{ color: colors.textPrimary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>{item.label}</Text>
+              <Text
+                style={{
+                  color: colors.textPrimary,
+                  fontFamily: typography.caption.fontFamily,
+                  fontSize: typography.caption.fontSize,
+                }}
+              >
+                {item.label}
+              </Text>
             )}
           </React.Fragment>
         );

@@ -301,7 +301,7 @@ export default function HowToPlayPage() {
         </Section>
 
         <View style={{ alignItems: "center", marginTop: spacing.lg, gap: spacing.sm }}>
-          <Text {...headingProps(2)} style={{ color: colors.textPrimary, fontFamily: typography.h2.fontFamily, fontSize: 22 }}>
+          <Text {...headingProps(2)} style={{ color: colors.textPrimary, fontFamily: typography.h2.fontFamily, fontSize: 25 }}>
             Ready to Play?
           </Text>
           <Paragraph>Put your new knowledge to the test — no sign-up required.</Paragraph>
