@@ -17,7 +17,26 @@
     "eas-prod": "eas build --profile production"
   },
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "setupFiles": [
+      "<rootDir>/jest.setup.js"
+    ],
+    "collectCoverageFrom": [
+      "src/engine/**/*.{ts,tsx}",
+      "src/components/landing/dicePlatformLayout.ts",
+      "src/lib/breakpoints.ts",
+      "src/theme/ThemeProvider.tsx",
+      "src/theme/tokens.ts",
+      "!src/engine/gameStore.ts",
+      "!src/engine/index.ts",
+      "!src/engine/types.ts",
+      "!**/__tests__/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 80
+      }
+    }
   },
   "dependencies": {
     "@expo-google-fonts/fredoka": "^0.4.1",
@@ -46,13 +65,16 @@
     "react-native-svg": "15.12.1",
     "react-native-web": "^0.21.0",
     "react-native-worklets": "^0.5.1",
+    "three": "^0.185.1",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@testing-library/react-native": "^14.0.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.9.5",
     "@types/react": "~19.1.10",
+    "@types/three": "^0.185.4",
     "babel-preset-expo": "^54.0.10",
     "eslint": "^10.6.0",
     "eslint-plugin-unused-imports": "^4.4.1",

@@ -1,10 +1,18 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useColorScheme } from "react-native";
 import { RADII, SPACING, TYPOGRAPHY, ThemeColors, darkColors, lightColors } from "./tokens";
+
+export type ThemeMode = "light" | "dark" | "system";
+
+export const THEME_STORAGE_KEY = "@liarsdice/theme-mode";
 
 type ThemeContextValue = {
   colors: ThemeColors;
   isDark: boolean;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
+  toggleTheme: () => void;
   radii: typeof RADII;
   spacing: typeof SPACING;
   typography: typeof TYPOGRAPHY;
@@ -12,34 +20,77 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+export function resolveIsDark(mode: ThemeMode, systemScheme: string | null | undefined): boolean {
+  if (mode === "system") return systemScheme === "dark";
+  return mode === "dark";
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const liveColorScheme = useColorScheme();
+  const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
+  const [storageReady, setStorageReady] = useState(false);
 
-  // This is a static export with no real server, so the pre-built HTML always
-  // bakes in the light theme (no browser to read a real preference at build
-  // time). If the very first CLIENT render read the OS preference directly it
-  // would often disagree with that static HTML, and relying on React to patch
-  // up the resulting hydration mismatch is a real race in practice: on some
-  // routes/viewports the mismatch is large enough that React defers the fix to
-  // an async recovery pass, which can still be pending when the page is first
-  // interactive. So instead, first render deliberately mirrors the static
-  // HTML (light, matching exactly => no mismatch at all), and only after
-  // mount (guaranteed post-hydration) do we switch to the real scheme, via a
-  // plain client-side re-render rather than a hydration patch.
+  // First render is always light to match static HTML (no browser preference at
+  // build time). After mount we read the stored preference, then resolve.
+  // Do not apply OS dark until storage has been consulted — otherwise a saved
+  // "light" preference can flash dark for one frame.
   const [isDark, setIsDark] = useState(false);
+
   useEffect(() => {
-    setIsDark(liveColorScheme === "dark");
-  }, [liveColorScheme]);
+    let cancelled = false;
+    AsyncStorage.getItem(THEME_STORAGE_KEY)
+      .then((stored) => {
+        if (cancelled) return;
+        if (stored === "light" || stored === "dark" || stored === "system") {
+          setThemeModeState(stored);
+          setIsDark(resolveIsDark(stored, liveColorScheme));
+        } else {
+          setIsDark(resolveIsDark("system", liveColorScheme));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setStorageReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Intentionally once on mount — live scheme changes are handled below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!storageReady) return;
+    if (themeMode === "system") {
+      setIsDark(resolveIsDark("system", liveColorScheme));
+    }
+  }, [liveColorScheme, themeMode, storageReady]);
+
+  const setThemeMode = useCallback(
+    (mode: ThemeMode) => {
+      setThemeModeState(mode);
+      setIsDark(resolveIsDark(mode, liveColorScheme));
+      void AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
+    },
+    [liveColorScheme],
+  );
+
+  const toggleTheme = useCallback(() => {
+    const next: ThemeMode = isDark ? "light" : "dark";
+    setThemeMode(next);
+  }, [isDark, setThemeMode]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       colors: isDark ? darkColors : lightColors,
       isDark,
+      themeMode,
+      setThemeMode,
+      toggleTheme,
       radii: RADII,
       spacing: SPACING,
       typography: TYPOGRAPHY,
     }),
-    [isDark],
+    [isDark, themeMode, setThemeMode, toggleTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

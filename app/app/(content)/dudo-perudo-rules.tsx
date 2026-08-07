@@ -4,6 +4,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
 import { DataTable } from "../../src/components/content/DataTable";
+import { DiceExample, DiceDivider } from "../../src/components/content/DiceIllustration";
 import { BulletList, Callout, Paragraph, Section, SubSection } from "../../src/components/content/Prose";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { Button } from "../../src/components/ui/Button";
@@ -70,6 +71,8 @@ export default function DudoPerudoRulesPage() {
           </Paragraph>
         </Section>
 
+        <DiceDivider />
+
         <Section title="Dudo Rules Explained">
           <Paragraph>
             The standard South American version of Dudo follows a clear structure that balances simplicity with strategic
@@ -88,15 +91,23 @@ export default function DudoPerudoRulesPage() {
           </SubSection>
           <SubSection title="Wild Aces">
             <Paragraph>
-              Aces (ones) are <Bold>wild</Bold> — they count as any face value. Bidding on aces directly follows special
-              rules: the quantity required is halved (rounded up), and switching back requires more than doubling the ace
-              quantity.
+              Aces (ones) are <Bold>wild</Bold> — they count as any face value. Learn this first: most Dudo bids include
+              wild ones. Bidding on aces directly follows special rules: the quantity required is halved (rounded up), and
+              switching back requires more than doubling the ace quantity.
             </Paragraph>
+            <DiceExample
+              label="A classic Dudo hand"
+              dice={[1, 4, 4, 5, 6]}
+              highlightValues={[4]}
+              wildHighlight
+              caption="In the common South American ruleset, the two fours and the wild ace all support a bid on fours."
+            />
           </SubSection>
           <SubSection title="Bidding">
             <Paragraph>
-              Play proceeds clockwise. A player who does not want to raise the bid may challenge by calling &quot;Dudo!&quot;
-              — all dice are then revealed and counted.
+              Play proceeds clockwise. Bids claim how many of a face value exist across the table, counting wild aces.
+              A player who does not want to raise the bid may challenge by calling &quot;Dudo!&quot; — all dice are then
+              revealed and counted.
             </Paragraph>
           </SubSection>
           <SubSection title="Palifico">

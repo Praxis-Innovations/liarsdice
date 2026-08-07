@@ -52,12 +52,18 @@ export function RoundResult({ state, onContinue, animating }: RoundResultProps) 
               from={{ opacity: animating ? 0 : 1, translateY: animating ? 12 : 0 }}
               animate={{ opacity: 1, translateY: 0 }}
               transition={{ type: "timing", duration: 350, delay: index * 120 }}
-              style={{ backgroundColor: colors.surface, borderRadius: radii.sm, padding: spacing.sm }}
+              style={{ gap: 6 }}
             >
-              <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11, marginBottom: 4 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11 }}>
                 {player?.name}
               </Text>
-              <DiceRow dice={dice as DieValue[]} size="sm" highlightValues={[result.currentBid.faceValue]} wildValue={state.onesWild} />
+              <DiceRow
+                dice={dice as DieValue[]}
+                size="sm"
+                highlightValues={[result.currentBid.faceValue]}
+                wildValue={state.onesWild}
+                emphasized={playerId === "human"}
+              />
             </MotiView>
           );
         })}

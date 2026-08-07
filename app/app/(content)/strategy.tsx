@@ -4,6 +4,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
 import { DataTable } from "../../src/components/content/DataTable";
+import { DiceExample, DiceDivider, GameScenario } from "../../src/components/content/DiceIllustration";
 import { Callout, Paragraph, Section } from "../../src/components/content/Prose";
 import { headingProps } from "../../src/lib/heading";
 import { useTheme } from "../../src/theme/ThemeProvider";
@@ -69,13 +70,21 @@ export default function StrategyPage() {
           </Callout>
         </Section>
 
+        <DiceDivider />
+
         <Section title="Probability Table">
           <Paragraph>
             Use this reference table to quickly estimate how many of a given face value are likely among the hidden dice. Bids
             near or below the expected count are statistically reasonable; bids well above are risky.
           </Paragraph>
           <DataTable
-            columns={["Unknown Dice", "Expected Count (Wild)", "Prob. per Die (Wild)", "Expected Count (No Wild)", "Prob. per Die (No Wild)"]}
+            columns={[
+              "Unknown Dice",
+              "Expected (Wild)",
+              "P(Wild)",
+              "Expected (No Wild)",
+              "P(No Wild)",
+            ]}
             rows={PROBABILITY_ROWS}
           />
           <Callout>
@@ -85,6 +94,8 @@ export default function StrategyPage() {
             very safe.
           </Callout>
         </Section>
+
+        <DiceDivider />
 
         <Section title="When to Challenge">
           <Paragraph>
@@ -99,7 +110,19 @@ export default function StrategyPage() {
             Always count how many of the bid&apos;s face value (and ones, if wild) you hold.{"\n\n"}
             <Bold>Consider the bidder: </Bold>A conservative player making a high bid likely has the dice to back it up.
           </Callout>
+          <GameScenario
+            title="Should you challenge?"
+            players={[
+              { name: "You", dice: [4, 2, 5, 1, 3], isYou: true },
+            ]}
+            bid='"Six fours" — 15 total dice on the table'
+            highlightValues={[4]}
+            wildHighlight
+            result="You hold 1 four + 1 wild ace = 2 matching. Need 4 more from 10 unknown dice. Expected: ~3.3. Bid is above expected — consider challenging."
+          />
         </Section>
+
+        <DiceDivider />
 
         <Section title="When to Use Spot On">
           <Paragraph>
@@ -118,6 +141,8 @@ export default function StrategyPage() {
           </Callout>
         </Section>
 
+        <DiceDivider />
+
         <Section title="Bluffing Strategy">
           <Callout>
             <Bold>Bid on faces you don&apos;t hold: </Bold>
@@ -130,6 +155,8 @@ export default function StrategyPage() {
             Bluff when opponents seem uncertain.
           </Callout>
         </Section>
+
+        <DiceDivider />
 
         <Section title="Reading Your Opponents">
           <Callout>
@@ -144,6 +171,8 @@ export default function StrategyPage() {
           </Callout>
         </Section>
 
+        <DiceDivider />
+
         <Section title="Opening Bid Strategy">
           <Callout>
             <Bold>Bid conservatively early: </Bold>
@@ -154,6 +183,8 @@ export default function StrategyPage() {
             Use information from other players&apos; bids if you go later in the order.
           </Callout>
         </Section>
+
+        <DiceDivider />
 
         <Section title="Palifico Round Strategy">
           <Paragraph>
@@ -170,6 +201,8 @@ export default function StrategyPage() {
           </Callout>
         </Section>
 
+        <DiceDivider />
+
         <Section title="Endgame Strategy">
           <Callout>
             <Bold>Your hand is most of the information: </Bold>
@@ -180,6 +213,8 @@ export default function StrategyPage() {
             Your opponent has strong information too — wild bluffs are more likely to be caught.
           </Callout>
         </Section>
+
+        <DiceDivider />
 
         <Section title="Common Mistakes">
           <Callout>

@@ -3,6 +3,7 @@ import Head from "expo-router/head";
 import React from "react";
 import { Text, View } from "react-native";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
+import { DiceDivider, DiceExample } from "../../src/components/content/DiceIllustration";
 import { BulletList, Callout, Paragraph, Quote, Section } from "../../src/components/content/Prose";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { Button } from "../../src/components/ui/Button";
@@ -68,7 +69,14 @@ export default function HistoryPage() {
             The game&apos;s survival across so many centuries and borders speaks to the elegance of its design — needing only
             a handful of dice and a cup per player made it portable and accessible.
           </Paragraph>
+          <DiceExample
+            label="The game has always started with a private hand"
+            dice={[1, 3, 4, 5, 6]}
+            caption="Across centuries and regions, the ritual is familiar: shake, conceal, peek, and make a claim."
+          />
         </Section>
+
+        <DiceDivider />
 
         <Section title='The Name "Dudo"'>
           <Paragraph>
