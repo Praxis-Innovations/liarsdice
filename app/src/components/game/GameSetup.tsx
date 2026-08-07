@@ -12,6 +12,7 @@ interface GameSetupProps {
   settings: GameSettings;
   onUpdateSettings: (partial: Partial<GameSettings>) => void;
   onStart: () => void;
+  onStartTutorial: () => void;
 }
 
 const DIFFICULTIES: { value: AIDifficulty; label: string; desc: string }[] = [
@@ -20,7 +21,7 @@ const DIFFICULTIES: { value: AIDifficulty; label: string; desc: string }[] = [
   { value: "hard", label: "Hard", desc: "Strategic bluffing, optimal play" },
 ];
 
-export function GameSetup({ settings, onUpdateSettings, onStart }: GameSetupProps) {
+export function GameSetup({ settings, onUpdateSettings, onStart, onStartTutorial }: GameSetupProps) {
   const { colors, radii, spacing, typography } = useTheme();
 
   const card = { backgroundColor: colors.surfaceRaised, borderRadius: radii.md, padding: spacing.md, gap: spacing.sm };
@@ -126,6 +127,7 @@ export function GameSetup({ settings, onUpdateSettings, onStart }: GameSetupProp
       </View>
 
       <Button label="Start Game" fullWidth onPress={onStart} />
+      <Button label="Play Tutorial" variant="ghost" fullWidth onPress={onStartTutorial} />
     </View>
   );
 }

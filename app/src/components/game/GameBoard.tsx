@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { useGameStore } from "../../engine/gameStore";
 import { getBreakpoint } from "../../lib/breakpoints";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Footer } from "../shared/Footer";
+import { TutorialOverlay, type MeasuredRect } from "../tutorial/TutorialOverlay";
+import { TutorialWelcome } from "../tutorial/TutorialWelcome";
+import { TUTORIAL_STEPS } from "../tutorial/tutorialSteps";
 import { ActionBar } from "./ActionBar";
 import { BidHistory } from "./BidHistory";
 import { BidPanel } from "./BidPanel";
@@ -27,6 +30,9 @@ export function GameBoard() {
     showHints,
     soundEnabled,
     animatingReveal,
+    tutorialMode,
+    tutorialStep,
+    showTutorialPrompt,
     updateSettings,
     startGame,
     placeBid,
@@ -36,18 +42,124 @@ export function GameBoard() {
     resetGame,
     toggleHints,
     toggleSound,
+    startTutorial,
+    skipTutorial,
+    advanceTutorialStep,
+    dismissTutorialPrompt,
+    completeTutorial,
   } = useGameStore();
 
   const { colors, radii, spacing, typography } = useTheme();
-  const { width } = useWindowDimensions();
+  const { width, height: screenHeight } = useWindowDimensions();
   const bp = getBreakpoint(width);
   const compact = bp === "phone";
   const pagePad = compact ? spacing.sm : spacing.md;
-  // Explicit pixel column width — percentage width + maxWidth is unreliable on RN-web.
   const columnWidth = Math.min(width, 720);
-
-  // RN-web ScrollView content shrink-wraps unless width is forced.
   const scrollContent = { flexGrow: 1, width: "100%" as const };
+
+  const gameStatusRef = useRef<View>(null) as React.RefObject<View>;
+  const humanPanelRef = useRef<View>(null) as React.RefObject<View>;
+  const opponentPanelsRef = useRef<View>(null) as React.RefObject<View>;
+  const bidPanelRef = useRef<View>(null) as React.RefObject<View>;
+  const actionControlsRef = useRef<View>(null) as React.RefObject<View>;
+  const scrollViewRef = useRef<ScrollView>(null) as React.RefObject<ScrollView>;
+
+  const [measurements, setMeasurements] = useState<Record<string, MeasuredRect>>({});
+
+  const measureAll = useCallback(() => {
+    const refs: Record<string, React.RefObject<View>> = {
+      gameStatus: gameStatusRef,
+      humanPanel: humanPanelRef,
+      opponentPanels: opponentPanelsRef,
+      bidPanel: bidPanelRef,
+      actionControls: actionControlsRef,
+    };
+
+    const newMeasurements: Record<string, MeasuredRect> = {};
+    let pending = Object.keys(refs).length;
+
+    for (const [key, ref] of Object.entries(refs)) {
+      if (ref.current) {
+        ref.current.measureInWindow((x, y, w, h) => {
+          if (w > 0 && h > 0) {
+            newMeasurements[key] = { x, y, width: w, height: h };
+          }
+          pending--;
+          if (pending === 0) {
+            setMeasurements(newMeasurements);
+          }
+        });
+      } else {
+        pending--;
+        if (pending === 0) {
+          setMeasurements(newMeasurements);
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!tutorialMode) return;
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(measureAll);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [tutorialMode, tutorialStep, phase, width, screenHeight, measureAll]);
+
+  const prevPhaseRef = useRef(phase);
+  useEffect(() => {
+    if (!tutorialMode) {
+      prevPhaseRef.current = phase;
+      return;
+    }
+
+    const prevPhase = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+
+    const step = TUTORIAL_STEPS[tutorialStep];
+    if (!step) return;
+
+    if (step.action === "wait-for-ai" && prevPhase === "ai-thinking" && phase === "playing") {
+      advanceTutorialStep();
+    }
+    if (step.action === "wait-for-round-result" && phase === "round-result") {
+      advanceTutorialStep();
+    }
+  }, [phase, tutorialMode, tutorialStep, advanceTutorialStep]);
+
+  const prevHistoryLenRef = useRef(0);
+  useEffect(() => {
+    if (!tutorialMode || !gameState) return;
+
+    const currentLen = gameState.roundHistory.length;
+    const step = TUTORIAL_STEPS[tutorialStep];
+
+    if (step?.action === "wait-for-bid" && currentLen > prevHistoryLenRef.current) {
+      const lastAction = gameState.roundHistory[currentLen - 1];
+      if (lastAction?.playerId === "human" && lastAction.type === "bid") {
+        advanceTutorialStep();
+      }
+    }
+
+    prevHistoryLenRef.current = currentLen;
+  }, [gameState?.roundHistory.length, tutorialMode, tutorialStep, advanceTutorialStep, gameState]);
+
+  const handleTutorialNext = useCallback(() => {
+    const step = TUTORIAL_STEPS[tutorialStep];
+    if (!step) return;
+
+    if (step.action === "celebrate") {
+      completeTutorial();
+      resetGame();
+      return;
+    }
+
+    advanceTutorialStep();
+  }, [tutorialStep, advanceTutorialStep, completeTutorial, resetGame]);
+
+  const handleTutorialSkip = useCallback(() => {
+    skipTutorial();
+  }, [skipTutorial]);
 
   if (phase === "setup" || !gameState) {
     return (
@@ -61,14 +173,14 @@ export function GameBoard() {
             alignSelf: "center",
           }}
         >
-          <GameSetup settings={settings} onUpdateSettings={updateSettings} onStart={startGame} />
+          <GameSetup settings={settings} onUpdateSettings={updateSettings} onStart={startGame} onStartTutorial={startTutorial} />
         </View>
         <Footer />
       </ScrollView>
     );
   }
 
-  if (phase === "game-over") {
+  if (phase === "game-over" && !tutorialMode) {
     return (
       <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={scrollContent}>
         <View
@@ -112,107 +224,140 @@ export function GameBoard() {
   const highlightValues =
     showingResult && gameState.currentBid ? [gameState.currentBid.faceValue] : undefined;
 
+  const showBidPanel = isHumanTurn && phase === "playing";
+  const showActionControls = isHumanTurn && phase === "playing" && gameState.currentBid;
+
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={scrollContent}>
-      <View
-        style={{
-          padding: pagePad,
-          width: columnWidth,
-          alignSelf: "center",
-          flexGrow: 1,
-        }}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={scrollContent}
+        scrollEventThrottle={16}
       >
-        <View className="flex-row items-center justify-between" style={{ marginBottom: spacing.sm }}>
-          <Pressable onPress={resetGame} hitSlop={8}>
-            <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>
-              ← New Game
-            </Text>
-          </Pressable>
-          <View className="flex-row" style={{ gap: spacing.xs }}>
-            <Pressable
-              onPress={toggleHints}
-              style={{
-                paddingHorizontal: spacing.sm,
-                paddingVertical: 4,
-                borderRadius: radii.sm,
-                backgroundColor: showHints ? `${colors.accent}22` : "transparent",
-              }}
-            >
-              <Text
-                style={{
-                  color: showHints ? colors.accent : colors.textSecondary,
-                  fontFamily: typography.caption.fontFamily,
-                  fontSize: 11,
-                }}
-              >
-                Hints
+        <View
+          style={{
+            padding: pagePad,
+            width: columnWidth,
+            alignSelf: "center",
+            flexGrow: 1,
+          }}
+        >
+          <View className="flex-row items-center justify-between" style={{ marginBottom: spacing.sm }}>
+            <Pressable onPress={tutorialMode ? handleTutorialSkip : resetGame} hitSlop={8}>
+              <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>
+                {tutorialMode ? "← Exit Tutorial" : "← New Game"}
               </Text>
             </Pressable>
-            <Pressable onPress={toggleSound} style={{ paddingHorizontal: spacing.sm, paddingVertical: 4 }}>
-              <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11 }}>
-                {soundEnabled ? "Sound" : "Muted"}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <GameStatus state={gameState} phase={phase} />
-
-        {showingResult && gameState.lastRoundResult ? (
-          <RoundResult
-            state={gameState}
-            onContinue={gameState.gameOver ? resetGame : continueToNextRound}
-            animating={animatingReveal}
-          />
-        ) : (
-          <View style={{ gap: compact ? spacing.sm : spacing.md }}>
-            <View className="flex-row flex-wrap" style={{ gap: seatGap }}>
-              {opponents.map((player) => (
-                <PlayerPanel
-                  key={player.id}
-                  player={player}
-                  isCurrentTurn={gameState.players[gameState.currentPlayerIndex].id === player.id}
-                  isHuman={false}
-                  showDice={showingResult}
-                  highlightValues={highlightValues}
-                  onesWild={gameState.onesWild}
-                  lastAction={lastActions.get(player.id)}
-                  seatWidth={seatWidth}
-                />
-              ))}
-            </View>
-
-            {human && !human.isEliminated ? (
-              <PlayerPanel
-                player={human}
-                isCurrentTurn={isHumanTurn}
-                isHuman
-                showDice={false}
-                highlightValues={highlightValues}
-                onesWild={gameState.onesWild}
-                lastAction={lastActions.get(human.id)}
-              />
-            ) : null}
-
-            <BidHistory state={gameState} />
-
-            {isHumanTurn && phase === "playing" ? (
-              <View
-                style={{
-                  gap: spacing.sm,
-                  paddingTop: spacing.sm,
-                  borderTopWidth: 1,
-                  borderTopColor: colors.border,
-                }}
-              >
-                <BidPanel state={gameState} onBid={placeBid} showHints={showHints} />
-                <ActionBar state={gameState} onChallenge={challenge} onSpotOn={spotOn} showHints={showHints} />
+            {!tutorialMode ? (
+              <View className="flex-row" style={{ gap: spacing.xs }}>
+                <Pressable
+                  onPress={toggleHints}
+                  style={{
+                    paddingHorizontal: spacing.sm,
+                    paddingVertical: 4,
+                    borderRadius: radii.sm,
+                    backgroundColor: showHints ? `${colors.accent}22` : "transparent",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: showHints ? colors.accent : colors.textSecondary,
+                      fontFamily: typography.caption.fontFamily,
+                      fontSize: 11,
+                    }}
+                  >
+                    Hints
+                  </Text>
+                </Pressable>
+                <Pressable onPress={toggleSound} style={{ paddingHorizontal: spacing.sm, paddingVertical: 4 }}>
+                  <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11 }}>
+                    {soundEnabled ? "Sound" : "Muted"}
+                  </Text>
+                </Pressable>
               </View>
             ) : null}
           </View>
-        )}
-      </View>
-      <Footer />
-    </ScrollView>
+
+          <View ref={gameStatusRef} collapsable={false}>
+            <GameStatus state={gameState} phase={phase} />
+          </View>
+
+          {showingResult && gameState.lastRoundResult ? (
+            <RoundResult
+              state={gameState}
+              onContinue={gameState.gameOver ? resetGame : continueToNextRound}
+              animating={animatingReveal}
+            />
+          ) : (
+            <View style={{ gap: compact ? spacing.sm : spacing.md }}>
+              <View ref={opponentPanelsRef} collapsable={false} className="flex-row flex-wrap" style={{ gap: seatGap }}>
+                {opponents.map((player) => (
+                  <PlayerPanel
+                    key={player.id}
+                    player={player}
+                    isCurrentTurn={gameState.players[gameState.currentPlayerIndex].id === player.id}
+                    isHuman={false}
+                    showDice={showingResult}
+                    highlightValues={highlightValues}
+                    onesWild={gameState.onesWild}
+                    lastAction={lastActions.get(player.id)}
+                    seatWidth={seatWidth}
+                  />
+                ))}
+              </View>
+
+              {human && !human.isEliminated ? (
+                <View ref={humanPanelRef} collapsable={false}>
+                  <PlayerPanel
+                    player={human}
+                    isCurrentTurn={isHumanTurn}
+                    isHuman
+                    showDice={false}
+                    highlightValues={highlightValues}
+                    onesWild={gameState.onesWild}
+                    lastAction={lastActions.get(human.id)}
+                  />
+                </View>
+              ) : null}
+
+              <BidHistory state={gameState} />
+
+              {showBidPanel ? (
+                <View
+                  style={{
+                    gap: spacing.sm,
+                    paddingTop: spacing.sm,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                  }}
+                >
+                  <View ref={bidPanelRef} collapsable={false}>
+                    <BidPanel state={gameState} onBid={placeBid} showHints={showHints} />
+                  </View>
+                  <View ref={actionControlsRef} collapsable={false}>
+                    <ActionBar state={gameState} onChallenge={challenge} onSpotOn={spotOn} showHints={showHints} />
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          )}
+        </View>
+        <Footer />
+      </ScrollView>
+
+      {showTutorialPrompt ? (
+        <TutorialWelcome onStart={startTutorial} onSkip={dismissTutorialPrompt} />
+      ) : null}
+
+      {tutorialMode && tutorialStep < TUTORIAL_STEPS.length ? (
+        <TutorialOverlay
+          stepIndex={tutorialStep}
+          measurements={measurements}
+          onNext={handleTutorialNext}
+          onSkip={handleTutorialSkip}
+        />
+      ) : null}
+    </View>
   );
 }
