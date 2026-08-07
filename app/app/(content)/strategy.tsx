@@ -4,7 +4,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
 import { DataTable } from "../../src/components/content/DataTable";
-import { DiceExample, DiceDivider, GameScenario } from "../../src/components/content/DiceIllustration";
+import { DiceDivider, GameScenario } from "../../src/components/content/DiceIllustration";
 import { Callout, Paragraph, Section } from "../../src/components/content/Prose";
 import { headingProps } from "../../src/lib/heading";
 import { useTheme } from "../../src/theme/ThemeProvider";

@@ -6,7 +6,6 @@ import { ThemeProvider } from "../../../theme/ThemeProvider";
 import { RoundResult } from "../RoundResult";
 
 jest.mock("moti", () => {
-  const React = require("react");
   const { View } = require("react-native");
   return {
     MotiView: ({ children, ...props }: { children?: React.ReactNode }) => (

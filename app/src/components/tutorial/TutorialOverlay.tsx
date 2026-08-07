@@ -194,7 +194,6 @@ function getTooltipPosition(
   if (!targetRect) return "bottom";
 
   const cutoutBottom = targetRect.y + targetRect.height + CUTOUT_PAD;
-  const cutoutTop = targetRect.y - CUTOUT_PAD;
   const spaceBelow = containerHeight - cutoutBottom;
 
   if (step.position === "above") return "top";
