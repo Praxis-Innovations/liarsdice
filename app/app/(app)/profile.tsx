@@ -59,12 +59,12 @@ export default function ProfileScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: spacing.lg, gap: spacing.xs }}>
-      <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: spacing.md, fontFamily: typography.caption.fontFamily }}>
+      <Text style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary, marginTop: spacing.md, fontFamily: typography.caption.fontFamily }}>
         Email
       </Text>
-      <Text style={{ fontSize: 16, color: colors.textPrimary, fontFamily: typography.body.fontFamily }}>{user?.email}</Text>
+      <Text style={{ fontSize: typography.body.fontSize, color: colors.textPrimary, fontFamily: typography.body.fontFamily }}>{user?.email}</Text>
 
-      <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: spacing.md, fontFamily: typography.caption.fontFamily }}>
+      <Text style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary, marginTop: spacing.md, fontFamily: typography.caption.fontFamily }}>
         Display name
       </Text>
       <TextField value={displayName} onChangeText={setDisplayName} placeholder="Display name" />

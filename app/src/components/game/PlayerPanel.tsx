@@ -1,9 +1,10 @@
 import React from "react";
-import { Text, View, useWindowDimensions } from "react-native";
+import { Text, View } from "react-native";
+import { DICE_PER_PLAYER } from "../../engine/constants";
 import type { DieValue, Player } from "../../engine/types";
-import { getBreakpoint } from "../../lib/breakpoints";
 import { useTheme } from "../../theme/ThemeProvider";
 import { DiceRow } from "./DiceDisplay";
+import { fitDieInSeat, type PlaySizeTier } from "./tableSeating";
 
 interface PlayerPanelProps {
   player: Player;
@@ -13,110 +14,224 @@ interface PlayerPanelProps {
   highlightValues?: DieValue[];
   onesWild: boolean;
   lastAction?: string;
-  /** Fixed seat width for opponent grid; omit for full-width human seat. */
   seatWidth?: number;
+  seatHeight?: number;
+  dieSizePx?: number;
+  compactSeat?: boolean;
+  diceColumns?: number;
+  sizeTier?: PlaySizeTier;
 }
 
-export function PlayerPanel({
-  player,
-  isCurrentTurn,
-  isHuman,
-  showDice,
-  highlightValues,
-  onesWild,
-  lastAction,
-  seatWidth,
-}: PlayerPanelProps) {
+export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function PlayerPanel(
+  {
+    player,
+    isCurrentTurn,
+    isHuman,
+    showDice,
+    highlightValues,
+    onesWild,
+    seatWidth,
+    seatHeight,
+    dieSizePx,
+    compactSeat = false,
+    diceColumns = 5,
+    sizeTier = "compact",
+  },
+  ref,
+) {
   const { colors, radii, spacing, typography } = useTheme();
-  const { width } = useWindowDimensions();
-  const compact = getBreakpoint(width) === "phone";
 
-  const seatStyle = isHuman
-    ? { width: "100%" as const, maxWidth: "100%" as const }
-    : seatWidth != null
-      ? { width: seatWidth, maxWidth: "100%" as const }
-      : { flexGrow: 1, flexBasis: 140, maxWidth: "100%" as const };
+  const seatStyle =
+    seatWidth != null
+      ? {
+          width: seatWidth,
+          maxWidth: seatWidth,
+          height: seatHeight,
+        }
+      : isHuman
+        ? { width: "100%" as const, maxWidth: "100%" as const }
+        : { flexGrow: 1, flexBasis: 140, maxWidth: "100%" as const };
+
+  const pad = compactSeat ? (sizeTier === "compact" ? 8 : 10) : spacing.sm;
+  const nameSize = compactSeat ? (sizeTier === "roomy" ? 19 : sizeTier === "regular" ? 17 : 16) : isHuman ? 16 : 15;
+  const chip = sizeTier === "roomy" ? 32 : sizeTier === "regular" ? 30 : 28;
+  const displayName = isHuman ? "You" : player.name;
+  const initial = (isHuman ? "Y" : player.name.trim().charAt(0) || "?").toUpperCase();
+
+  // Always fit a single row of dice inside the card width.
+  const cols = Math.max(diceColumns, DICE_PER_PLAYER);
+  const dieCap = dieSizePx ?? (sizeTier === "roomy" ? 26 : sizeTier === "regular" ? 20 : 15);
+  const fittedDie =
+    compactSeat && seatWidth != null
+      ? fitDieInSeat(seatWidth, seatHeight ?? 80, cols, DICE_PER_PLAYER, dieCap, 8)
+      : dieCap;
 
   if (player.isEliminated) {
     return (
       <View
+        ref={ref}
+        collapsable={false}
         style={{
           ...seatStyle,
           opacity: 0.45,
-          gap: 4,
-          padding: compact ? spacing.xs : spacing.sm,
-          borderRadius: radii.sm,
+          gap: 2,
+          padding: pad,
+          borderRadius: radii.md,
           borderWidth: 1,
           borderColor: colors.border,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: colors.surface,
         }}
       >
         <Text
           style={{
             color: colors.textSecondary,
             fontFamily: typography.bodySemibold.fontFamily,
-            fontSize: 13,
+            fontSize: nameSize,
             textDecorationLine: "line-through",
+            textAlign: "center",
           }}
           numberOfLines={1}
         >
-          {player.name}
+          {displayName}
         </Text>
-        <Text style={{ color: colors.danger, fontFamily: typography.caption.fontFamily, fontSize: 11 }}>Eliminated</Text>
+        <Text
+          style={{
+            color: colors.danger,
+            fontFamily: typography.caption.fontFamily,
+            fontSize: 11,
+            textAlign: "center",
+          }}
+        >
+          Out
+        </Text>
       </View>
     );
   }
 
   return (
     <View
+      ref={ref}
+      collapsable={false}
       style={{
         ...seatStyle,
-        gap: spacing.xs,
-        padding: compact ? spacing.xs + 2 : spacing.sm,
-        borderRadius: radii.sm,
-        borderWidth: 1,
+        gap: compactSeat ? 4 : spacing.xs,
+        padding: pad,
+        borderRadius: radii.md,
+        borderWidth: isCurrentTurn ? 2 : 1,
         borderColor: isCurrentTurn ? colors.accent : colors.border,
-        backgroundColor: isHuman ? colors.surfaceRaised : "transparent",
+        backgroundColor: isHuman ? colors.surfaceRaised : colors.surface,
+        justifyContent: compactSeat ? "flex-start" : undefined,
+        alignItems: compactSeat ? "stretch" : undefined,
+        overflow: "hidden",
       }}
     >
-      <View className="flex-row items-center justify-between" style={{ gap: spacing.xs }}>
-        <View className="flex-row items-center" style={{ gap: 6, flexShrink: 1, minWidth: 0 }}>
+      {compactSeat ? (
+        <View
+          className="flex-row items-center"
+          style={{ gap: sizeTier === "compact" ? 6 : 8, width: "100%", minHeight: chip }}
+        >
+          <View
+            style={{
+              width: chip,
+              height: chip,
+              borderRadius: chip / 2,
+              backgroundColor: isHuman ? `${colors.primary}33` : `${colors.secondary}28`,
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Text
+              style={{
+                color: isHuman ? colors.primary : colors.secondary,
+                fontFamily: typography.bodySemibold.fontFamily,
+                fontSize: sizeTier === "compact" ? 13 : 14,
+              }}
+            >
+              {initial}
+            </Text>
+          </View>
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontFamily: typography.bodySemibold.fontFamily,
+              fontSize: nameSize,
+              flex: 1,
+              minWidth: 0,
+            }}
+            numberOfLines={1}
+          >
+            {displayName}
+          </Text>
+          {isCurrentTurn ? (
+            <View
+              style={{
+                paddingHorizontal: 5,
+                paddingVertical: 2,
+                borderRadius: radii.pill,
+                backgroundColor: `${colors.accent}33`,
+                flexShrink: 0,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.accent,
+                  fontFamily: typography.bodySemibold.fontFamily,
+                  fontSize: 11,
+                  letterSpacing: 0.3,
+                }}
+              >
+                TURN
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      ) : (
+        <View className="flex-row items-center justify-between" style={{ gap: 4 }}>
           <Text
             style={{
               color: isCurrentTurn ? colors.accent : colors.textPrimary,
               fontFamily: typography.bodySemibold.fontFamily,
-              fontSize: isHuman ? (compact ? 14 : 15) : 13,
+              fontSize: nameSize,
               flexShrink: 1,
             }}
             numberOfLines={1}
           >
-            {isHuman ? "You" : player.name}
+            {displayName}
           </Text>
           {isCurrentTurn ? (
-            <Text style={{ color: colors.accent, fontFamily: typography.caption.fontFamily, fontSize: 11 }}>turn</Text>
+            <Text style={{ color: colors.accent, fontFamily: typography.caption.fontFamily, fontSize: 10 }}>
+              turn
+            </Text>
           ) : null}
         </View>
-        <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11 }}>
-          {player.diceCount}
-        </Text>
+      )}
+
+      <View
+        style={
+          compactSeat
+            ? {
+                width: "100%",
+                alignItems: "center",
+                justifyContent: "center",
+              }
+            : undefined
+        }
+      >
+        <DiceRow
+          dice={player.dice}
+          size="sm"
+          dieSizePx={fittedDie}
+          hidden={!showDice}
+          highlightValues={highlightValues}
+          wildValue={onesWild}
+          bare
+          noWrap
+          tight
+        />
       </View>
-
-      {lastAction ? (
-        <Text
-          style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11 }}
-          numberOfLines={1}
-        >
-          {lastAction}
-        </Text>
-      ) : null}
-
-      <DiceRow
-        dice={player.dice}
-        size={isHuman ? "lg" : "sm"}
-        hidden={!isHuman && !showDice}
-        highlightValues={highlightValues}
-        wildValue={onesWild}
-        bare
-      />
     </View>
   );
-}
+});

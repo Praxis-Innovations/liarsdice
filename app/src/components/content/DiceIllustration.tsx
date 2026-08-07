@@ -68,7 +68,7 @@ export function DiceExample({ label, dice, highlightValues = [], wildHighlight =
         marginVertical: spacing.sm,
       }}
     >
-      <Text style={{ fontFamily: typography.bodySemibold.fontFamily, fontSize: 14, color: colors.textPrimary }}>
+      <Text style={{ fontFamily: typography.bodySemibold.fontFamily, fontSize: 18, color: colors.textPrimary }}>
         {label}
       </Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
@@ -91,7 +91,14 @@ export function DiceExample({ label, dice, highlightValues = [], wildHighlight =
         })}
       </View>
       {caption && (
-        <Text style={{ fontFamily: typography.caption.fontFamily, fontSize: 13, color: colors.textSecondary, lineHeight: 19 }}>
+        <Text
+          style={{
+            fontFamily: typography.caption.fontFamily,
+            fontSize: typography.caption.fontSize,
+            color: colors.textSecondary,
+            lineHeight: typography.caption.lineHeight,
+          }}
+        >
           {caption}
         </Text>
       )}
@@ -133,13 +140,19 @@ export function GameScenario({ title, players, bid, result, highlightValues = []
         marginVertical: spacing.sm,
       }}
     >
-      <Text style={{ fontFamily: typography.h3.fontFamily, fontSize: 16, color: colors.textPrimary }}>
+      <Text style={{ fontFamily: typography.h3.fontFamily, fontSize: typography.body.fontSize, color: colors.textPrimary }}>
         {title}
       </Text>
 
       {players.map((player) => (
         <View key={player.name} style={{ gap: 6 }}>
-          <Text style={{ fontFamily: typography.bodyMedium.fontFamily, fontSize: 13, color: player.isYou ? colors.accent : colors.textSecondary }}>
+          <Text
+            style={{
+              fontFamily: typography.bodyMedium.fontFamily,
+              fontSize: typography.caption.fontSize,
+              color: player.isYou ? colors.accent : colors.textSecondary,
+            }}
+          >
             {player.name}{player.isYou ? " (You)" : ""}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
@@ -173,14 +186,14 @@ export function GameScenario({ title, players, bid, result, highlightValues = []
             paddingVertical: spacing.sm,
           }}
         >
-          <Text style={{ fontFamily: typography.bodySemibold.fontFamily, fontSize: 14, color: colors.accent }}>
+          <Text style={{ fontFamily: typography.bodySemibold.fontFamily, fontSize: 18, color: colors.accent }}>
             Current bid: {bid}
           </Text>
         </View>
       )}
 
       {result && (
-        <Text style={{ fontFamily: typography.bodyMedium.fontFamily, fontSize: 14, color: colors.secondary }}>
+        <Text style={{ fontFamily: typography.bodyMedium.fontFamily, fontSize: 18, color: colors.secondary }}>
           {result}
         </Text>
       )}

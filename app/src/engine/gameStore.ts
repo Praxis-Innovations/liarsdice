@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { applyAction, createGame, startNewRound } from "./game";
 import { getAIDecision } from "./ai";
+import { tutorialRaiseAction } from "./tutorialAi";
 import type { Bid, GameAction, GameSettings, GameState, RNGFunction } from "./types";
 
 const PREFERENCE_KEYS = {
@@ -31,10 +32,11 @@ function seededRng(seed: number): RNGFunction {
 
 const TUTORIAL_SEED = 49;
 const TUTORIAL_AI_SEED = 777;
-const TUTORIAL_AI_DELAY = 3500;
+/** Per-AI think time — keep snappy with 2 AI opponents. */
+const TUTORIAL_AI_DELAY = 1400;
 
 const TUTORIAL_SETTINGS: GameSettings = {
-  playerCount: 2,
+  playerCount: 3,
   aiDifficulty: "easy",
   enableSpotOn: false,
   enablePalifico: false,
@@ -234,7 +236,7 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     completeTutorial: () => {
       savePreference(PREFERENCE_KEYS.tutorialCompleted, true);
-      set({ tutorialCompleted: true });
+      set({ tutorialCompleted: true, tutorialMode: false, tutorialStep: 0 });
     },
 
     startTutorial: () => {
@@ -297,8 +299,16 @@ async function processAITurns(
     if (!currentPlayer.isAI) return;
 
     const rng = tutorialMode && tutorialAiRng ? tutorialAiRng : undefined;
-    const action = getAIDecision(state, currentPlayer.id, rng);
+    const action = tutorialMode
+      ? tutorialRaiseAction(state, currentPlayer.id)
+      : getAIDecision(state, currentPlayer.id, rng);
     const newState = applyAction(state, action);
+
+    // Illegal/no-op action — don't spin forever on the same AI seat.
+    if (newState === state) {
+      set({ phase: "playing" });
+      return;
+    }
 
     if (newState.lastRoundResult) {
       set({ gameState: newState, phase: newState.gameOver ? "game-over" : "round-result", animatingReveal: true });

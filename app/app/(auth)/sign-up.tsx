@@ -39,7 +39,7 @@ export default function SignUpScreen() {
       </Head>
       <AuthCard title="Create account" subtitle="Free forever — no download, no card required.">
         {error ? (
-          <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 14 }}>{error}</Text>
+          <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 18 }}>{error}</Text>
         ) : null}
 
         <TextField placeholder="Display name" autoCapitalize="words" value={displayName} onChangeText={setDisplayName} />
@@ -63,17 +63,17 @@ export default function SignUpScreen() {
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
           <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>or</Text>
+          <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 16 }}>or</Text>
           <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
         </View>
 
         <SocialSignInButtons onError={setError} />
 
         <View style={{ flexDirection: "row", justifyContent: "center", gap: spacing.xs, marginTop: spacing.sm }}>
-          <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 14 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 18 }}>
             Already have an account?
           </Text>
-          <Link href="/sign-in" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 14 }}>
+          <Link href="/sign-in" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 18 }}>
             Sign in
           </Link>
         </View>

@@ -80,10 +80,10 @@ export function GameOver({ state, onPlayAgain }: GameOverProps) {
 
       <View className="flex-row" style={{ gap: spacing.sm, width: "100%", maxWidth: 360, marginTop: spacing.md }}>
         <View style={{ flex: 1 }}>
-          <Button label="Play Again" fullWidth onPress={onPlayAgain} />
+          <Button label="Play Again" fullWidth labelFontSize={16} onPress={onPlayAgain} />
         </View>
         <View style={{ flex: 1 }}>
-          <Button label="Share Result" variant="ghost" fullWidth onPress={handleShare} />
+          <Button label="Share Result" variant="ghost" fullWidth labelFontSize={16} onPress={handleShare} />
         </View>
       </View>
     </View>

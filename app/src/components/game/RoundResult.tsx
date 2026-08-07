@@ -1,19 +1,36 @@
 import { MotiView } from "moti";
 import React from "react";
 import { Text, View } from "react-native";
-import type { DieValue, GameState } from "../../engine/types";
+import type { GameState, Player } from "../../engine/types";
 import { headingProps } from "../../lib/heading";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Button } from "../ui/Button";
-import { DiceRow } from "./DiceDisplay";
 
 interface RoundResultProps {
   state: GameState;
   onContinue: () => void;
   animating: boolean;
+  /** Compact banner for table-center / phone dock (default). */
+  compact?: boolean;
+  /** Hard size cap from the table center air (tablet+) or phone dock width. */
+  maxWidth?: number;
+  maxHeight?: number;
 }
 
-export function RoundResult({ state, onContinue, animating }: RoundResultProps) {
+function displayName(player: Player | undefined): string {
+  if (!player) return "?";
+  return player.id === "human" ? "You" : player.name;
+}
+
+/** Challenge / Spot On result card. */
+export function RoundResult({
+  state,
+  onContinue,
+  animating,
+  compact = true,
+  maxWidth,
+  maxHeight,
+}: RoundResultProps) {
   const { colors, radii, spacing, typography } = useTheme();
   const result = state.lastRoundResult;
   if (!result) return null;
@@ -23,69 +40,179 @@ export function RoundResult({ state, onContinue, animating }: RoundResultProps) 
   const loser = state.players.find((p) => p.id === result.loser);
   const isSpotOn = result.challengeType === "spot-on";
   const resultColor = result.challengerWins ? colors.secondary : colors.danger;
+  const challengerName = displayName(challenger);
+  const bidderName = displayName(bidder);
+  const loserName = displayName(loser);
+
+  const pad = compact ? spacing.sm : spacing.lg;
+  const titleSize = compact ? 20 : 28;
+  const outcomeSize = compact ? 16 : 24;
+  const valueSize = compact ? 18 : 24;
+  const cardMaxW = maxWidth ?? (compact ? 280 : 480);
+
+  const outcomeLine = result.challengerWins
+    ? `${challengerName} wins`
+    : `${challengerName} loses`;
+
+  let consequence = "";
+  if (loser && loser.id !== "") {
+    consequence = `${loserName} loses a die`;
+    if (loser.diceCount <= 0) consequence += " — out";
+    if (result.diceGained) consequence += ` · ${challengerName} gains one`;
+  }
+
+  const callLine = isSpotOn
+    ? `${challengerName} · Spot On`
+    : `${challengerName} vs ${bidderName}`;
 
   return (
-    <View style={{ backgroundColor: colors.surfaceRaised, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.md }}>
-      <Text
-        {...headingProps(2)}
-        style={{ color: colors.accent, fontFamily: typography.h2.fontFamily, fontSize: 22, textAlign: "center" }}
+    <MotiView
+      from={{ opacity: animating ? 0 : 1, scale: animating ? 0.96 : 1 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "timing", duration: 280 }}
+      style={{
+        backgroundColor: colors.surfaceRaised,
+        borderRadius: radii.md,
+        padding: pad,
+        gap: compact ? 6 : spacing.md,
+        width: "100%",
+        maxWidth: cardMaxW,
+        maxHeight,
+        borderWidth: 1,
+        borderColor: colors.border,
+        shadowColor: "#000",
+        shadowOpacity: 0.12,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 4,
+      }}
+    >
+      <View className="flex-row items-center justify-between" style={{ gap: 8 }}>
+        <Text
+          {...headingProps(2)}
+          style={{
+            color: colors.accent,
+            fontFamily: typography.h2.fontFamily,
+            fontSize: titleSize,
+            flexShrink: 0,
+          }}
+        >
+          {isSpotOn ? "Spot On!" : "Liar!"}
+        </Text>
+        <Text
+          style={{
+            color: resultColor,
+            fontFamily: typography.h3.fontFamily,
+            fontSize: outcomeSize,
+            flex: 1,
+            textAlign: "right",
+          }}
+          numberOfLines={1}
+        >
+          {outcomeLine}
+        </Text>
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: compact ? 6 : spacing.sm,
+          paddingVertical: compact ? 6 : spacing.sm,
+          paddingHorizontal: compact ? 8 : spacing.sm,
+          borderRadius: radii.sm,
+          backgroundColor: colors.surface,
+        }}
       >
-        {isSpotOn ? "Spot On!" : "Liar Called!"}
-      </Text>
-
-      <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 14, textAlign: "center" }}>
-        <Text style={{ color: colors.textPrimary, fontFamily: typography.bodySemibold.fontFamily }}>{challenger?.name}</Text>
-        {isSpotOn ? " called Spot On on " : " challenged "}
-        <Text style={{ color: colors.textPrimary, fontFamily: typography.bodySemibold.fontFamily }}>{bidder?.name}</Text>
-        &apos;s bid of{" "}
-        <Text style={{ color: colors.accent, fontFamily: typography.bodySemibold.fontFamily }}>
-          {result.currentBid.quantity} &times; {result.currentBid.faceValue}s
-        </Text>
-      </Text>
-
-      <View style={{ gap: spacing.sm }}>
-        {Object.entries(result.allDice).map(([playerId, dice], index) => {
-          const player = state.players.find((p) => p.id === playerId);
-          return (
-            <MotiView
-              key={playerId}
-              from={{ opacity: animating ? 0 : 1, translateY: animating ? 12 : 0 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: "timing", duration: 350, delay: index * 120 }}
-              style={{ gap: 6 }}
-            >
-              <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 11 }}>
-                {player?.name}
-              </Text>
-              <DiceRow
-                dice={dice as DieValue[]}
-                size="sm"
-                highlightValues={[result.currentBid.faceValue]}
-                wildValue={state.onesWild}
-                emphasized={playerId === "human"}
-              />
-            </MotiView>
-          );
-        })}
-      </View>
-
-      <View style={{ alignItems: "center", gap: 4 }}>
-        <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 14 }}>
-          Actual count: <Text style={{ color: resultColor, fontFamily: typography.h3.fontFamily, fontSize: 18 }}>{result.actualCount}</Text>{" "}
-          (bid was {result.currentBid.quantity})
-        </Text>
-        <Text style={{ color: resultColor, fontFamily: typography.h3.fontFamily, fontSize: 17, marginTop: 4 }}>
-          {result.challengerWins ? `${challenger?.name} wins the challenge!` : `${challenger?.name} loses the challenge!`}
-        </Text>
-        {loser && loser.id !== "" ? (
-          <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 13 }}>
-            {loser.name} loses a die{loser.diceCount <= 0 ? " and is eliminated!" : "."}
-            {result.diceGained ? ` ${challenger?.name} gains a die!` : ""}
+        <View style={{ flex: 1, alignItems: "center", gap: 1 }}>
+          <Text
+            style={{
+              color: colors.textSecondary,
+              fontFamily: typography.caption.fontFamily,
+              fontSize: 10,
+              letterSpacing: 0.4,
+              textTransform: "uppercase",
+            }}
+          >
+            Bid
           </Text>
-        ) : null}
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontFamily: typography.h3.fontFamily,
+              fontSize: valueSize,
+            }}
+          >
+            {result.currentBid.quantity}×{result.currentBid.faceValue}
+          </Text>
+          <Text
+            style={{
+              color: colors.textSecondary,
+              fontFamily: typography.caption.fontFamily,
+              fontSize: 11,
+            }}
+            numberOfLines={1}
+          >
+            {bidderName}
+          </Text>
+        </View>
+
+        <View style={{ width: 1, alignSelf: "stretch", backgroundColor: colors.border }} />
+
+        <View style={{ flex: 1, alignItems: "center", gap: 1 }}>
+          <Text
+            style={{
+              color: colors.textSecondary,
+              fontFamily: typography.caption.fontFamily,
+              fontSize: 10,
+              letterSpacing: 0.4,
+              textTransform: "uppercase",
+            }}
+          >
+            Actual
+          </Text>
+          <Text
+            style={{
+              color: resultColor,
+              fontFamily: typography.h3.fontFamily,
+              fontSize: valueSize,
+            }}
+          >
+            {result.actualCount}
+          </Text>
+          <Text
+            style={{
+              color: colors.textSecondary,
+              fontFamily: typography.caption.fontFamily,
+              fontSize: 11,
+            }}
+            numberOfLines={1}
+          >
+            {isSpotOn ? "exact" : "on table"}
+          </Text>
+        </View>
       </View>
 
-      <Button label={state.gameOver ? "See Results" : "Next Round"} fullWidth onPress={onContinue} />
-    </View>
+      <Text
+        style={{
+          color: colors.textSecondary,
+          fontFamily: typography.caption.fontFamily,
+          fontSize: 12,
+          textAlign: "center",
+        }}
+        numberOfLines={1}
+      >
+        {callLine}
+        {consequence ? ` · ${consequence}` : ""}
+      </Text>
+
+      <Button
+        label={state.gameOver ? "See Results" : "Next Round"}
+        variant="secondary"
+        fullWidth
+        compact={compact}
+        onPress={onContinue}
+      />
+    </MotiView>
   );
 }

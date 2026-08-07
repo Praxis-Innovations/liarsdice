@@ -58,7 +58,7 @@ export default function ResetPasswordScreen() {
       {head}
       <AuthCard title="Set a new password">
         {error ? (
-          <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 14 }}>{error}</Text>
+          <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 18 }}>{error}</Text>
         ) : null}
 
         <TextField placeholder="New password" secureTextEntry value={password} onChangeText={setPassword} />

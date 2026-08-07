@@ -28,7 +28,7 @@ export function CTABanner() {
           style={{
             color: colors.background,
             fontFamily: typography.h1.fontFamily,
-            fontSize: isNarrow ? 28 : 34,
+            fontSize: isNarrow ? 31 : 38,
             textAlign: "center",
           }}
         >
@@ -39,7 +39,7 @@ export function CTABanner() {
             color: colors.background,
             opacity: 0.72,
             fontFamily: typography.body.fontFamily,
-            fontSize: 16,
+            fontSize: typography.body.fontSize,
             textAlign: "center",
             marginTop: spacing.sm,
             marginBottom: spacing.lg,

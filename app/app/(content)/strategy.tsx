@@ -232,7 +232,7 @@ export default function StrategyPage() {
         </Section>
 
         <View style={{ alignItems: "center", marginTop: spacing.lg, gap: spacing.sm }}>
-          <Text {...headingProps(2)} style={{ color: colors.textPrimary, fontFamily: typography.h2.fontFamily, fontSize: 22 }}>
+          <Text {...headingProps(2)} style={{ color: colors.textPrimary, fontFamily: typography.h2.fontFamily, fontSize: 25 }}>
             Put Your Strategy to the Test
           </Text>
           <Paragraph>Play against AI opponents online and apply the probability math, bluffing tactics, and reading skills.</Paragraph>

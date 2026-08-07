@@ -17,7 +17,7 @@ export default function HomeScreen() {
       >
         Welcome, {display_name}
       </Text>
-      <Text style={{ fontFamily: typography.body.fontFamily, fontSize: 15, color: colors.textSecondary }}>
+      <Text style={{ fontFamily: typography.body.fontFamily, fontSize: 19, color: colors.textSecondary }}>
         This is the Home tab — replace with your app&apos;s actual content.
       </Text>
     </View>

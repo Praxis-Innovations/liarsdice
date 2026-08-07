@@ -1,5 +1,13 @@
 import React from "react";
-import { ActivityIndicator, Pressable, Text, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  Text,
+  View,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useTheme } from "../../theme/ThemeProvider";
 
@@ -10,6 +18,15 @@ type ButtonProps = Omit<PressableProps, "children" | "style"> & {
   variant?: Variant;
   fullWidth?: boolean;
   loading?: boolean;
+  /** Smaller padding/type for the play dock. */
+  compact?: boolean;
+  /**
+   * Override label size. Play/setup keep pre-scale 16 when not compact;
+   * omit to use site typography.button (enlarged for marketing/content/auth).
+   */
+  labelFontSize?: number;
+  /** Optional leading icon (caller colors it to match the variant). */
+  icon?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -20,6 +37,9 @@ export function Button({
   variant = "primary",
   fullWidth,
   loading,
+  compact = false,
+  labelFontSize,
+  icon,
   disabled,
   style: externalStyle,
   ...pressableProps
@@ -56,12 +76,12 @@ export function Button({
           borderColor: variantStyle.borderColor,
           borderWidth: variant === "ghost" || variant === "danger" ? 2 : 0,
           borderRadius: radii.pill,
-          paddingVertical: spacing.md,
-          paddingHorizontal: spacing.xl,
+          paddingVertical: compact ? spacing.sm : spacing.md,
+          paddingHorizontal: compact ? spacing.md : spacing.xl,
           alignItems: "center",
           justifyContent: "center",
           alignSelf: fullWidth ? "stretch" : "auto",
-          opacity: disabled ? 0.5 : 1,
+          opacity: disabled ? 0.45 : 1,
         },
         externalStyle,
       ]}
@@ -69,15 +89,18 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={variantStyle.textColor} />
       ) : (
-        <Text
-          style={{
-            color: variantStyle.textColor,
-            fontFamily: typography.button.fontFamily,
-            fontSize: typography.button.fontSize,
-          }}
-        >
-          {label}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {icon}
+          <Text
+            style={{
+              color: variantStyle.textColor,
+              fontFamily: typography.button.fontFamily,
+              fontSize: compact ? 14 : (labelFontSize ?? typography.button.fontSize),
+            }}
+          >
+            {label}
+          </Text>
+        </View>
       )}
     </AnimatedPressable>
   );

@@ -241,7 +241,7 @@ export function Hero() {
               style={{
                 color: colors.accent,
                 fontFamily: typography.bodySemibold.fontFamily,
-                fontSize: 13,
+                fontSize: typography.caption.fontSize,
                 letterSpacing: 1.8,
               }}
             >
@@ -254,8 +254,8 @@ export function Hero() {
             style={{
               color: colors.textPrimary,
               fontFamily: typography.display.fontFamily,
-              fontSize: isPhone ? 44 : bp === "tablet" ? 48 : 60,
-              lineHeight: isPhone ? 48 : bp === "tablet" ? 52 : 66,
+              fontSize: isPhone ? 50 : bp === "tablet" ? 54 : 68,
+              lineHeight: isPhone ? 54 : bp === "tablet" ? 59 : 74,
               textAlign: isCompact ? "center" : "left",
             }}
           >
@@ -266,8 +266,8 @@ export function Hero() {
             style={{
               color: colors.textSecondary,
               fontFamily: typography.body.fontFamily,
-              fontSize: isPhone ? 17 : 20,
-              lineHeight: isPhone ? 26 : 30,
+              fontSize: isPhone ? 21 : 25,
+              lineHeight: isPhone ? 33 : 38,
               marginTop: spacing.md,
               textAlign: isCompact ? "center" : "left",
               maxWidth: 480,
@@ -287,7 +287,7 @@ export function Hero() {
             style={{
               color: colors.textSecondary,
               fontFamily: typography.caption.fontFamily,
-              fontSize: 13,
+              fontSize: typography.caption.fontSize,
               marginTop: spacing.md,
               textAlign: isCompact ? "center" : "left",
               opacity: 0.7,

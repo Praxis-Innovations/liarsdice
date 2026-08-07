@@ -60,15 +60,15 @@ export function Footer() {
         <View style={{ flex: 1, gap: spacing.sm }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: spacing.xs }}>
             <Die face={5} color={colors.primary} pipColor="#FFFFFF" size={28} />
-            <Text style={{ fontFamily: typography.h2.fontFamily, fontSize: 20, color: colors.textPrimary }}>
+            <Text style={{ fontFamily: typography.h2.fontFamily, fontSize: 23, color: colors.textPrimary }}>
               Liar&apos;s Dice
             </Text>
           </View>
           <Text
             style={{
               fontFamily: typography.body.fontFamily,
-              fontSize: 14,
-              lineHeight: 22,
+              fontSize: 18,
+              lineHeight: 28,
               color: colors.textSecondary,
               maxWidth: 320,
             }}
@@ -82,7 +82,7 @@ export function Footer() {
           <Text
             style={{
               fontFamily: typography.bodySemibold.fontFamily,
-              fontSize: 12,
+              fontSize: 15,
               color: colors.accent,
               letterSpacing: 1.5,
               textTransform: "uppercase",
@@ -97,7 +97,7 @@ export function Footer() {
               href={link.href}
               style={{
                 fontFamily: typography.body.fontFamily,
-                fontSize: 14,
+                fontSize: 18,
                 color: colors.textSecondary,
               }}
             >
@@ -111,7 +111,7 @@ export function Footer() {
           <Text
             style={{
               fontFamily: typography.bodySemibold.fontFamily,
-              fontSize: 12,
+              fontSize: 15,
               color: colors.accent,
               letterSpacing: 1.5,
               textTransform: "uppercase",
@@ -124,7 +124,7 @@ export function Footer() {
             href="/play"
             style={{
               fontFamily: typography.body.fontFamily,
-              fontSize: 14,
+              fontSize: 18,
               color: colors.textSecondary,
             }}
           >
@@ -143,7 +143,14 @@ export function Footer() {
           alignItems: "center",
         }}
       >
-        <Text style={{ fontFamily: typography.caption.fontFamily, fontSize: 12, color: colors.textSecondary, textAlign: "center" }}>
+        <Text
+          style={{
+            fontFamily: typography.caption.fontFamily,
+            fontSize: 15,
+            color: colors.textSecondary,
+            textAlign: "center",
+          }}
+        >
           © {new Date().getFullYear()} Liar&apos;s Dice Online. Liar&apos;s Dice is a public domain game.
         </Text>
       </View>

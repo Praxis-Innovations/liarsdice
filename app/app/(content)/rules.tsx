@@ -133,7 +133,7 @@ export default function RulesPage() {
           <SubSection title="Switching from Non-Ones to Ones">
             <Paragraph>
               The minimum quantity for your ones bid must be at least the ceiling of half the current quantity:{" "}
-              <Text style={{ backgroundColor: colors.surface, fontFamily: "Manrope_600SemiBold", fontSize: 13 }}>
+              <Text style={{ backgroundColor: colors.surface, fontFamily: "Manrope_600SemiBold", fontSize: 16 }}>
                 {" "}
                 ones quantity &ge; ceil(current quantity / 2){" "}
               </Text>
@@ -149,7 +149,7 @@ export default function RulesPage() {
           <SubSection title="Switching from Ones to Non-Ones">
             <Paragraph>
               The minimum quantity for your new bid must be at least double the ones quantity plus one:{" "}
-              <Text style={{ backgroundColor: colors.surface, fontFamily: "Manrope_600SemiBold", fontSize: 13 }}>
+              <Text style={{ backgroundColor: colors.surface, fontFamily: "Manrope_600SemiBold", fontSize: 16 }}>
                 {" "}
                 new quantity &ge; ones quantity &times; 2 + 1{" "}
               </Text>
@@ -365,7 +365,7 @@ export default function RulesPage() {
         </Section>
 
         <View style={{ alignItems: "center", marginTop: spacing.lg, gap: spacing.sm }}>
-          <Text {...headingProps(2)} style={{ color: colors.textPrimary, fontFamily: typography.h2.fontFamily, fontSize: 22 }}>
+          <Text {...headingProps(2)} style={{ color: colors.textPrimary, fontFamily: typography.h2.fontFamily, fontSize: 25 }}>
             Ready to Play?
           </Text>
           <Paragraph>Put your knowledge to the test against AI opponents with adjustable difficulty. No sign-up required.</Paragraph>

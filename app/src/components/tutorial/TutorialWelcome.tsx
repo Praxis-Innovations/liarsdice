@@ -54,7 +54,7 @@ export function TutorialWelcome({ onStart, onSkip }: TutorialWelcomeProps) {
             style={{
               color: colors.accent,
               fontFamily: typography.h2.fontFamily,
-              fontSize: typography.h2.fontSize,
+              fontSize: 24,
               textAlign: "center",
             }}
           >
@@ -73,7 +73,7 @@ export function TutorialWelcome({ onStart, onSkip }: TutorialWelcomeProps) {
           </Text>
 
           <View style={{ width: "100%", gap: spacing.sm, marginTop: spacing.xs }}>
-            <Button label="Learn to Play" fullWidth onPress={onStart} />
+            <Button label="Learn to Play" fullWidth labelFontSize={16} onPress={onStart} />
             <Pressable onPress={onSkip} hitSlop={8} style={{ alignSelf: "center", paddingVertical: spacing.xs }}>
               <Text
                 style={{

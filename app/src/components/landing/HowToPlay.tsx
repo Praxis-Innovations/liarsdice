@@ -93,7 +93,7 @@ export function HowToPlay() {
           style={{
             color: colors.textPrimary,
             fontFamily: typography.h1.fontFamily,
-            fontSize: isNarrow ? 30 : 36,
+            fontSize: isNarrow ? 34 : 40,
             textAlign: "center",
             marginBottom: spacing.xl,
           }}
@@ -141,8 +141,8 @@ export function HowToPlay() {
                 style={{
                   color: colors.textSecondary,
                   fontFamily: typography.body.fontFamily,
-                  fontSize: 15,
-                  lineHeight: 22,
+                  fontSize: 19,
+                  lineHeight: 28,
                 }}
               >
                 {step.body}
