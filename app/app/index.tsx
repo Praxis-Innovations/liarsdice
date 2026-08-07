@@ -4,9 +4,10 @@
 import Head from "expo-router/head";
 import React from "react";
 import { ScrollView } from "react-native";
-import { CTAFooter } from "../src/components/landing/CTAFooter";
+import { CTABanner } from "../src/components/landing/CTABanner";
 import { Hero } from "../src/components/landing/Hero";
 import { HowToPlay } from "../src/components/landing/HowToPlay";
+import { Footer } from "../src/components/shared/Footer";
 import { useTheme } from "../src/theme/ThemeProvider";
 
 export default function LandingScreen() {
@@ -24,7 +25,8 @@ export default function LandingScreen() {
       <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1 }}>
         <Hero />
         <HowToPlay />
-        <CTAFooter />
+        <CTABanner />
+        <Footer />
       </ScrollView>
     </>
   );

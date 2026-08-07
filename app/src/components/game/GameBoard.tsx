@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useGameStore } from "../../engine/gameStore";
 import { useTheme } from "../../theme/ThemeProvider";
+import { Footer } from "../shared/Footer";
 import { ActionBar } from "./ActionBar";
 import { BidHistory } from "./BidHistory";
 import { BidPanel } from "./BidPanel";
@@ -35,16 +36,22 @@ export function GameBoard() {
 
   if (phase === "setup" || !gameState) {
     return (
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: spacing.lg, flexGrow: 1, justifyContent: "center" }}>
-        <GameSetup settings={settings} onUpdateSettings={updateSettings} onStart={startGame} />
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ padding: spacing.lg, flexGrow: 1, justifyContent: "center" }}>
+          <GameSetup settings={settings} onUpdateSettings={updateSettings} onStart={startGame} />
+        </View>
+        <Footer />
       </ScrollView>
     );
   }
 
   if (phase === "game-over") {
     return (
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: spacing.lg }}>
-        <GameOver state={gameState} onPlayAgain={resetGame} />
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ padding: spacing.lg, flexGrow: 1 }}>
+          <GameOver state={gameState} onPlayAgain={resetGame} />
+        </View>
+        <Footer />
       </ScrollView>
     );
   }
@@ -65,7 +72,8 @@ export function GameBoard() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: spacing.md, maxWidth: 900, width: "100%", alignSelf: "center" }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={{ padding: spacing.md, maxWidth: 900, width: "100%", alignSelf: "center", flexGrow: 1 }}>
       <View className="flex-row items-center justify-between" style={{ marginBottom: spacing.md }}>
         <Pressable onPress={resetGame}>
           <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 12 }}>&larr; New Game</Text>
@@ -134,6 +142,8 @@ export function GameBoard() {
           </View>
         </View>
       )}
+      </View>
+      <Footer />
     </ScrollView>
   );
 }

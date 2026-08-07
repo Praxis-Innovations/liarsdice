@@ -52,6 +52,7 @@ export interface DieProps {
   size?: number;
 }
 
+/** Flat SVG die used in-game and as the native fallback for marketing. */
 export function Die({ face, color, pipColor = "#FFFFFF", size = 100 }: DieProps) {
   const radius = size * DIE_RADIUS_RATIO;
   const pipRadius = size * PIP_RADIUS_RATIO;

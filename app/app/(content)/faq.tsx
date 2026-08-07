@@ -3,6 +3,7 @@ import Head from "expo-router/head";
 import React from "react";
 import { Text, View } from "react-native";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
+import { DiceDivider, DiceExample } from "../../src/components/content/DiceIllustration";
 import { Callout, Paragraph, Section } from "../../src/components/content/Prose";
 import { headingProps } from "../../src/lib/heading";
 import { useTheme } from "../../src/theme/ThemeProvider";
@@ -50,15 +51,15 @@ export const FAQ_ITEMS: { category: "General" | "Rules" | "Strategy" | "About"; 
   },
   {
     category: "Rules",
-    question: "How does bidding work?",
+    question: 'What does "wild aces" mean?',
     answer:
-      'Each round, a player makes a bid consisting of a quantity and a face value — for example, "three fives," meaning they claim there are at least three dice showing five among all players\' dice combined. The next player must either raise the bid or challenge it.',
+      'In the standard rules, dice showing a one (aces) count as wild — they match whatever face value is being bid on. For example, if someone bids "four threes," then every die showing a three AND every die showing a one counts toward that total. Learn this before bidding math, because most bids include wild ones.',
   },
   {
     category: "Rules",
-    question: 'What does "wild aces" mean?',
+    question: "How does bidding work?",
     answer:
-      'In the standard rules, dice showing a one (aces) count as wild — they match whatever face value is being bid on. For example, if someone bids "four threes," then every die showing a three AND every die showing a one counts toward that total.',
+      'Each round, a player makes a bid consisting of a quantity and a face value — for example, "three fives," meaning they claim there are at least three fives among all players\' dice combined (including wild aces, unless ones were opened as the first bid). The next player must either raise the bid or challenge it.',
   },
   {
     category: "Rules",
@@ -166,21 +167,31 @@ export default function FAQPage() {
           answer? <InlineLink href="/rules">Read the full rules</InlineLink> or{" "}
           <InlineLink href="/play">jump into a game</InlineLink> and learn by playing.
         </Paragraph>
+        <DiceExample
+          label="The one rule worth remembering first"
+          dice={[3, 1, 3, 5, 2]}
+          highlightValues={[3]}
+          wildHighlight
+          caption="When ones are wild, the ace counts with the two threes — a bid on three threes is already supported."
+        />
 
-        {categories.map((category) => (
-          <Section key={category} title={CATEGORY_TITLES[category]}>
-            <View style={{ gap: spacing.sm }}>
-              {FAQ_ITEMS.filter((item) => item.category === category).map((item) => (
-                <Callout key={item.question}>
-                  <Text style={{ color: colors.textPrimary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 15, marginBottom: 4 }}>
-                    {item.question}
-                  </Text>
-                  {"\n"}
-                  {item.answer}
-                </Callout>
-              ))}
-            </View>
-          </Section>
+        {categories.map((category, index) => (
+          <React.Fragment key={category}>
+            {index > 0 && <DiceDivider />}
+            <Section title={CATEGORY_TITLES[category]}>
+              <View style={{ gap: spacing.sm }}>
+                {FAQ_ITEMS.filter((item) => item.category === category).map((item) => (
+                  <Callout key={item.question}>
+                    <Text style={{ color: colors.textPrimary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 15, marginBottom: 4 }}>
+                      {item.question}
+                    </Text>
+                    {"\n"}
+                    {item.answer}
+                  </Callout>
+                ))}
+              </View>
+            </Section>
+          </React.Fragment>
         ))}
 
         <View style={{ alignItems: "center", marginTop: spacing.lg, gap: spacing.sm }}>

@@ -3,6 +3,7 @@ import Head from "expo-router/head";
 import React from "react";
 import { Text, View } from "react-native";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
+import { DiceExample, DiceDivider, GameScenario } from "../../src/components/content/DiceIllustration";
 import { BulletList, Callout, NumberedList, Paragraph, Section } from "../../src/components/content/Prose";
 import { headingProps } from "../../src/lib/heading";
 import { useTheme } from "../../src/theme/ThemeProvider";
@@ -71,6 +72,8 @@ export default function HowToPlayPage() {
           </Paragraph>
         </Section>
 
+        <DiceDivider />
+
         <Section title="Setting Up the Game">
           <Paragraph>Setting up a round takes less than a minute. Follow these steps before each round:</Paragraph>
           <NumberedList
@@ -81,6 +84,11 @@ export default function HowToPlayPage() {
               "Choose a starting player — randomly for round one, then the loser of the previous challenge starts.",
             ]}
           />
+          <DiceExample
+            label="You peek under your cup and see:"
+            dice={[2, 2, 5, 6, 1]}
+            caption="You know your own 5 dice, but the other players' dice are hidden."
+          />
           <Callout>
             <Bold>Key concept: </Bold>
             No one knows what anyone else rolled. You can see only your own dice. The total pool of all dice on the table is
@@ -88,42 +96,24 @@ export default function HowToPlayPage() {
           </Callout>
         </Section>
 
-        <Section title="How Bidding Works">
-          <Paragraph>
-            Bidding is the heart of Liar&apos;s Dice. On your turn you claim how many dice of a particular face value exist
-            among all players&apos; dice combined — not just your own.
-          </Paragraph>
-          <Callout>
-            <Bold>Anatomy of a bid: </Bold>A bid has a <Bold>quantity</Bold> and a <Bold>face value</Bold>. &quot;Four
-            threes&quot; means you claim at least four dice showing 3 among every player&apos;s hidden dice.
-          </Callout>
-          <Paragraph>After the opening bid, each player must raise the bid. You can raise in three ways:</Paragraph>
-          <NumberedList
-            items={[
-              <>
-                <Bold>Increase the quantity</Bold> while keeping the same face value or choosing higher.
-              </>,
-              <>
-                <Bold>Increase the face value</Bold> while keeping the same quantity.
-              </>,
-              <>
-                <Bold>Switch to or from aces (ones)</Bold> — special rules apply, covered in Wild Aces below.
-              </>,
-            ]}
-          />
-          <Paragraph>You may never lower the bid. Bids keep climbing until someone calls the bidder a liar.</Paragraph>
-        </Section>
+        <DiceDivider />
 
         <Section title="Wild Aces">
           <Paragraph>
-            One of the most important rules for beginners: <Bold>ones (aces) are wild</Bold>. Every die showing a 1 counts as
-            whatever face value is being bid on.
+            Before bidding makes sense, you need one key idea: <Bold>ones (aces) are wild</Bold>. Every die showing a 1
+            counts as whatever face value is being bid on. That means a bid like &quot;five sixes&quot; can be met by a
+            mix of real sixes and wild aces.
           </Paragraph>
-          <Callout>
-            <Bold>Example: </Bold>
-            15 dice on the table, bid is &quot;five sixes.&quot; There are three dice showing 6 and three showing 1. Because
-            aces are wild, the true count is six — the bid is met.
-          </Callout>
+          <GameScenario
+            title="Wild aces in action"
+            players={[
+              { name: "All dice revealed", dice: [6, 2, 1, 6, 4, 1, 3, 6, 5, 1] },
+            ]}
+            bid='"Five sixes"'
+            highlightValues={[6]}
+            wildHighlight
+            result="3 sixes + 3 wild aces = 6 total. Bid of five sixes is met!"
+          />
           <Paragraph>
             One critical exception: <Bold>if a player opens the round by bidding on ones</Bold>, aces are no longer wild for the
             rest of that round.
@@ -142,6 +132,45 @@ export default function HowToPlayPage() {
           />
         </Section>
 
+        <DiceDivider />
+
+        <Section title="How Bidding Works">
+          <Paragraph>
+            Bidding is the heart of Liar&apos;s Dice. On your turn you claim how many dice of a particular face value exist
+            among all players&apos; dice combined — not just your own. Remember: unless ones were opened as the first bid,
+            wild aces count toward that face value.
+          </Paragraph>
+          <Callout>
+            <Bold>Anatomy of a bid: </Bold>A bid has a <Bold>quantity</Bold> and a <Bold>face value</Bold>. &quot;Four
+            threes&quot; means you claim at least four dice showing 3 (including wild aces) among every player&apos;s
+            hidden dice.
+          </Callout>
+          <DiceExample
+            label={'What "four threes" could look like across all players:'}
+            dice={[3, 5, 3, 1, 3, 2, 6, 3, 4, 1]}
+            highlightValues={[3]}
+            wildHighlight
+            caption="4 dice showing 3 (highlighted in gold) plus 2 wild aces (highlighted in green) = 6 total. The bid of four threes is met!"
+          />
+          <Paragraph>After the opening bid, each player must raise the bid. You can raise in three ways:</Paragraph>
+          <NumberedList
+            items={[
+              <>
+                <Bold>Increase the quantity</Bold> while keeping the same face value or choosing higher.
+              </>,
+              <>
+                <Bold>Increase the face value</Bold> while keeping the same quantity.
+              </>,
+              <>
+                <Bold>Switch to or from aces (ones)</Bold> — use the conversion rules from Wild Aces above.
+              </>,
+            ]}
+          />
+          <Paragraph>You may never lower the bid. Bids keep climbing until someone calls the bidder a liar.</Paragraph>
+        </Section>
+
+        <DiceDivider />
+
         <Section title='Calling "Liar!" (Challenge)'>
           <Paragraph>
             Instead of raising, you can <Bold>challenge</Bold> the previous bid by calling &quot;Liar!&quot; This is the
@@ -151,16 +180,24 @@ export default function HowToPlayPage() {
             When called, all players reveal their dice. Everyone counts the dice matching the bid&apos;s face value, plus any
             wild aces.
           </Paragraph>
-          <Callout>
-            <Bold>If the bid is met or exceeded: </Bold>
-            the challenger loses one die.{"\n"}
-            <Bold>If the bid is not met: </Bold>
-            the bidder loses one die.
-          </Callout>
+          <GameScenario
+            title="Challenge example"
+            players={[
+              { name: "You", dice: [4, 4, 2, 6, 1], isYou: true },
+              { name: "Alice", dice: [3, 3, 5, 2, 4] },
+              { name: "Bob", dice: [4, 1, 6, 3, 5] },
+            ]}
+            bid='"Seven fours" — Alice calls Liar!'
+            highlightValues={[4]}
+            wildHighlight
+            result="4 fours + 2 wild aces = 6 total. Bid needed 7 — Alice was right! The bidder loses a die."
+          />
           <Paragraph>
             After a challenge resolves, the player who lost a die starts the next round, and bidding begins again from scratch.
           </Paragraph>
         </Section>
+
+        <DiceDivider />
 
         <Section title="Spot On Calls">
           <Paragraph>
@@ -184,10 +221,17 @@ export default function HowToPlayPage() {
           </Callout>
         </Section>
 
+        <DiceDivider />
+
         <Section title="Palifico Rounds">
           <Paragraph>
             A <Bold>palifico round</Bold> is a special round triggered when a player is reduced to exactly one die.
           </Paragraph>
+          <DiceExample
+            label="A player is down to their last die:"
+            dice={[4]}
+            caption="This triggers a palifico round — special rules apply."
+          />
           <NumberedList
             items={[
               <>
@@ -208,6 +252,8 @@ export default function HowToPlayPage() {
           </Callout>
         </Section>
 
+        <DiceDivider />
+
         <Section title="Winning the Game">
           <Paragraph>
             Each time you lose a challenge, you lose one die. When you lose your last die, you are eliminated. The{" "}
@@ -218,6 +264,8 @@ export default function HowToPlayPage() {
             our <InlineLink href="/rules">detailed rules reference</InlineLink>.
           </Paragraph>
         </Section>
+
+        <DiceDivider />
 
         <Section title="Tips for Beginners">
           <NumberedList

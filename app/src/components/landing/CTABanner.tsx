@@ -2,16 +2,17 @@ import { Link } from "expo-router";
 import React from "react";
 import { Text, View, useWindowDimensions } from "react-native";
 import { headingProps } from "../../lib/heading";
+import { isCompactWidth } from "../../lib/breakpoints";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Button } from "../ui/Button";
 
-export function CTAFooter() {
+export function CTABanner() {
   const { colors, spacing, typography } = useTheme();
   const { width } = useWindowDimensions();
-  const isNarrow = width < 760;
+  const isNarrow = isCompactWidth(width);
 
   return (
-    <View style={{ backgroundColor: colors.background }}>
+    <View style={{ backgroundColor: colors.background, paddingBottom: spacing.xl }}>
       <View
         style={{
           backgroundColor: colors.textPrimary,
@@ -50,32 +51,6 @@ export function CTAFooter() {
         <Link href="/play" asChild>
           <Button label="Play now" variant="primary" />
         </Link>
-      </View>
-
-      <View
-        className="flex-row flex-wrap items-center justify-between"
-        style={{ maxWidth: 1120, width: "100%", alignSelf: "center", padding: spacing.lg, gap: spacing.sm }}
-      >
-        <Text style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
-          © {new Date().getFullYear()} Liar&apos;s Dice
-        </Text>
-        <View className="flex-row flex-wrap" style={{ gap: spacing.lg }}>
-          <Link href="/play" style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
-            Play
-          </Link>
-          <Link href="/how-to-play" style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
-            How to Play
-          </Link>
-          <Link href="/rules" style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
-            Rules
-          </Link>
-          <Link href="/sign-in" style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
-            Sign in
-          </Link>
-          <Link href="/sign-up" style={{ color: colors.textSecondary, fontFamily: typography.caption.fontFamily, fontSize: 13 }}>
-            Create account
-          </Link>
-        </View>
       </View>
     </View>
   );

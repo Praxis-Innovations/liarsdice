@@ -3,6 +3,7 @@ import React from "react";
 import { Text, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import { headingProps } from "../../lib/heading";
+import { isCompactWidth } from "../../lib/breakpoints";
 import { useTheme } from "../../theme/ThemeProvider";
 
 function RollIcon({ color }: { color: string }) {
@@ -82,7 +83,7 @@ const STEPS = [
 export function HowToPlay() {
   const { colors, spacing, typography } = useTheme();
   const { width } = useWindowDimensions();
-  const isNarrow = width < 760;
+  const isNarrow = isCompactWidth(width);
 
   return (
     <View style={{ backgroundColor: colors.surface }} className="px-6 py-16 md:px-16 md:py-24">

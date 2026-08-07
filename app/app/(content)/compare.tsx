@@ -4,6 +4,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
 import { DataTable } from "../../src/components/content/DataTable";
+import { DiceExample, DiceDivider } from "../../src/components/content/DiceIllustration";
 import { Paragraph, Section } from "../../src/components/content/Prose";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { Button } from "../../src/components/ui/Button";
@@ -63,7 +64,15 @@ export default function ComparePage() {
             Most variations trace their roots to <InlineLink href="/history">the long history of Liar&apos;s Dice</InlineLink>,
             which stretches from 15th-century South America to modern-day pubs and mobile screens.
           </Paragraph>
+          <DiceExample
+            label="The shared foundation"
+            dice={[2, 4, 1, 5, 3]}
+            wildHighlight
+            caption="Every variant begins with hidden dice and a bid. Wild aces, Palifico, and Spot On are what make each version feel different."
+          />
         </Section>
+
+        <DiceDivider />
 
         <Section title="Feature Comparison Table">
           <Paragraph>

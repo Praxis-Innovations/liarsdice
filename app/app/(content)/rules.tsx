@@ -4,6 +4,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { BulletList, Callout, NumberedList, Paragraph, Section, SubSection } from "../../src/components/content/Prose";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
+import { DiceExample, DiceDivider, GameScenario } from "../../src/components/content/DiceIllustration";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { Button } from "../../src/components/ui/Button";
 import { headingProps } from "../../src/lib/heading";
@@ -70,6 +71,8 @@ export default function RulesPage() {
           />
         </Section>
 
+        <DiceDivider />
+
         <Section title="Setup">
           <Paragraph>Getting started is simple:</Paragraph>
           <NumberedList
@@ -82,67 +85,32 @@ export default function RulesPage() {
               "A starting player is chosen (randomly, or the loser of the previous round goes first).",
             ]}
           />
+          <DiceExample
+            label="You peek under your cup:"
+            dice={[3, 3, 5, 6, 1]}
+            caption="These are your 5 dice. No one else can see them."
+          />
           <Paragraph>
             Your own dice are the only certain information you have. Everything else is a matter of deduction, estimation, and
             reading your opponents.
           </Paragraph>
         </Section>
 
-        <Section title="Bidding Rules">
-          <Paragraph>
-            On your turn, you must make a <Bold>bid</Bold> about how many dice of a particular face value are on the table
-            (among all players&apos; dice combined). A bid consists of two parts:
-          </Paragraph>
-          <BulletList
-            items={[
-              <>
-                <Bold>Quantity:</Bold> How many dice you claim are showing a particular value
-              </>,
-              <>
-                <Bold>Face value:</Bold> Which number on the die
-              </>,
-            ]}
-          />
-          <Callout>
-            <Bold>Example: </Bold>
-            &quot;Three fives&quot; means you claim there are at least 3 dice showing a 5 among all players&apos; dice on the
-            table.
-          </Callout>
-          <Paragraph>
-            Each subsequent bid must <Bold>raise</Bold> the stakes. There are two ways to raise:
-          </Paragraph>
-          <BulletList
-            items={[
-              <>
-                <Bold>Increase the quantity</Bold> — bid a higher number of any face value
-              </>,
-              <>
-                <Bold>Increase the face value at the same quantity</Bold> — keep the same count but name a higher face
-              </>,
-            ]}
-          />
-          <Callout>
-            <Bold>Example: </Bold>
-            The current bid is &quot;three fours.&quot; Valid raises include &quot;three fives,&quot; &quot;three sixes,&quot;
-            &quot;four twos,&quot; &quot;five threes,&quot; and so on. &quot;Three threes&quot; or &quot;two sixes&quot; would be
-            invalid because neither the quantity nor the face value has increased.
-          </Callout>
-          <Paragraph>
-            If you don&apos;t want to raise the bid, you must instead challenge the previous player&apos;s bid. You are never
-            allowed to pass.
-          </Paragraph>
-        </Section>
+        <DiceDivider />
 
         <Section title="Wild Aces Rules">
           <Paragraph>
-            By default, <Bold>ones (aces) are wild</Bold>. This means that any die showing a 1 counts as whatever face value is
-            being bid on. Wild aces effectively double the probability of any given face value appearing.
+            Before the bidding rules make sense, learn this key concept: by default, <Bold>ones (aces) are wild</Bold>.
+            Any die showing a 1 counts as whatever face value is being bid on. Wild aces effectively double the
+            probability of any given face value appearing.
           </Paragraph>
-          <Callout>
-            <Bold>Example: </Bold>
-            The current bid is &quot;four threes.&quot; If the table has three 3s and two 1s, the actual count is 5, which meets
-            and exceeds the bid.
-          </Callout>
+          <DiceExample
+            label="Wild aces example — bid is &quot;four threes&quot;:"
+            dice={[3, 5, 1, 3, 2, 6, 1, 3, 4, 2]}
+            highlightValues={[3]}
+            wildHighlight
+            caption="3 threes (gold) + 2 wild aces (green) = 5 total. The bid of four threes is met."
+          />
 
           <SubSection title="When Ones Are Not Wild">
             <Paragraph>
@@ -153,6 +121,8 @@ export default function RulesPage() {
             <Paragraph>Ones are also not wild during Palifico rounds.</Paragraph>
           </SubSection>
         </Section>
+
+        <DiceDivider />
 
         <Section title="Ones Bid Transitions">
           <Paragraph>
@@ -198,6 +168,57 @@ export default function RulesPage() {
           </Paragraph>
         </Section>
 
+        <DiceDivider />
+
+        <Section title="Bidding Rules">
+          <Paragraph>
+            On your turn, you must make a <Bold>bid</Bold> about how many dice of a particular face value are on the table
+            (among all players&apos; dice combined). Unless ones were opened as the first bid, wild aces count toward that
+            face value. A bid consists of two parts:
+          </Paragraph>
+          <BulletList
+            items={[
+              <>
+                <Bold>Quantity:</Bold> How many dice you claim are showing a particular value (including wild aces)
+              </>,
+              <>
+                <Bold>Face value:</Bold> Which number on the die
+              </>,
+            ]}
+          />
+          <Callout>
+            <Bold>Example: </Bold>
+            &quot;Three fives&quot; means you claim there are at least 3 dice showing a 5 — counting wild aces — among all
+            players&apos; dice on the table.
+          </Callout>
+          <Paragraph>
+            Each subsequent bid must <Bold>raise</Bold> the stakes. There are two ways to raise:
+          </Paragraph>
+          <BulletList
+            items={[
+              <>
+                <Bold>Increase the quantity</Bold> — bid a higher number of any face value
+              </>,
+              <>
+                <Bold>Increase the face value at the same quantity</Bold> — keep the same count but name a higher face
+              </>,
+            ]}
+          />
+          <Callout>
+            <Bold>Example: </Bold>
+            The current bid is &quot;three fours.&quot; Valid raises include &quot;three fives,&quot; &quot;three sixes,&quot;
+            &quot;four twos,&quot; &quot;five threes,&quot; and so on. &quot;Three threes&quot; or &quot;two sixes&quot; would be
+            invalid because neither the quantity nor the face value has increased. Switching to or from ones uses the
+            transition rules above.
+          </Callout>
+          <Paragraph>
+            If you don&apos;t want to raise the bid, you must instead challenge the previous player&apos;s bid. You are never
+            allowed to pass.
+          </Paragraph>
+        </Section>
+
+        <DiceDivider />
+
         <Section title='Challenging ("Liar!")'>
           <Paragraph>
             Instead of raising the bid, you may <Bold>challenge</Bold> the previous player&apos;s bid by calling{" "}
@@ -218,16 +239,25 @@ export default function RulesPage() {
               </>,
             ]}
           />
-          <Callout>
-            <Bold>Example: </Bold>
-            Alice bids &quot;five threes.&quot; Bob calls &quot;Liar!&quot; The table shows four 3s and two 1s (wild). The
-            actual count is 6, which meets the bid of 5. Bob (the challenger) loses one die.
-          </Callout>
+          <GameScenario
+            title="Challenge resolution"
+            players={[
+              { name: "Alice", dice: [3, 5, 3, 2, 6] },
+              { name: "Bob", dice: [4, 1, 3, 5, 1] },
+              { name: "Carlos", dice: [3, 6, 2, 4, 1] },
+            ]}
+            bid='"Five threes" — Bob calls Liar!'
+            highlightValues={[3]}
+            wildHighlight
+            result="4 threes + 3 wild aces = 7 total. Bid of 5 is met — Bob (the challenger) loses a die."
+          />
           <Paragraph>
             After a challenge is resolved, the player who lost a die starts the next round. All players re-roll their remaining
             dice.
           </Paragraph>
         </Section>
+
+        <DiceDivider />
 
         <Section title="Spot On (Optional Rule)">
           <Paragraph>
@@ -255,11 +285,18 @@ export default function RulesPage() {
           </Paragraph>
         </Section>
 
+        <DiceDivider />
+
         <Section title="Palifico Rounds">
           <Paragraph>
             A <Bold>Palifico round</Bold> is a special restricted round triggered when a player is reduced to{" "}
             <Bold>exactly 1 die</Bold>. Each player can only trigger one Palifico round over the course of the game.
           </Paragraph>
+          <DiceExample
+            label="A player is down to one die:"
+            dice={[4]}
+            caption="Palifico round triggered — aces are not wild, and the face value is locked."
+          />
           <Paragraph>Palifico rounds have three special rules:</Paragraph>
           <NumberedList
             items={[
@@ -282,6 +319,8 @@ export default function RulesPage() {
           </Callout>
         </Section>
 
+        <DiceDivider />
+
         <Section title="Elimination and Winning">
           <Paragraph>
             When a player loses their <Bold>last remaining die</Bold>, they are eliminated. The game is won by the{" "}
@@ -299,6 +338,8 @@ export default function RulesPage() {
             probability tables and advanced bluffing tactics.
           </Paragraph>
         </Section>
+
+        <DiceDivider />
 
         <Section title="Common House Rules and Variations">
           <Paragraph>Numerous variations exist. Here are some of the most popular house rules and regional differences:</Paragraph>

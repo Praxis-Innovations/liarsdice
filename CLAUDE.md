@@ -47,8 +47,11 @@ improve:
   components in `src/components/content/Prose.tsx` already wire this up for content pages.
 - `app/public/robots.txt` and `app/public/sitemap.xml` must stay in sync with the real public
   route list (currently `/`, `/play`, `/how-to-play`, `/rules`, `/strategy`,
-  `/dudo-perudo-rules`, `/compare`, `/history`, `/faq`, `/sign-up`, `/sign-in`,
-  `/forgot-password`).
+  `/dudo-perudo-rules`, `/compare`, `/history`, `/faq`). Auth routes (`/sign-up`,
+  `/sign-in`, `/forgot-password`) are intentionally omitted from `sitemap.xml` (and
+  from `inject-seo.js` ROUTES) until the auth feature is enabled. `robots.txt` is
+  still a broad `Allow: /` — do not claim auth routes are disallowed unless you add
+  explicit `Disallow` rules.
 - The JSON-LD structured data in `app/app/+html.tsx` (site-wide `WebSite`) and in
   `app/scripts/inject-seo.js` (per-route `Article`/`FAQPage`/`HowTo`/`BreadcrumbList`) must be
   kept accurate as the product evolves. `inject-seo.js`'s `FAQ_ITEMS` array must stay in sync with
@@ -76,27 +79,43 @@ improve:
   auto-switch with dark mode (that requires hand-written `dark:` variants on every className).
   Keep it this way rather than reaching for Tailwind color utilities.
 - **Animation**: `moti` (declarative, built on `react-native-reanimated`) for entrance/idle
-  animations (see `src/components/landing/AnimatedDice.tsx`, `HowToPlay.tsx`); raw
-  `react-native-reanimated` for anything more custom (see `src/components/ui/Button.tsx`'s press
-  animation). Both work on native and web — this app ships to iOS/Android too (see `app.json`,
-  `eas.json`), so avoid HTML/CSS/WebGL-only animation approaches.
+  animations (see `HowToPlay.tsx`); raw `react-native-reanimated` for custom motion (see
+  `src/components/ui/Button.tsx`, native hero toss in `AnimatedDice.tsx`). Prefer portable RN
+  animation on shared code paths.
 - **Theme**: `app/src/theme/` — light + dark token sets (`tokens.ts`), consumed via
-  `ThemeProvider`/`useTheme()` (`ThemeProvider.tsx`), which follows `app.json`'s
-  `userInterfaceStyle: "automatic"` through NativeWind's own `useColorScheme()`. This requires
-  `tailwind.config.js`'s `darkMode` to stay `"media"` — NativeWind only falls back to the OS
-  `Appearance` value in that mode; `"class"` pins to a manually-toggled class and never auto-syncs
-  (silently breaks dark mode, since this app has no manual light/dark toggle UI). Don't switch to
-  `"class"` without adding one.
+  `ThemeProvider`/`useTheme()` (`ThemeProvider.tsx`). First client paint stays light to match
+  static HTML; after mount it loads `@liarsdice/theme-mode` from AsyncStorage (`light` |
+  `dark` | `system`) and then follows that preference. The Header sun/moon control calls
+  `toggleTheme()` (forces light/dark; does not cycle back to `system`). Inline `useTheme().colors`
+  styles follow the toggle. Keep `tailwind.config.js` `darkMode: "media"` — any future `dark:`
+  Tailwind classes would still track the OS, not the in-app toggle, so do not introduce
+  color-via-className for themed UI.
+- **Chrome**: global `Header` (`src/components/shared/Header.tsx`) and `Footer`
+  (`src/components/shared/Footer.tsx`). Header is mounted from `app/app/_layout.tsx` (hidden on
+  auth/`/home`/`/profile` prefixes), uses `useSafeAreaInsets()` so the bar clears notches on
+  iOS/Android (inset is 0 on web — no visual change). `HEADER_HEIGHT` is the 64px content row;
+  `useHeaderOffset()` is height + top inset for hero canvas math. Favicon is `app/public/favicon.svg`
+  (also linked from `app/app/+html.tsx` for static export).
 - **Fonts**: Fredoka (headings, `@expo-google-fonts/fredoka`) + Manrope (body/UI,
   `@expo-google-fonts/manrope`), loaded via `expo-font`'s `useFonts` in `app/app/_layout.tsx`.
   Chosen for a bold/playful-but-highly-legible game aesthetic — do not fall back to system fonts
   for headings.
+- **Landing hero**: `Hero.tsx` + responsive helpers in `dicePlatformLayout.ts` (re-exported from
+  `DicePlatform.tsx`: `getBreakpoint`, `getPlatformMetrics`, `getDiceBand`,
+  `placeDiceOnPlatform` — unit-tested). Always 6 dice;
+  sizes scale down on smaller widths. Soft spotlight SVG is shared; blur uses web-only CSS
+  `filter`. **Web** dice/table: vanilla Three.js in `CssDice3D.web.tsx` (filename is historical —
+  not CSS 3D; do not add `@react-three/*`). **Native** dice: SVG + Reanimated via
+  `CssDice3D.tsx` → `ScatteredDice`. Keep that platform split so iOS/Android never load WebGL.
+  Do not commit `web/` Next.js leftovers — product web is Expo static export under `app/`.
+- **Breakpoints** (shared in `src/lib/breakpoints.ts`, Tailwind-aligned):
+  - phone `<768` (`md`), tablet `768–1023`, laptop/desktop `≥1024` (`lg`)
+  - Header/Footer/CTA/HowToPlay chrome uses the same `lg` cutover (`isDesktopWidth` /
+    `isCompactWidth`) so nav and hero compact mode switch together
+  - Prefer these helpers over hard-coded width literals
 - **Visual direction**: bold, playful, chunky rounded shapes, custom SVG illustration — not
   emoji, not generic stock imagery, not vector-icon-pack glyphs standing in for real iconography.
-  The landing hero's focal visual is a custom `react-native-svg` dice illustration animated with
-  `moti` (`AnimatedDice.tsx`) — keep this pattern (SVG + RN animation) rather than reaching for an
-  HTML/CSS/WebGL escape hatch, video embed, or Lottie/3D library, to stay portable to native
-  builds.
+  Content pages use `DiceIllustration.tsx` figures to break up prose.
 
 ## Game engine and content pages
 
@@ -123,12 +142,22 @@ improve:
   `Paragraph`, `BulletList`, `NumberedList`, `Callout`, `Quote` — use these instead of raw
   `View`/`Text` for prose so heading structure and spacing stay consistent), `DataTable.tsx` (RN
   has no native `<table>`; renders a horizontally-scrollable grid on wide viewports and stacks
-  into label:value cards below ~640px — reuse this for any new tabular content), `ContentLayout.tsx`
-  (breadcrumb + H1 + `ContentNav` cross-links top and bottom of every page — internal linking
-  between these pages matters for their SEO purpose), and `Breadcrumb.tsx`/`ContentNav.tsx`. The
-  `(content)` route group doesn't affect URLs (`(content)/rules.tsx` still serves at `/rules`,
+  into label:value cards below Tailwind `md` / 768px — reuse this for any new tabular content), `ContentLayout.tsx`
+  (breadcrumb + H1 + bottom `ContentNav` + full-bleed `Footer` — top in-page nav was removed in
+  favor of the global Header; keep bottom cross-links for SEO internal linking),
+  `DiceIllustration.tsx` (figures for rules/how-to pages), and `Breadcrumb.tsx`/`ContentNav.tsx`.
+  The `(content)` route group doesn't affect URLs (`(content)/rules.tsx` still serves at `/rules`,
   preserving the target-keyword URLs the content was written for) — it only groups these routes
   under their own plain, non-auth-gated `_layout.tsx`.
+
+## Tests
+
+- Run from `app/`: `npm test` (Jest + `jest-expo`).
+- Engine suites live in `app/src/engine/__tests__/` (rules correctness).
+- UI/helper suites: `app/src/components/landing/__tests__/DicePlatform.test.ts` (covers
+  `dicePlatformLayout.ts`), `app/src/theme/__tests__/ThemeProvider.test.tsx`. Prefer
+  pure-helper tests over WebGL snapshot tests. Jest enforces ≥80% lines on the configured
+  `collectCoverageFrom` set (`npm test -- --coverage`).
 
 ## Scope note
 
