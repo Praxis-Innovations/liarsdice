@@ -9,7 +9,12 @@ const PREFERENCE_KEYS = {
   showHints: "liarsdice-hints",
   soundEnabled: "liarsdice-sound",
   tutorialCompleted: "liarsdice-tutorial",
+  zoomLevel: "liarsdice-zoom",
 } as const;
+
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 1.5;
+const ZOOM_STEP = 0.1;
 
 async function loadPreference(key: string, fallback: boolean): Promise<boolean> {
   const stored = await AsyncStorage.getItem(key);
@@ -57,6 +62,7 @@ interface GameStore {
   tutorialStep: number;
   showTutorialPrompt: boolean;
   prefsLoaded: boolean;
+  zoomLevel: number;
 
   updateSettings: (partial: Partial<GameSettings>) => void;
   startGame: () => void;
@@ -72,6 +78,8 @@ interface GameStore {
   skipTutorial: () => void;
   advanceTutorialStep: () => void;
   dismissTutorialPrompt: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
 }
 
 const DEFAULT_SETTINGS: GameSettings = {
@@ -102,8 +110,12 @@ export const useGameStore = create<GameStore>((set, get) => {
       loadPreference(PREFERENCE_KEYS.showHints, false),
       loadPreference(PREFERENCE_KEYS.soundEnabled, true),
       loadPreference(PREFERENCE_KEYS.tutorialCompleted, false),
-    ]).then(([showHints, soundEnabled, tutorialCompleted]) => {
-      set({ showHints, soundEnabled, tutorialCompleted, prefsLoaded: true });
+      AsyncStorage.getItem(PREFERENCE_KEYS.zoomLevel).then((v) => {
+        const n = v !== null ? parseFloat(v) : 1.0;
+        return Number.isFinite(n) ? Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, n)) : 1.0;
+      }),
+    ]).then(([showHints, soundEnabled, tutorialCompleted, zoomLevel]) => {
+      set({ showHints, soundEnabled, tutorialCompleted, zoomLevel, prefsLoaded: true });
     });
   }
 
@@ -119,6 +131,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     tutorialStep: 0,
     showTutorialPrompt: false,
     prefsLoaded: false,
+    zoomLevel: 1.0,
 
     updateSettings: (partial) => {
       set((state) => ({ settings: { ...state.settings, ...partial } }));
@@ -276,6 +289,22 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (gameState && gameState.players[gameState.currentPlayerIndex].isAI) {
         void processAITurns(set, get);
       }
+    },
+
+    zoomIn: () => {
+      set((state) => {
+        const next = Math.round((Math.min(ZOOM_MAX, state.zoomLevel + ZOOM_STEP)) * 10) / 10;
+        void AsyncStorage.setItem(PREFERENCE_KEYS.zoomLevel, String(next));
+        return { zoomLevel: next };
+      });
+    },
+
+    zoomOut: () => {
+      set((state) => {
+        const next = Math.round((Math.max(ZOOM_MIN, state.zoomLevel - ZOOM_STEP)) * 10) / 10;
+        void AsyncStorage.setItem(PREFERENCE_KEYS.zoomLevel, String(next));
+        return { zoomLevel: next };
+      });
     },
   };
 });

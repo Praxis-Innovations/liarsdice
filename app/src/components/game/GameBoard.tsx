@@ -39,6 +39,9 @@ export function GameBoard() {
   const continueToNextRound = useGameStore((s) => s.continueToNextRound);
   const resetGame = useGameStore((s) => s.resetGame);
   const toggleHints = useGameStore((s) => s.toggleHints);
+  const zoomLevel = useGameStore((s) => s.zoomLevel);
+  const zoomIn = useGameStore((s) => s.zoomIn);
+  const zoomOut = useGameStore((s) => s.zoomOut);
   const startTutorial = useGameStore((s) => s.startTutorial);
   const skipTutorial = useGameStore((s) => s.skipTutorial);
   const dismissTutorialPrompt = useGameStore((s) => s.dismissTutorialPrompt);
@@ -248,125 +251,130 @@ export function GameBoard() {
           compact={compact}
           tutorialMode={tutorialMode}
           showHints={showHints}
+          zoomLevel={zoomLevel}
           onBack={tutorialMode ? handleTutorialSkip : resetGame}
           onToggleHints={toggleHints}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
         />
 
-        <View
-          style={
-            compact
-              ? {
-                  flex: 1,
-                  width: "100%",
-                  minHeight: 160,
-                  maxHeight: Math.round(availableHeight * 0.52),
-                }
-              : {
-                  height: tableHeight,
-                  width: "100%",
-                  flexShrink: 1,
-                  minHeight: sizeTier === "compact" ? 160 : 210,
-                }
-          }
-        >
-          <GameTable
-            players={gameState.players}
-            currentPlayerId={currentPlayerId}
-            showDice={showingResult}
-            highlightValues={highlightValues}
-            onesWild={gameState.onesWild}
-            lastActions={lastActions}
-            revealedDice={showingResult ? gameState.lastRoundResult?.allDice : undefined}
-            dense={dense}
-            sizeTier={sizeTier}
-            humanSeatRef={humanPanelRef}
-            tableRef={tableRef}
-            opponentsRef={opponentsRef}
-            renderCenter={({ maxWidth, maxHeight }) => {
-              // Phone: leave the felt empty — bids / results sit under the table.
-              if (compact) return null;
-              if (showingResult && gameState.lastRoundResult) {
-                return (
-                  <View ref={roundResultRef} collapsable={false}>
-                    <RoundResult
-                      state={gameState}
-                      onContinue={handleResultContinue}
-                      animating={animatingReveal}
-                      compact={false}
-                      maxWidth={maxWidth}
-                      maxHeight={maxHeight}
-                    />
-                  </View>
-                );
-              }
-              if (!showingResult) {
-                return (
-                  <View ref={bidChromeRef} collapsable={false}>
-                    <TableBidCenter
-                      state={gameState}
-                      dense={false}
-                      sizeTier={sizeTier}
-                      maxWidth={maxWidth}
-                      maxHeight={maxHeight}
-                    />
-                  </View>
-                );
-              }
-              return null;
-            }}
-          />
-        </View>
-
-        {compact && showingResult && gameState.lastRoundResult ? (
+        <View style={{ flex: 1, transform: [{ scale: zoomLevel }] }}>
           <View
-            ref={roundResultRef}
-            collapsable={false}
-            style={{ width: "100%", marginTop: spacing.xs, flexShrink: 0 }}
-          >
-            <RoundResult
-              state={gameState}
-              onContinue={handleResultContinue}
-              animating={animatingReveal}
+            style={
               compact
-              maxWidth={width - pagePad * 2}
+                ? {
+                    flex: 1,
+                    width: "100%",
+                    minHeight: 160,
+                    maxHeight: Math.round(availableHeight * 0.52),
+                  }
+                : {
+                    height: tableHeight,
+                    width: "100%",
+                    flexShrink: 1,
+                    minHeight: sizeTier === "compact" ? 160 : 210,
+                  }
+            }
+          >
+            <GameTable
+              players={gameState.players}
+              currentPlayerId={currentPlayerId}
+              showDice={showingResult}
+              highlightValues={highlightValues}
+              onesWild={gameState.onesWild}
+              lastActions={lastActions}
+              revealedDice={showingResult ? gameState.lastRoundResult?.allDice : undefined}
+              dense={dense}
+              sizeTier={sizeTier}
+              humanSeatRef={humanPanelRef}
+              tableRef={tableRef}
+              opponentsRef={opponentsRef}
+              renderCenter={({ maxWidth, maxHeight }) => {
+                // Phone: leave the felt empty — bids / results sit under the table.
+                if (compact) return null;
+                if (showingResult && gameState.lastRoundResult) {
+                  return (
+                    <View ref={roundResultRef} collapsable={false}>
+                      <RoundResult
+                        state={gameState}
+                        onContinue={handleResultContinue}
+                        animating={animatingReveal}
+                        compact={false}
+                        maxWidth={maxWidth}
+                        maxHeight={maxHeight}
+                      />
+                    </View>
+                  );
+                }
+                if (!showingResult) {
+                  return (
+                    <View ref={bidChromeRef} collapsable={false}>
+                      <TableBidCenter
+                        state={gameState}
+                        dense={false}
+                        sizeTier={sizeTier}
+                        maxWidth={maxWidth}
+                        maxHeight={maxHeight}
+                      />
+                    </View>
+                  );
+                }
+                return null;
+              }}
             />
           </View>
-        ) : (
-          <View
-            style={{
-              gap: sizeTier === "compact" ? 6 : spacing.sm,
-              marginTop: sizeTier === "compact" ? spacing.xs : spacing.sm,
-              flexShrink: 0,
-              paddingTop: sizeTier === "compact" ? 6 : spacing.sm,
-              borderTopWidth: 1,
-              borderTopColor: colors.border,
-            }}
-          >
-            {compact && !showingResult ? (
-              <View ref={bidChromeRef} collapsable={false}>
-                <MobileBidStrip state={gameState} />
+
+          {compact && showingResult && gameState.lastRoundResult ? (
+            <View
+              ref={roundResultRef}
+              collapsable={false}
+              style={{ width: "100%", marginTop: spacing.xs, flexShrink: 0 }}
+            >
+              <RoundResult
+                state={gameState}
+                onContinue={handleResultContinue}
+                animating={animatingReveal}
+                compact
+                maxWidth={width - pagePad * 2}
+              />
+            </View>
+          ) : (
+            <View
+              style={{
+                gap: sizeTier === "compact" ? 6 : spacing.sm,
+                marginTop: sizeTier === "compact" ? spacing.xs : spacing.sm,
+                flexShrink: 0,
+                paddingTop: sizeTier === "compact" ? 6 : spacing.sm,
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+              }}
+            >
+              {compact && !showingResult ? (
+                <View ref={bidChromeRef} collapsable={false}>
+                  <MobileBidStrip state={gameState} />
+                </View>
+              ) : null}
+              <View ref={bidPanelRef} collapsable={false}>
+                <BidPanel
+                  state={gameState}
+                  onBid={placeBid}
+                  showHints={showHints}
+                  enabled={controlsEnabled}
+                  sizeTier={sizeTier}
+                />
               </View>
-            ) : null}
-            <View ref={bidPanelRef} collapsable={false}>
-              <BidPanel
-                state={gameState}
-                onBid={placeBid}
-                showHints={showHints}
-                enabled={controlsEnabled}
-                sizeTier={sizeTier}
-              />
+              <View ref={actionControlsRef} collapsable={false}>
+                <ActionBar
+                  state={gameState}
+                  onChallenge={challenge}
+                  onSpotOn={spotOn}
+                  showHints={showHints}
+                  enabled={controlsEnabled && !!gameState.currentBid}
+                />
+              </View>
             </View>
-            <View ref={actionControlsRef} collapsable={false}>
-              <ActionBar
-                state={gameState}
-                onChallenge={challenge}
-                onSpotOn={spotOn}
-                showHints={showHints}
-                enabled={controlsEnabled && !!gameState.currentBid}
-              />
-            </View>
-          </View>
-        )}
+          )}
+        </View>
       </View>
 
       {showTutorialPrompt ? (

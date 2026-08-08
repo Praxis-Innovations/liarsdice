@@ -13,26 +13,31 @@ interface PlayTopBarProps {
   compact: boolean;
   tutorialMode: boolean;
   showHints: boolean;
+  zoomLevel: number;
   onBack: () => void;
   onToggleHints: () => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
   statusRef?: React.RefObject<View | null>;
 }
 
 function IconButton({
   label,
   active,
+  disabled,
   onPress,
   children,
 }: {
   label: string;
   active?: boolean;
+  disabled?: boolean;
   onPress: () => void;
   children: React.ReactNode;
 }) {
   const { colors } = useTheme();
   return (
     <Pressable
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
       accessibilityLabel={label}
       hitSlop={6}
       style={{
@@ -45,6 +50,7 @@ function IconButton({
         borderWidth: 1,
         borderColor: active ? colors.accent : colors.border,
         flexShrink: 0,
+        opacity: disabled ? 0.35 : 1,
       }}
     >
       {children}
@@ -60,8 +66,11 @@ export function PlayTopBar({
   compact,
   tutorialMode,
   showHints,
+  zoomLevel,
   onBack,
   onToggleHints,
+  onZoomIn,
+  onZoomOut,
   statusRef,
 }: PlayTopBarProps) {
   const { colors, spacing } = useTheme();
@@ -86,6 +95,17 @@ export function PlayTopBar({
     </IconButton>
   ) : null;
 
+  const zoomButtons = (
+    <>
+      <IconButton label="Zoom out" disabled={zoomLevel <= 0.5} onPress={onZoomOut}>
+        <Ionicons name="remove" size={18} color={zoomLevel <= 0.5 ? colors.textSecondary : colors.textPrimary} />
+      </IconButton>
+      <IconButton label="Zoom in" disabled={zoomLevel >= 1.5} onPress={onZoomIn}>
+        <Ionicons name="add" size={18} color={zoomLevel >= 1.5 ? colors.textSecondary : colors.textPrimary} />
+      </IconButton>
+    </>
+  );
+
   // Phone: single row — mode badge hidden via compact, turn badge fits inline.
   if (compact) {
     return (
@@ -100,6 +120,7 @@ export function PlayTopBar({
         <View style={{ flex: 1 }} />
         <GameStatus state={state} phase={phase} dense compact />
         <DiceCountChip state={state} dense />
+        {zoomButtons}
         {hintsToggle}
       </View>
     );
@@ -124,6 +145,7 @@ export function PlayTopBar({
 
       <View className="flex-row items-center justify-end" style={{ gap: 6, flex: 1, minWidth: 0 }}>
         <GameStatus state={state} phase={phase} dense={dense} />
+        {zoomButtons}
         {hintsToggle}
       </View>
     </View>
