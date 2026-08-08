@@ -111,8 +111,8 @@ export const useGameStore = create<GameStore>((set, get) => {
       loadPreference(PREFERENCE_KEYS.soundEnabled, true),
       loadPreference(PREFERENCE_KEYS.tutorialCompleted, false),
       AsyncStorage.getItem(PREFERENCE_KEYS.zoomLevel).then((v) => {
-        const n = v !== null ? parseFloat(v) : 1.0;
-        return Number.isFinite(n) ? Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, n)) : 1.0;
+        const n = v !== null ? parseFloat(v) : 0.8;
+        return Number.isFinite(n) ? Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, n)) : 0.8;
       }),
     ]).then(([showHints, soundEnabled, tutorialCompleted, zoomLevel]) => {
       set({ showHints, soundEnabled, tutorialCompleted, zoomLevel, prefsLoaded: true });
@@ -131,7 +131,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     tutorialStep: 0,
     showTutorialPrompt: false,
     prefsLoaded: false,
-    zoomLevel: 1.0,
+    zoomLevel: 0.8,
 
     updateSettings: (partial) => {
       set((state) => ({ settings: { ...state.settings, ...partial } }));

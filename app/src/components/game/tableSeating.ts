@@ -349,8 +349,7 @@ export function layoutTableSeats(
   const count = Math.min(6, Math.max(2, Math.floor(playerCount)));
   const hi = Math.max(0, Math.min(count - 1, humanIndex));
   const sizeTier = options.sizeTier ?? "compact";
-  const padding =
-    options.padding ?? Math.max(4, Math.min(10, Math.floor(Math.min(arenaWidth, arenaHeight) * 0.015)));
+  const padding = options.padding ?? 0;
   const maxDice = options.maxDice ?? DICE_PER_PLAYER;
   const minGap = options.minGap ?? 4;
   const minDie = options.minDieSize ?? 9;
