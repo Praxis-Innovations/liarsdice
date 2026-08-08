@@ -30,7 +30,7 @@ export function getPlatformMetrics(width: number, heroHeight: number): PlatformM
     const platformWidth = Math.min(width - widthPad * 2, 380);
     const platformHeight = 64;
     const left = (width - platformWidth) / 2;
-    const bottom = 20;
+    const bottom = -10;
     const top = heroHeight - bottom - platformHeight;
     return {
       left,
