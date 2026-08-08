@@ -259,6 +259,7 @@ export function GameBoard() {
                   flex: 1,
                   width: "100%",
                   minHeight: 160,
+                  maxHeight: Math.round(availableHeight * 0.52),
                 }
               : {
                   height: tableHeight,

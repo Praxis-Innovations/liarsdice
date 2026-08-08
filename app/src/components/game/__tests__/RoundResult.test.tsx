@@ -118,6 +118,46 @@ describe("RoundResult", () => {
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
+  it("colors outcome green when human wins", async () => {
+    const state = makeState({
+      challenger: "human",
+      challengedPlayer: "ai-1",
+      challengeType: "liar",
+      currentBid: { quantity: 4, faceValue: 3 },
+      allDice: {},
+      actualCount: 2,
+      challengerWins: true,
+      loser: "ai-1",
+      diceGained: false,
+    });
+    const { getByText } = await renderResult(state);
+    const outcomeEl = getByText("You wins");
+    const style = Array.isArray(outcomeEl.props.style)
+      ? Object.assign({}, ...outcomeEl.props.style)
+      : outcomeEl.props.style;
+    expect(style.color).toBe("#00B894");
+  });
+
+  it("colors outcome red when human loses", async () => {
+    const state = makeState({
+      challenger: "ai-1",
+      challengedPlayer: "human",
+      challengeType: "liar",
+      currentBid: { quantity: 2, faceValue: 3 },
+      allDice: {},
+      actualCount: 4,
+      challengerWins: true,
+      loser: "human",
+      diceGained: false,
+    });
+    const { getByText } = await renderResult(state);
+    const outcomeEl = getByText("Silver Fox wins");
+    const style = Array.isArray(outcomeEl.props.style)
+      ? Object.assign({}, ...outcomeEl.props.style)
+      : outcomeEl.props.style;
+    expect(style.color).toBe("#D62839");
+  });
+
   it("returns null without a last round result", async () => {
     const state = makeState({
       challenger: "human",
