@@ -58,7 +58,6 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
   const nameSize = compactSeat ? (sizeTier === "roomy" ? 19 : sizeTier === "regular" ? 17 : 16) : isHuman ? 16 : 15;
   const chip = sizeTier === "roomy" ? 32 : sizeTier === "regular" ? 30 : 28;
   const displayName = isHuman ? "You" : player.name;
-  const initial = (isHuman ? "Y" : player.name.trim().charAt(0) || "?").toUpperCase();
 
   // Always fit a single row of dice inside the card width.
   const cols = Math.max(diceColumns, DICE_PER_PLAYER);
@@ -139,27 +138,6 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
             minHeight: chip,
           }}
         >
-          <View
-            style={{
-              width: chip,
-              height: chip,
-              borderRadius: chip / 2,
-              backgroundColor: isHuman ? `${colors.primary}33` : `${colors.secondary}28`,
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Text
-              style={{
-                color: isHuman ? colors.primary : colors.secondary,
-                fontFamily: typography.bodySemibold.fontFamily,
-                fontSize: sizeTier === "compact" ? 13 : 14,
-              }}
-            >
-              {initial}
-            </Text>
-          </View>
           <Text
             style={{
               color: colors.textPrimary,

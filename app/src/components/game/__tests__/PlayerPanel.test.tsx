@@ -55,10 +55,9 @@ async function renderPanel(player: Player, overrides: Partial<React.ComponentPro
 }
 
 describe("PlayerPanel", () => {
-  it("labels the human seat as You with a Y chip", async () => {
+  it("labels the human seat as You", async () => {
     const { getByText } = await renderPanel(human);
     expect(getByText("You")).toBeTruthy();
-    expect(getByText("Y")).toBeTruthy();
   });
 
   it("shows opponent name and TURN badge on their turn", async () => {
@@ -67,14 +66,13 @@ describe("PlayerPanel", () => {
     expect(getByText("TURN")).toBeTruthy();
   });
 
-  it("reverses avatar/name row when outwardAlign is right", async () => {
+  it("reverses name row when outwardAlign is right", async () => {
     const { getByText } = await renderPanel(bot, {
       isHuman: false,
       showDice: false,
       outwardAlign: "right",
     });
     expect(getByText("Silver Fox")).toBeTruthy();
-    expect(getByText("S")).toBeTruthy();
   });
 
   it("renders eliminated state", async () => {
