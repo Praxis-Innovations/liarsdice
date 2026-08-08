@@ -22,6 +22,8 @@ async function renderBar(
 ) {
   const onBack = jest.fn();
   const onToggleHints = jest.fn();
+  const onZoomIn = jest.fn();
+  const onZoomOut = jest.fn();
   const view = await render(
     <ThemeProvider>
       <PlayTopBar
@@ -31,13 +33,16 @@ async function renderBar(
         compact={overrides.compact ?? false}
         tutorialMode={overrides.tutorialMode ?? false}
         showHints={overrides.showHints ?? false}
+        zoomLevel={1.0}
         onBack={onBack}
         onToggleHints={onToggleHints}
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
       />
     </ThemeProvider>,
   );
   await waitFor(() => expect(view.getByText("Round 2")).toBeTruthy());
-  return Object.assign(view, { onBack, onToggleHints });
+  return Object.assign(view, { onBack, onToggleHints, onZoomIn, onZoomOut });
 }
 
 describe("PlayTopBar", () => {

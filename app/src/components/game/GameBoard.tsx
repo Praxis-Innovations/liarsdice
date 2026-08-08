@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef } from "react";
-import { View, useWindowDimensions } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { LayoutChangeEvent, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGameStore } from "../../engine/gameStore";
 import type { DieValue } from "../../engine/types";
@@ -60,6 +60,12 @@ export function GameBoard() {
   /** Phone stays tight; tablet/desktop get roomier play chrome. */
   const sizeTier: "compact" | "regular" | "roomy" =
     compact || (dense && bp === "tablet") ? "compact" : bp === "laptop" ? "roomy" : "regular";
+
+  const [zoomBox, setZoomBox] = useState({ w: 0, h: 0 });
+  const onZoomBoxLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width: w, height: h } = e.nativeEvent.layout;
+    setZoomBox((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+  }, []);
 
   const gameContainerRef = useRef<View>(null) as React.RefObject<View>;
   const gameStatusRef = useRef<View>(null) as React.RefObject<View>;
@@ -258,7 +264,19 @@ export function GameBoard() {
           onZoomOut={zoomOut}
         />
 
-        <View style={{ flex: 1, transform: [{ scale: zoomLevel }] }}>
+        <View style={{ flex: 1 }} onLayout={onZoomBoxLayout}>
+         <View
+          style={
+            zoomBox.w > 0
+              ? {
+                  width: zoomBox.w / zoomLevel,
+                  height: zoomBox.h / zoomLevel,
+                  transform: [{ scale: zoomLevel }],
+                  transformOrigin: "0% 0%",
+                }
+              : { flex: 1 }
+          }
+         >
           <View
             style={
               compact
@@ -374,6 +392,7 @@ export function GameBoard() {
               </View>
             </View>
           )}
+         </View>
         </View>
       </View>
 
