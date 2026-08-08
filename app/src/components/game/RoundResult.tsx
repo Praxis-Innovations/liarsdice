@@ -39,7 +39,8 @@ export function RoundResult({
   const bidder = state.players.find((p) => p.id === result.challengedPlayer);
   const loser = state.players.find((p) => p.id === result.loser);
   const isSpotOn = result.challengeType === "spot-on";
-  const resultColor = result.challengerWins ? colors.secondary : colors.danger;
+  const humanWon = result.loser !== "human";
+  const resultColor = humanWon ? colors.secondary : colors.danger;
   const challengerName = displayName(challenger);
   const bidderName = displayName(bidder);
   const loserName = displayName(loser);

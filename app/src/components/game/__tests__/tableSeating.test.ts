@@ -191,4 +191,27 @@ describe("layoutTableSeats", () => {
     expect(seats.find((s) => s.playerIndex === 2)?.isHuman).toBe(true);
     expect(seats.filter((s) => s.isHuman)).toHaveLength(1);
   });
+
+  it("assigns outwardAlign to every seat with center for human", () => {
+    const seats = layoutTableSeats(390, 480, 4, 0, { sizeTier: "compact" });
+    for (const s of seats) {
+      expect(["left", "right", "center"]).toContain(s.outwardAlign);
+    }
+    const human = seats.find((s) => s.isHuman)!;
+    expect(human.outwardAlign).toBe("center");
+  });
+
+  it("gives left-side opponents left align and right-side opponents right align", () => {
+    const seats = layoutTableSeats(390, 480, 4, 0, { sizeTier: "compact" });
+    const opponents = seats.filter((s) => !s.isHuman);
+    const felt = getFeltBounds(390, 480, "compact");
+    for (const opp of opponents) {
+      const cx = opp.x + opp.width / 2;
+      if (cx > felt.cx + 20) {
+        expect(opp.outwardAlign).toBe("right");
+      } else if (cx < felt.cx - 20) {
+        expect(opp.outwardAlign).toBe("left");
+      }
+    }
+  });
 });

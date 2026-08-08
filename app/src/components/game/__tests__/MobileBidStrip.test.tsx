@@ -50,6 +50,15 @@ function makeStripState(overrides: Parameters<typeof makeGameState>[0] = {}) {
   });
 }
 
+function flattenStyle(style: unknown): Record<string, unknown> {
+  if (style == null) return {};
+  if (Array.isArray(style)) {
+    return style.reduce<Record<string, unknown>>((acc, item) => ({ ...acc, ...flattenStyle(item) }), {});
+  }
+  if (typeof style === "object") return style as Record<string, unknown>;
+  return {};
+}
+
 describe("MobileBidStrip", () => {
   it("shows empty-round copy before any bid", async () => {
     const view = await render(<MobileBidStrip state={makeStripState()} />);
@@ -80,5 +89,45 @@ describe("MobileBidStrip", () => {
     expect(view.getByText("2×1s")).toBeTruthy();
     expect(view.getByText("Silver Fox")).toBeTruthy();
     expect(view.getByText("3 × 2s")).toBeTruthy();
+  });
+
+  it("uses a fixed height for both empty and non-empty states", async () => {
+    const emptyView = await render(<MobileBidStrip state={makeStripState()} />);
+    const emptyText = emptyView.getByText("Open the round");
+    // Walk up to find the container with height: 148
+    let node = emptyText.parent;
+    let foundEmpty = false;
+    while (node) {
+      if (flattenStyle(node.props.style).height === 148) {
+        foundEmpty = true;
+        break;
+      }
+      node = node.parent;
+    }
+    expect(foundEmpty).toBe(true);
+
+    const bidsView = await render(
+      <MobileBidStrip
+        state={makeStripState({
+          currentBid: { quantity: 1, faceValue: 1 },
+          lastBidder: "human",
+          isFirstBidOfRound: false,
+          roundHistory: [
+            { type: "bid", playerId: "human", bid: { quantity: 1, faceValue: 1 } },
+          ],
+        })}
+      />,
+    );
+    const bidsText = bidsView.getByText("Round bids");
+    let bidsNode = bidsText.parent;
+    let foundBids = false;
+    while (bidsNode) {
+      if (flattenStyle(bidsNode.props.style).height === 148) {
+        foundBids = true;
+        break;
+      }
+      bidsNode = bidsNode.parent;
+    }
+    expect(foundBids).toBe(true);
   });
 });

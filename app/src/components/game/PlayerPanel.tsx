@@ -4,7 +4,7 @@ import { DICE_PER_PLAYER } from "../../engine/constants";
 import type { DieValue, Player } from "../../engine/types";
 import { useTheme } from "../../theme/ThemeProvider";
 import { DiceRow } from "./DiceDisplay";
-import { fitDieInSeat, type PlaySizeTier } from "./tableSeating";
+import { fitDieInSeat, type OutwardAlign, type PlaySizeTier } from "./tableSeating";
 
 interface PlayerPanelProps {
   player: Player;
@@ -20,6 +20,7 @@ interface PlayerPanelProps {
   compactSeat?: boolean;
   diceColumns?: number;
   sizeTier?: PlaySizeTier;
+  outwardAlign?: OutwardAlign;
 }
 
 export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function PlayerPanel(
@@ -36,6 +37,7 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
     compactSeat = false,
     diceColumns = 5,
     sizeTier = "compact",
+    outwardAlign = "center",
   },
   ref,
 ) {
@@ -56,7 +58,6 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
   const nameSize = compactSeat ? (sizeTier === "roomy" ? 19 : sizeTier === "regular" ? 17 : 16) : isHuman ? 16 : 15;
   const chip = sizeTier === "roomy" ? 32 : sizeTier === "regular" ? 30 : 28;
   const displayName = isHuman ? "You" : player.name;
-  const initial = (isHuman ? "Y" : player.name.trim().charAt(0) || "?").toUpperCase();
 
   // Always fit a single row of dice inside the card width.
   const cols = Math.max(diceColumns, DICE_PER_PLAYER);
@@ -129,30 +130,14 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
     >
       {compactSeat ? (
         <View
-          className="flex-row items-center"
-          style={{ gap: sizeTier === "compact" ? 6 : 8, width: "100%", minHeight: chip }}
+          style={{
+            flexDirection: outwardAlign === "right" ? "row-reverse" : "row",
+            alignItems: "center",
+            gap: sizeTier === "compact" ? 6 : 8,
+            width: "100%",
+            minHeight: chip,
+          }}
         >
-          <View
-            style={{
-              width: chip,
-              height: chip,
-              borderRadius: chip / 2,
-              backgroundColor: isHuman ? `${colors.primary}33` : `${colors.secondary}28`,
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Text
-              style={{
-                color: isHuman ? colors.primary : colors.secondary,
-                fontFamily: typography.bodySemibold.fontFamily,
-                fontSize: sizeTier === "compact" ? 13 : 14,
-              }}
-            >
-              {initial}
-            </Text>
-          </View>
           <Text
             style={{
               color: colors.textPrimary,

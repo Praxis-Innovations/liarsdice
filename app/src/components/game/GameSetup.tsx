@@ -35,30 +35,38 @@ export function GameSetup({
 }: GameSetupProps) {
   const { colors, radii, spacing, typography } = useTheme();
 
-  const sectionGap = density === 0 ? spacing.xl : density === 1 ? spacing.lg : spacing.md + 4;
-  const cardPad = density === 2 ? spacing.md : spacing.md + 4;
+  const isDense = density === 2;
+  const sectionGap = density === 0 ? spacing.xl : density === 1 ? spacing.lg : spacing.md;
+  const cardPad = isDense ? 14 : spacing.md + 4;
   const showRuleHints = density < 2;
   const selectedDifficulty =
     GAME_SETUP_DIFFICULTIES.find((d) => d.value === settings.aiDifficulty) ?? GAME_SETUP_DIFFICULTIES[1];
   const formMaxWidth =
-    density === 2 ? GAME_SETUP_LAYOUT.maxWidth.dense : GAME_SETUP_LAYOUT.maxWidth.comfortable;
+    isDense ? GAME_SETUP_LAYOUT.maxWidth.dense : GAME_SETUP_LAYOUT.maxWidth.comfortable;
   const titleSize =
     density === 0
       ? GAME_SETUP_LAYOUT.titleSize.comfortable
       : density === 1
         ? GAME_SETUP_LAYOUT.titleSize.medium
         : GAME_SETUP_LAYOUT.titleSize.dense;
+  const labelFontSize = isDense ? GAME_SETUP_LAYOUT.labelSize.dense : GAME_SETUP_LAYOUT.labelSize.default;
+  const bodyFontSize = isDense ? GAME_SETUP_LAYOUT.bodySize.dense : GAME_SETUP_LAYOUT.bodySize.default;
+  const captionFontSize = isDense ? GAME_SETUP_LAYOUT.captionSize.dense : GAME_SETUP_LAYOUT.captionSize.default;
+  const chipFontSize = isDense ? GAME_SETUP_LAYOUT.chipLabelSize.dense : GAME_SETUP_LAYOUT.chipLabelSize.default;
+  const countFontSize = isDense ? GAME_SETUP_LAYOUT.playerCountSize.dense : GAME_SETUP_LAYOUT.playerCountSize.default;
+  const nameInputWidth = isDense ? GAME_SETUP_LAYOUT.nameInput.width.dense : GAME_SETUP_LAYOUT.nameInput.width.default;
+  const ctaFontSize = isDense ? 14 : 16;
 
   const card = {
     backgroundColor: colors.surfaceRaised,
     borderRadius: radii.md,
     padding: cardPad,
-    gap: density === 2 ? 8 : spacing.sm + 2,
+    gap: isDense ? 6 : spacing.sm + 2,
   };
   const label = {
     color: colors.accent,
     fontFamily: typography.bodySemibold.fontFamily,
-    fontSize: GAME_SETUP_LAYOUT.labelSize,
+    fontSize: labelFontSize,
   };
   const rowCard = {
     ...card,
@@ -100,7 +108,7 @@ export function GameSetup({
           maxLength={20}
           placeholder="Your name"
           style={{
-            width: GAME_SETUP_LAYOUT.nameInput.width,
+            width: nameInputWidth,
             maxWidth: GAME_SETUP_LAYOUT.nameInput.maxWidth,
           }}
         />
@@ -113,7 +121,7 @@ export function GameSetup({
             style={{
               color: colors.textSecondary,
               fontFamily: typography.caption.fontFamily,
-              fontSize: GAME_SETUP_LAYOUT.captionSize,
+              fontSize: captionFontSize,
             }}
           >
             {MIN_PLAYERS}–{MAX_PLAYERS} total
@@ -129,7 +137,7 @@ export function GameSetup({
             style={{
               color: colors.textPrimary,
               fontFamily: typography.h2.fontFamily,
-              fontSize: GAME_SETUP_LAYOUT.playerCountSize,
+              fontSize: countFontSize,
               minWidth: 34,
               textAlign: "center",
             }}
@@ -167,7 +175,7 @@ export function GameSetup({
                   borderWidth: 2,
                   borderColor: selected ? colors.accent : colors.border,
                   backgroundColor: selected ? `${colors.accent}18` : colors.surface,
-                  paddingVertical: density === 2 ? 10 : 12,
+                  paddingVertical: isDense ? 8 : 12,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
@@ -176,7 +184,7 @@ export function GameSetup({
                   style={{
                     color: colors.textPrimary,
                     fontFamily: typography.bodySemibold.fontFamily,
-                    fontSize: GAME_SETUP_LAYOUT.chipLabelSize,
+                    fontSize: chipFontSize,
                     textAlign: "center",
                   }}
                 >
@@ -191,7 +199,7 @@ export function GameSetup({
           style={{
             color: colors.textSecondary,
             fontFamily: typography.caption.fontFamily,
-            fontSize: GAME_SETUP_LAYOUT.captionSize,
+            fontSize: captionFontSize,
             lineHeight: 20,
           }}
         >
@@ -202,13 +210,13 @@ export function GameSetup({
       <View testID={GAME_SETUP_TEST_IDS.rulesSection} style={card}>
         <Text style={label}>Optional Rules</Text>
 
-        <View className="flex-row items-center justify-between" style={{ minHeight: density === 2 ? 44 : 52 }}>
+        <View className="flex-row items-center justify-between" style={{ minHeight: isDense ? 38 : 52 }}>
           <View style={{ flex: 1, marginRight: spacing.sm, paddingRight: spacing.xs }}>
             <Text
               style={{
                 color: colors.textPrimary,
                 fontFamily: typography.body.fontFamily,
-                fontSize: GAME_SETUP_LAYOUT.bodySize,
+                fontSize: bodyFontSize,
               }}
             >
               Spot On
@@ -218,7 +226,7 @@ export function GameSetup({
                 style={{
                   color: colors.textSecondary,
                   fontFamily: typography.caption.fontFamily,
-                  fontSize: GAME_SETUP_LAYOUT.captionSize,
+                  fontSize: captionFontSize,
                 }}
               >
                 Exact-count bonus die
@@ -232,13 +240,13 @@ export function GameSetup({
           />
         </View>
 
-        <View className="flex-row items-center justify-between" style={{ minHeight: density === 2 ? 44 : 52 }}>
+        <View className="flex-row items-center justify-between" style={{ minHeight: isDense ? 38 : 52 }}>
           <View style={{ flex: 1, marginRight: spacing.sm, paddingRight: spacing.xs }}>
             <Text
               style={{
                 color: colors.textPrimary,
                 fontFamily: typography.body.fontFamily,
-                fontSize: GAME_SETUP_LAYOUT.bodySize,
+                fontSize: bodyFontSize,
               }}
             >
               Palifico Rounds
@@ -248,7 +256,7 @@ export function GameSetup({
                 style={{
                   color: colors.textSecondary,
                   fontFamily: typography.caption.fontFamily,
-                  fontSize: GAME_SETUP_LAYOUT.captionSize,
+                  fontSize: captionFontSize,
                 }}
               >
                 Special round at 1 die
@@ -269,7 +277,7 @@ export function GameSetup({
             label={GAME_SETUP_LAYOUT.actionsOrder[0]}
             variant="ghost"
             fullWidth
-            labelFontSize={16}
+            labelFontSize={ctaFontSize}
             onPress={onStartTutorial}
           />
         </View>
@@ -277,7 +285,7 @@ export function GameSetup({
           <Button
             label={GAME_SETUP_LAYOUT.actionsOrder[1]}
             fullWidth
-            labelFontSize={16}
+            labelFontSize={ctaFontSize}
             onPress={onStart}
           />
         </View>

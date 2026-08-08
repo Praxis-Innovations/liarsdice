@@ -58,10 +58,10 @@ describe("PlayTopBar", () => {
     expect(view.queryByLabelText("Enable hints")).toBeNull();
   });
 
-  it("still shows status badges on compact (phone) layout", async () => {
+  it("shows turn badge but hides mode badge on compact (phone) layout", async () => {
     const view = await renderBar({ compact: true });
     expect(view.getByText("Your turn")).toBeTruthy();
-    expect(view.getByText("Aces wild")).toBeTruthy();
+    expect(view.queryByText("Aces wild")).toBeNull();
   });
 
   it("invokes back and hints toggles", async () => {

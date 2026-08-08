@@ -69,14 +69,17 @@ function flattenStyle(style: unknown): Record<string, unknown> {
 describe("GAME_SETUP_LAYOUT contract", () => {
   it("locks column width, name input size, row directions, and CTA order", () => {
     expect(GAME_SETUP_LAYOUT.maxWidth.comfortable).toBe(475);
-    expect(GAME_SETUP_LAYOUT.maxWidth.dense).toBe(450);
-    expect(GAME_SETUP_LAYOUT.nameInput.width).toBe(175);
+    expect(GAME_SETUP_LAYOUT.maxWidth.dense).toBe(400);
+    expect(GAME_SETUP_LAYOUT.nameInput.width.default).toBe(175);
+    expect(GAME_SETUP_LAYOUT.nameInput.width.dense).toBe(155);
     expect(GAME_SETUP_LAYOUT.nameInput.maxWidth).toBe("48%");
     expect(GAME_SETUP_LAYOUT.rowDirection).toBe("row");
     expect(GAME_SETUP_LAYOUT.difficultyDirection).toBe("row");
     expect(GAME_SETUP_LAYOUT.actionsOrder).toEqual(["Tutorial", "Start Game"]);
     expect(GAME_SETUP_LAYOUT.titleSize.comfortable).toBe(35);
-    expect(GAME_SETUP_LAYOUT.labelSize).toBe(16);
+    expect(GAME_SETUP_LAYOUT.titleSize.dense).toBe(25);
+    expect(GAME_SETUP_LAYOUT.labelSize.default).toBe(16);
+    expect(GAME_SETUP_LAYOUT.labelSize.dense).toBe(14);
   });
 
   it("locks difficulty copy shown under the chip row", () => {
@@ -123,7 +126,7 @@ describe("GameSetup UI", () => {
     const { getByTestId } = await renderSetup();
 
     const inputStyle = flattenStyle(getByTestId(GAME_SETUP_TEST_IDS.nameInput).props.style);
-    expect(inputStyle.width).toBe(GAME_SETUP_LAYOUT.nameInput.width);
+    expect(inputStyle.width).toBe(GAME_SETUP_LAYOUT.nameInput.width.default);
     expect(inputStyle.maxWidth).toBe(GAME_SETUP_LAYOUT.nameInput.maxWidth);
   });
 
@@ -154,9 +157,7 @@ describe("GameSetup UI", () => {
 
   it("uses the dense max width only on density 2", async () => {
     const { getByTestId, rerender } = await renderSetup({ density: 0 });
-    expect(flattenStyle(getByTestId(GAME_SETUP_TEST_IDS.root).props.style).maxWidth).toBe(
-      GAME_SETUP_LAYOUT.maxWidth.comfortable,
-    );
+    expect(flattenStyle(getByTestId(GAME_SETUP_TEST_IDS.root).props.style).maxWidth).toBe(475);
 
     await rerender(
       <ThemeProvider>
@@ -170,9 +171,7 @@ describe("GameSetup UI", () => {
       </ThemeProvider>,
     );
 
-    expect(flattenStyle(getByTestId(GAME_SETUP_TEST_IDS.root).props.style).maxWidth).toBe(
-      GAME_SETUP_LAYOUT.maxWidth.dense,
-    );
+    expect(flattenStyle(getByTestId(GAME_SETUP_TEST_IDS.root).props.style).maxWidth).toBe(400);
   });
 
   it("hides optional-rule hints on density 2 but keeps the switches", async () => {

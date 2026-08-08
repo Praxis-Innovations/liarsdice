@@ -236,6 +236,7 @@ export function GameTable({
               diceColumns={seat.diceColumns}
               compactSeat
               sizeTier={sizeTier}
+              outwardAlign={seat.outwardAlign}
             />
           </View>
         );

@@ -43,7 +43,7 @@ export function MobileBidStrip({ state }: { state: GameState }) {
           paddingVertical: 12,
           paddingHorizontal: spacing.md,
           alignItems: "center",
-          minHeight: 72,
+          height: 148,
           justifyContent: "center",
         }}
       >
@@ -85,8 +85,8 @@ export function MobileBidStrip({ state }: { state: GameState }) {
         paddingHorizontal: spacing.sm,
         paddingTop: 8,
         paddingBottom: 8,
-        minHeight: 148,
-        maxHeight: 196,
+        height: 148,
+        justifyContent: "flex-end",
       }}
     >
       <Text
@@ -106,7 +106,7 @@ export function MobileBidStrip({ state }: { state: GameState }) {
       {prior.length > 0 ? (
         <ScrollView
           ref={scrollRef}
-          style={{ flexGrow: 0, flexShrink: 1, maxHeight: 96 }}
+          style={{ flexGrow: 0, flexShrink: 1 }}
           contentContainerStyle={{ gap: 4, paddingBottom: 4 }}
           showsVerticalScrollIndicator={prior.length > 4}
           nestedScrollEnabled

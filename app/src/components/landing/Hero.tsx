@@ -66,7 +66,7 @@ export function Hero() {
 
   // Reserve the dice height as well as the pad, so CTA/caption never cross the table stage.
   const contentBottomPad =
-    platform.height + getDiceBand(bp, width).maxSize + (isPhone ? 68 : bp === "tablet" ? 100 : 140);
+    platform.height + getDiceBand(bp, width).maxSize + (isPhone ? 100 : bp === "tablet" ? 100 : 140);
   // Extend the dice stage behind the sticky header on every breakpoint.
   const diceCanvasOffset = headerOffset;
   // Spotlight is stage-local: anchored to the dice platform, not the full hero width.
