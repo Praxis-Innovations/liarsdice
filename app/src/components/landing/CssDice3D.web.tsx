@@ -2,13 +2,13 @@
  * Web hero dice — vanilla Three.js WebGL (not CSS 3D; filename is historical).
  * Native builds resolve `CssDice3D.tsx` instead and never load this module.
  */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { View } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { DieFace } from "../shared/Die";
-import { ScatteredDice, type ScatteredDieConfig } from "./AnimatedDice";
 import type { DiceTableConfig } from "./DicePlatform";
+import { isHeroDiceTossComplete } from "./dicePlatformLayout";
 
 type DieData = {
   face: DieFace;
@@ -128,8 +128,8 @@ function createTable(table: DiceTableConfig, canvasWidth: number, canvasHeight: 
       depthWrite: false,
     }),
   );
+  // Lie on the table plane — readable under the elevated table camera.
   pad.rotation.x = -Math.PI / 2;
-  // Slightly deeper than wide-screen default so the halo has more vertical presence.
   pad.scale.set(table.width * 0.54, padDepth * 0.7, 1);
   pad.position.set(centerX, surfaceY - 1, -padDepth * 0.08);
   group.add(pad);
@@ -282,7 +282,6 @@ export function ScatteredCssDice({
   verticalOffset?: number;
 }) {
   const hostRef = useRef<View>(null);
-  const [webglReady, setWebglReady] = useState(false);
 
   useEffect(() => {
     if (dice.length === 0 || width < 32 || height < 32) return;
@@ -317,6 +316,7 @@ export function ScatteredCssDice({
       canvas.style.height = `${height}px`;
       canvas.style.pointerEvents = "none";
       canvas.style.display = "block";
+      canvas.style.background = "transparent";
       // Keep WebGL behind the semantic hero copy even in RN-web's DOM stacking contexts.
       canvas.style.zIndex = "0";
       host.appendChild(canvas);
@@ -337,10 +337,19 @@ export function ScatteredCssDice({
 
       const scene = new THREE.Scene();
       const camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, -1000, 1000);
-      // Person-at-the-table angle: elevated enough to reveal the die tops
-      // and table surface while dice remain physically flat.
-      camera.position.set(0, height * 0.3, 650);
-      camera.lookAt(0, -height * 0.08, 0);
+
+      // Landing line in world-Y (same space as toWorld).
+      const surfaceWorldY = table
+        ? height / 2 - (table.surfaceTop + verticalOffset)
+        : 0;
+      // Elevated table angle so flat-resting dice show their TOP faces…
+      camera.position.set(0, surfaceWorldY + 280, 560);
+      camera.lookAt(0, surfaceWorldY, 0);
+      // …but lookAt would park the surface at screen-center. Pan the ortho
+      // frustum so that point stays at its layout Y (e.g. 80% on mobile).
+      camera.top = height / 2 - surfaceWorldY;
+      camera.bottom = -height / 2 - surfaceWorldY;
+      camera.updateProjectionMatrix();
 
       // Bright, even lighting — enough fill that faces never crush to black
       scene.add(new THREE.AmbientLight(0xffffff, 1.15));
@@ -379,11 +388,13 @@ export function ScatteredCssDice({
         const land = toWorld(die.left ?? 0, (die.top ?? 0) + verticalOffset, die.size, width, height);
         const tableDepth = die.tableDepth ?? 0;
         const euler = landEuler(die.face, index, 0);
-        // Always begin at the top of the extended canvas (behind the navbar).
+        // Fall from above the land pose (throwDistance in px), clamped to the
+        // canvas top so compact + laptop share the same toss feel.
         const canvasTopY = height / 2 - die.size / 2;
+        const throwPx = Math.max(die.size * 4, die.throwDistance ?? height * 0.65);
         const start = {
           x: land.x + (die.throwOffsetX ?? 0) * 0.15,
-          y: canvasTopY + (index % 3) * 10,
+          y: Math.min(canvasTopY + (index % 3) * 10, land.y + throwPx),
         };
         const landQuat = new THREE.Quaternion().setFromEuler(euler);
         const spins = [
@@ -415,6 +426,7 @@ export function ScatteredCssDice({
       });
 
       const duration = 1.05;
+      const lastDelay = animDice.reduce((max, d) => Math.max(max, d.delay), 0);
       const q = new THREE.Quaternion();
       const started = performance.now();
       let frame = 0;
@@ -423,9 +435,11 @@ export function ScatteredCssDice({
       const tick = (now: number) => {
         if (!alive) return;
         const elapsed = (now - started) / 1000;
+        let allLanded = true;
 
         for (const d of animDice) {
           const t = Math.max(0, Math.min(1, (elapsed - d.delay) / duration));
+          if (t < 1) allLanded = false;
           const e = easeGravity(t);
           // Vertical drop only — X stays put
           d.mesh.position.x = THREE.MathUtils.lerp(d.start.x, d.land.x, Math.min(1, e * 1.1));
@@ -437,16 +451,20 @@ export function ScatteredCssDice({
         }
 
         renderer.render(scene, camera);
+        // Idle the GPU once every die has settled — keep the final frame on canvas.
+        if (allLanded || isHeroDiceTossComplete(elapsed, lastDelay, duration)) {
+          frame = 0;
+          return;
+        }
         frame = requestAnimationFrame(tick);
       };
 
       renderer.render(scene, camera);
-      setWebglReady(true);
       frame = requestAnimationFrame(tick);
 
       cleanupScene = () => {
         alive = false;
-        cancelAnimationFrame(frame);
+        if (frame) cancelAnimationFrame(frame);
         animDice.forEach((d) => {
           scene.remove(d.mesh);
           disposeObject3D(d.mesh);
@@ -457,7 +475,6 @@ export function ScatteredCssDice({
         }
         renderer.dispose();
         canvas.remove();
-        setWebglReady(false);
       };
     };
 
@@ -473,16 +490,23 @@ export function ScatteredCssDice({
     return null;
   }
 
+  // WebGL-only on web — no SVG/Reanimated double path while the canvas mounts.
   return (
-    <>
-      {!webglReady ? <ScatteredDice dice={dice as ScatteredDieConfig[]} pipColor={pipColor} /> : null}
-      <View
-        ref={hostRef}
-        collapsable={false}
-        pointerEvents="none"
-        style={{ position: "absolute", top: 0, left: 0, width, height, zIndex: 0 }}
-      />
-    </>
+    <View
+      ref={hostRef}
+      collapsable={false}
+      pointerEvents="none"
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width,
+        height,
+        zIndex: 0,
+        backgroundColor: "transparent",
+        overflow: "visible",
+      }}
+    />
   );
 }
 
