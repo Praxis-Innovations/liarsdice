@@ -5,16 +5,17 @@ import type { GameState, Player } from "../../engine/types";
 import { headingProps } from "../../lib/heading";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Button } from "../ui/Button";
+import { shortName } from "./shortName";
 
 interface RoundResultProps {
   state: GameState;
   onContinue: () => void;
   animating: boolean;
-  /** Compact banner for table-center / phone dock (default). */
+  /** Phone dock stacks vertically; desktop docks as a wide strip under the table. */
   compact?: boolean;
-  /** Hard size cap from the table center air (tablet+) or phone dock width. */
+  /** Fill the reserved controls dock height (mobile) so the table size stays put. */
+  fillDock?: boolean;
   maxWidth?: number;
-  maxHeight?: number;
 }
 
 function displayName(player: Player | undefined): string {
@@ -22,14 +23,120 @@ function displayName(player: Player | undefined): string {
   return player.id === "human" ? "You" : player.name;
 }
 
-/** Challenge / Spot On result card. */
+/** Second-person agreement: "You lose" / "Drake loses". */
+function withVerb(name: string, youForm: string, otherForm: string): string {
+  return `${name} ${name === "You" ? youForm : otherForm}`;
+}
+
+function BidActualColumns({
+  bidLabel,
+  actualValue,
+  actualCaption,
+  bidderLabel,
+  resultColor,
+  valueSize,
+  labelSize,
+  captionSize,
+  dividerWidth,
+  padV,
+  padH,
+  gap,
+  grow = false,
+  surface,
+  textPrimary,
+  textSecondary,
+  border,
+  radii,
+  captionFont,
+  valueFont,
+}: {
+  bidLabel: string;
+  actualValue: number;
+  actualCaption: string;
+  bidderLabel: string;
+  resultColor: string;
+  valueSize: number;
+  labelSize: number;
+  captionSize: number;
+  dividerWidth: number;
+  padV: number;
+  padH: number;
+  gap: number;
+  grow?: boolean;
+  surface: string;
+  textPrimary: string;
+  textSecondary: string;
+  border: string;
+  radii: number;
+  captionFont: string;
+  valueFont: string;
+}) {
+  return (
+    <View
+      style={{
+        flex: grow ? 1 : undefined,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: grow ? padH : 6,
+        paddingVertical: padV,
+        paddingHorizontal: padH,
+        borderRadius: radii,
+        backgroundColor: surface,
+        minWidth: 0,
+      }}
+    >
+      <View style={{ flex: 1, alignItems: "center", gap }}>
+        <Text
+          style={{
+            color: textSecondary,
+            fontFamily: captionFont,
+            fontSize: labelSize,
+            letterSpacing: 0.4,
+            textTransform: "uppercase",
+          }}
+        >
+          Bid
+        </Text>
+        <Text style={{ color: textPrimary, fontFamily: valueFont, fontSize: valueSize }}>{bidLabel}</Text>
+        <Text
+          style={{ color: textSecondary, fontFamily: captionFont, fontSize: captionSize }}
+          numberOfLines={1}
+        >
+          {bidderLabel}
+        </Text>
+      </View>
+
+      <View style={{ width: dividerWidth, alignSelf: "stretch", backgroundColor: border }} />
+
+      <View style={{ flex: 1, alignItems: "center", gap }}>
+        <Text
+          style={{
+            color: textSecondary,
+            fontFamily: captionFont,
+            fontSize: labelSize,
+            letterSpacing: 0.4,
+            textTransform: "uppercase",
+          }}
+        >
+          Actual
+        </Text>
+        <Text style={{ color: resultColor, fontFamily: valueFont, fontSize: valueSize }}>{actualValue}</Text>
+        <Text style={{ color: textSecondary, fontFamily: captionFont, fontSize: captionSize }}>
+          {actualCaption}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/** Challenge / Spot On result — docks under the table (not over the felt). */
 export function RoundResult({
   state,
   onContinue,
   animating,
   compact = true,
+  fillDock = false,
   maxWidth,
-  maxHeight,
 }: RoundResultProps) {
   const { colors, radii, spacing, typography } = useTheme();
   const result = state.lastRoundResult;
@@ -45,27 +152,130 @@ export function RoundResult({
   const bidderName = displayName(bidder);
   const loserName = displayName(loser);
 
-  const pad = compact ? spacing.sm : spacing.lg;
-  const titleSize = compact ? 20 : 28;
-  const outcomeSize = compact ? 16 : 24;
-  const valueSize = compact ? 18 : 24;
-  const cardMaxW = maxWidth ?? (compact ? 280 : 480);
-
+  const nameCap = compact ? 12 : 18;
   const outcomeLine = result.challengerWins
-    ? `${challengerName} wins`
-    : `${challengerName} loses`;
+    ? withVerb(shortName(challengerName, nameCap), "win", "wins")
+    : withVerb(shortName(challengerName, nameCap), "lose", "loses");
 
   let consequence = "";
   if (loser && loser.id !== "") {
-    consequence = `${loserName} loses a die`;
+    consequence = withVerb(shortName(loserName, nameCap), "lose a die", "loses a die");
     if (loser.diceCount <= 0) consequence += " — out";
-    if (result.diceGained) consequence += ` · ${challengerName} gains one`;
+    if (result.diceGained) {
+      consequence += ` · ${withVerb(shortName(challengerName, nameCap), "gain one", "gains one")}`;
+    }
   }
 
-  const callLine = isSpotOn
-    ? `${challengerName} · Spot On`
-    : `${challengerName} vs ${bidderName}`;
+  const title = isSpotOn ? "Spot On!" : "Liar!";
+  const bidLabel = `${result.currentBid.quantity}×${result.currentBid.faceValue}`;
+  const actualCaption = isSpotOn ? "exact" : "on table";
+  const continueLabel = state.gameOver ? "See Results" : "Next Round";
+  const bidderShort = shortName(bidderName, nameCap);
 
+  if (!compact) {
+    // Desktop / tablet: one wide strip under the table — room for CTA, no felt overlap.
+    return (
+      <MotiView
+        from={{ opacity: animating ? 0 : 1, translateY: animating ? 8 : 0 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: "timing", duration: 280 }}
+        style={{
+          width: "100%",
+          maxWidth: maxWidth ?? 960,
+          alignSelf: "center",
+          backgroundColor: colors.surfaceRaised,
+          borderRadius: radii.lg,
+          borderWidth: 2,
+          borderColor: resultColor,
+          paddingVertical: spacing.md,
+          paddingHorizontal: spacing.lg,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.md,
+          shadowColor: "#000",
+          shadowOpacity: 0.28,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 10,
+        }}
+      >
+        <View style={{ flexShrink: 0, gap: 2, minWidth: 120 }}>
+          <Text
+            {...headingProps(2)}
+            style={{
+              color: colors.accent,
+              fontFamily: typography.h2.fontFamily,
+              fontSize: 28,
+            }}
+          >
+            {title}
+          </Text>
+          <Text
+            style={{
+              color: resultColor,
+              fontFamily: typography.h3.fontFamily,
+              fontSize: 16,
+            }}
+            numberOfLines={1}
+          >
+            {outcomeLine}
+          </Text>
+        </View>
+
+        <BidActualColumns
+          bidLabel={bidLabel}
+          actualValue={result.actualCount}
+          actualCaption={actualCaption}
+          bidderLabel={bidderShort}
+          resultColor={resultColor}
+          valueSize={26}
+          labelSize={11}
+          captionSize={12}
+          dividerWidth={2}
+          padV={spacing.sm}
+          padH={spacing.md}
+          gap={2}
+          grow
+          surface={colors.surface}
+          textPrimary={colors.textPrimary}
+          textSecondary={colors.textSecondary}
+          border={colors.border}
+          radii={radii.md}
+          captionFont={typography.caption.fontFamily}
+          valueFont={typography.h3.fontFamily}
+        />
+
+        {consequence ? (
+          <Text
+            style={{
+              color: resultColor,
+              fontFamily: typography.h3.fontFamily,
+              fontSize: 16,
+              flexShrink: 1,
+              maxWidth: 160,
+            }}
+            numberOfLines={2}
+          >
+            {consequence}
+          </Text>
+        ) : null}
+
+        <Button
+          label={continueLabel}
+          variant="primary"
+          onPress={onContinue}
+          labelFontSize={17}
+          style={{ flexShrink: 0, minWidth: 150, paddingHorizontal: spacing.lg }}
+        />
+      </MotiView>
+    );
+  }
+
+  // Phone: stacked dock card — fillDock expands into the bid/button area.
+  const pad = fillDock ? spacing.md : spacing.sm;
+  const titleSize = fillDock ? 24 : 18;
+  const outcomeSize = fillDock ? 16 : 14;
+  const valueSize = fillDock ? 22 : 16;
   return (
     <MotiView
       from={{ opacity: animating ? 0 : 1, scale: animating ? 0.96 : 1 }}
@@ -75,12 +285,14 @@ export function RoundResult({
         backgroundColor: colors.surfaceRaised,
         borderRadius: radii.md,
         padding: pad,
-        gap: compact ? 6 : spacing.md,
+        gap: fillDock ? spacing.sm : 6,
         width: "100%",
-        maxWidth: cardMaxW,
-        maxHeight,
-        borderWidth: 1,
-        borderColor: colors.border,
+        maxWidth: maxWidth ?? 280,
+        flex: fillDock ? 1 : undefined,
+        height: fillDock ? "100%" : undefined,
+        justifyContent: fillDock ? "space-between" : undefined,
+        borderWidth: fillDock ? 2 : 1,
+        borderColor: fillDock ? resultColor : colors.border,
         shadowColor: "#000",
         shadowOpacity: 0.12,
         shadowRadius: 10,
@@ -88,130 +300,114 @@ export function RoundResult({
         elevation: 4,
       }}
     >
-      <View className="flex-row items-center justify-between" style={{ gap: 8 }}>
-        <Text
-          {...headingProps(2)}
-          style={{
-            color: colors.accent,
-            fontFamily: typography.h2.fontFamily,
-            fontSize: titleSize,
-            flexShrink: 0,
-          }}
-        >
-          {isSpotOn ? "Spot On!" : "Liar!"}
-        </Text>
-        <Text
-          style={{
-            color: resultColor,
-            fontFamily: typography.h3.fontFamily,
-            fontSize: outcomeSize,
-            flex: 1,
-            textAlign: "right",
-          }}
-          numberOfLines={1}
-        >
-          {outcomeLine}
-        </Text>
+      <View style={{ alignItems: "center", gap: fillDock ? 4 : 0 }}>
+        {fillDock ? (
+          <>
+            <Text
+              {...headingProps(2)}
+              style={{
+                color: colors.accent,
+                fontFamily: typography.h2.fontFamily,
+                fontSize: titleSize,
+                textAlign: "center",
+              }}
+            >
+              {title}
+            </Text>
+            <Text
+              style={{
+                color: resultColor,
+                fontFamily: typography.h3.fontFamily,
+                fontSize: outcomeSize,
+                textAlign: "center",
+              }}
+              numberOfLines={1}
+            >
+              {outcomeLine}
+            </Text>
+          </>
+        ) : (
+          <View className="flex-row items-center justify-between" style={{ gap: 8, width: "100%" }}>
+            <Text
+              {...headingProps(2)}
+              style={{
+                color: colors.accent,
+                fontFamily: typography.h2.fontFamily,
+                fontSize: titleSize,
+                flexShrink: 0,
+              }}
+            >
+              {title}
+            </Text>
+            <Text
+              style={{
+                color: resultColor,
+                fontFamily: typography.h3.fontFamily,
+                fontSize: outcomeSize,
+                flex: 1,
+                textAlign: "right",
+              }}
+              numberOfLines={1}
+            >
+              {outcomeLine}
+            </Text>
+          </View>
+        )}
       </View>
 
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: compact ? 6 : spacing.sm,
-          paddingVertical: compact ? 6 : spacing.sm,
-          paddingHorizontal: compact ? 8 : spacing.sm,
-          borderRadius: radii.sm,
-          backgroundColor: colors.surface,
-        }}
-      >
-        <View style={{ flex: 1, alignItems: "center", gap: 1 }}>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontFamily: typography.caption.fontFamily,
-              fontSize: 10,
-              letterSpacing: 0.4,
-              textTransform: "uppercase",
-            }}
-          >
-            Bid
-          </Text>
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontFamily: typography.h3.fontFamily,
-              fontSize: valueSize,
-            }}
-          >
-            {result.currentBid.quantity}×{result.currentBid.faceValue}
-          </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontFamily: typography.caption.fontFamily,
-              fontSize: 11,
-            }}
-            numberOfLines={1}
-          >
-            {bidderName}
-          </Text>
-        </View>
+      <BidActualColumns
+        bidLabel={bidLabel}
+        actualValue={result.actualCount}
+        actualCaption={actualCaption}
+        bidderLabel={bidderShort}
+        resultColor={resultColor}
+        valueSize={valueSize}
+        labelSize={10}
+        captionSize={11}
+        dividerWidth={1}
+        padV={fillDock ? spacing.sm : 4}
+        padH={fillDock ? spacing.sm : 8}
+        gap={fillDock ? 2 : 1}
+        surface={colors.surface}
+        textPrimary={colors.textPrimary}
+        textSecondary={colors.textSecondary}
+        border={colors.border}
+        radii={radii.sm}
+        captionFont={typography.caption.fontFamily}
+        valueFont={typography.h3.fontFamily}
+      />
 
-        <View style={{ width: 1, alignSelf: "stretch", backgroundColor: colors.border }} />
-
-        <View style={{ flex: 1, alignItems: "center", gap: 1 }}>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontFamily: typography.caption.fontFamily,
-              fontSize: 10,
-              letterSpacing: 0.4,
-              textTransform: "uppercase",
-            }}
-          >
-            Actual
-          </Text>
+      {consequence ? (
+        <View
+          style={{
+            borderRadius: radii.sm,
+            paddingVertical: fillDock ? 10 : 6,
+            paddingHorizontal: spacing.sm,
+            borderWidth: fillDock ? 2 : 0,
+            borderColor: resultColor,
+            backgroundColor: fillDock ? colors.surface : "transparent",
+            alignItems: "center",
+          }}
+        >
           <Text
             style={{
               color: resultColor,
               fontFamily: typography.h3.fontFamily,
-              fontSize: valueSize,
+              fontSize: fillDock ? 16 : 14,
+              textAlign: "center",
             }}
+            numberOfLines={2}
           >
-            {result.actualCount}
-          </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontFamily: typography.caption.fontFamily,
-              fontSize: 11,
-            }}
-            numberOfLines={1}
-          >
-            {isSpotOn ? "exact" : "on table"}
+            {consequence}
           </Text>
         </View>
-      </View>
-
-      <Text
-        style={{
-          color: colors.textSecondary,
-          fontFamily: typography.caption.fontFamily,
-          fontSize: 12,
-          textAlign: "center",
-        }}
-        numberOfLines={1}
-      >
-        {callLine}
-        {consequence ? ` · ${consequence}` : ""}
-      </Text>
+      ) : null}
 
       <Button
-        label={state.gameOver ? "See Results" : "Next Round"}
-        variant="secondary"
+        label={continueLabel}
+        variant="primary"
         fullWidth
-        compact={compact}
+        compact={!fillDock}
         onPress={onContinue}
       />
     </MotiView>

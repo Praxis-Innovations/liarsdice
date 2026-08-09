@@ -5,6 +5,15 @@ import type { Player } from "../../../engine/types";
 import { ThemeProvider } from "../../../theme/ThemeProvider";
 import { PlayerPanel } from "../PlayerPanel";
 
+jest.mock("moti", () => {
+  const { View } = require("react-native");
+  return {
+    MotiView: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <View {...props}>{children}</View>
+    ),
+  };
+});
+
 beforeEach(async () => {
   await AsyncStorage.clear();
 });
@@ -60,17 +69,20 @@ describe("PlayerPanel", () => {
     expect(getByText("You")).toBeTruthy();
   });
 
-  it("shows opponent name and TURN badge on their turn", async () => {
-    const { getByText } = await renderPanel(bot, { isCurrentTurn: true, isHuman: false, showDice: false });
+  it("shows opponent name on their turn without a TURN badge", async () => {
+    const { getByText, queryByText } = await renderPanel(bot, {
+      isCurrentTurn: true,
+      isHuman: false,
+      showDice: false,
+    });
     expect(getByText("Silver Fox")).toBeTruthy();
-    expect(getByText("TURN")).toBeTruthy();
+    expect(queryByText("TURN")).toBeNull();
   });
 
-  it("reverses name row when outwardAlign is right", async () => {
+  it("centers the opponent name in the seat", async () => {
     const { getByText } = await renderPanel(bot, {
       isHuman: false,
       showDice: false,
-      outwardAlign: "right",
     });
     expect(getByText("Silver Fox")).toBeTruthy();
   });

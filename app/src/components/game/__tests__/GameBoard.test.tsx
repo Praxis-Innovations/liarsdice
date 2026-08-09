@@ -69,6 +69,7 @@ function stubStore(partial: Record<string, unknown>) {
     showHints: false,
     soundEnabled: true,
     animatingReveal: false,
+    animatingShuffle: false,
     tutorialMode: false,
     tutorialStep: 0,
     showTutorialPrompt: false,
@@ -146,6 +147,29 @@ describe("GameBoard", () => {
     expect(mockGameTable).toHaveBeenCalled();
     expect(mockBidPanel).toHaveBeenCalled();
     expect(mockActionBar).toHaveBeenCalled();
+    expect(mockBidPanel.mock.calls[0]![0]).toMatchObject({ enabled: true });
+    expect(mockActionBar.mock.calls[0]![0]).toMatchObject({ enabled: true });
+  });
+
+  it("disables bid and challenge controls while dice are shuffling", async () => {
+    stubStore({
+      phase: "playing",
+      animatingShuffle: true,
+      gameState: makeGameState({
+        currentBid: { quantity: 2, faceValue: 3 },
+        lastBidder: "ai-1",
+        isFirstBidOfRound: false,
+        roundHistory: [{ type: "bid", playerId: "ai-1", bid: { quantity: 2, faceValue: 3 } }],
+      }),
+    });
+    await render(
+      <ThemeProvider>
+        <GameBoard />
+      </ThemeProvider>,
+    );
+    await waitFor(() => expect(mockBidPanel).toHaveBeenCalled());
+    expect(mockBidPanel.mock.calls[0]![0]).toMatchObject({ enabled: false });
+    expect(mockActionBar.mock.calls[0]![0]).toMatchObject({ enabled: false });
   });
 
   it("shows tutorial welcome on the playing shell when prompted", async () => {

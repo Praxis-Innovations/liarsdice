@@ -4,8 +4,8 @@ import type { DieValue, Player } from "../../engine/types";
 import { useTheme } from "../../theme/ThemeProvider";
 import { PlayerPanel } from "./PlayerPanel";
 import {
-  getFeltBounds,
   layoutTableSeats,
+  openCenterFromSeats,
   type PlaySizeTier,
   type SeatLayout,
 } from "./tableSeating";
@@ -19,11 +19,12 @@ interface GameTableProps {
   showDice: boolean;
   highlightValues?: DieValue[];
   onesWild: boolean;
-  lastActions: Map<string, string>;
   revealedDice?: Record<string, DieValue[]>;
   renderCenter?: (bounds: CenterBounds) => React.ReactNode;
   dense?: boolean;
   sizeTier?: PlaySizeTier;
+  /** Dice tumbling after a new round is dealt. */
+  shuffling?: boolean;
   humanSeatRef?: React.RefObject<View | null>;
   /** Whole table — tutorial "The Table" spotlight. */
   tableRef?: React.RefObject<View | null>;
@@ -33,10 +34,11 @@ interface GameTableProps {
 
 const TIER = {
   compact: {
-    maxDieSize: 15,
-    minDieSize: 10,
+    // ~10% smaller seats than the prior phone baseline for tighter mobile fit.
+    maxDieSize: 14,
+    minDieSize: 9,
     minGap: 4,
-    minSeatWidth: (n: number) => (n >= 5 ? 148 : 160),
+    minSeatWidth: (n: number) => (n >= 5 ? 133 : 144),
     // Keep the center card inside the open felt so rim seats stay clear on phones.
     centerMaxW: 168,
     centerWFrac: 0.4,
@@ -48,20 +50,20 @@ const TIER = {
     minDieSize: 15,
     minGap: 8,
     minSeatWidth: (n: number) => (n >= 5 ? 195 : 210),
-    centerMaxW: 275,
-    centerWFrac: 0.55,
-    centerHFrac: 0.55,
-    centerPadFrac: 0.08,
+    centerMaxW: 310,
+    centerWFrac: 0.62,
+    centerHFrac: 0.62,
+    centerPadFrac: 0.06,
   },
   roomy: {
     maxDieSize: 28,
     minDieSize: 18,
     minGap: 10,
     minSeatWidth: (n: number) => (n >= 5 ? 220 : 245),
-    centerMaxW: 325,
-    centerWFrac: 0.55,
-    centerHFrac: 0.55,
-    centerPadFrac: 0.06,
+    centerMaxW: 440,
+    centerWFrac: 0.72,
+    centerHFrac: 0.7,
+    centerPadFrac: 0.04,
   },
 } as const;
 
@@ -71,11 +73,11 @@ export function GameTable({
   showDice,
   highlightValues,
   onesWild,
-  lastActions,
   revealedDice,
   renderCenter,
   dense = false,
   sizeTier = "compact",
+  shuffling = false,
   humanSeatRef,
   tableRef,
   opponentsRef,
@@ -96,7 +98,7 @@ export function GameTable({
     players.findIndex((p) => p.id === "human"),
   );
 
-  const seats: SeatLayout[] =
+  const table =
     arena.width > 0 && arena.height > 0 && players.length >= 2
       ? layoutTableSeats(arena.width, arena.height, players.length, humanIndex, {
           maxDieSize: dense && sizeTier !== "compact" ? tier.maxDieSize - 2 : tier.maxDieSize,
@@ -105,20 +107,32 @@ export function GameTable({
           minSeatWidth: tier.minSeatWidth(players.length),
           sizeTier,
         })
-      : [];
+      : null;
 
-  const felt =
-    arena.width > 0 && arena.height > 0 ? getFeltBounds(arena.width, arena.height, sizeTier) : null;
-
-  const centerBounds: CenterBounds = felt
-    ? {
-        maxWidth: Math.min(felt.width * tier.centerWFrac, tier.centerMaxW),
-        maxHeight: Math.max(sizeTier === "compact" ? 88 : 96, felt.height * tier.centerHFrac),
-      }
-    : { maxWidth: 160, maxHeight: 120 };
+  const seats: SeatLayout[] = table?.seats ?? [];
+  const felt = table?.felt ?? null;
 
   const centerPadX = felt ? felt.width * tier.centerPadFrac : 16;
   const centerPadY = felt ? felt.height * tier.centerPadFrac : 16;
+  const openCenter =
+    felt && seats.length > 0
+      ? openCenterFromSeats(felt, seats, centerPadX, centerPadY, tier.minGap)
+      : null;
+
+  const centerBounds: CenterBounds = openCenter
+    ? {
+        maxWidth: Math.min(openCenter.width, tier.centerMaxW, felt!.width * tier.centerWFrac),
+        maxHeight: Math.max(
+          sizeTier === "compact" ? 88 : 96,
+          Math.min(openCenter.height, felt!.height * tier.centerHFrac),
+        ),
+      }
+    : felt
+      ? {
+          maxWidth: Math.min(felt.width * tier.centerWFrac, tier.centerMaxW),
+          maxHeight: Math.max(sizeTier === "compact" ? 88 : 96, felt.height * tier.centerHFrac),
+        }
+      : { maxWidth: 160, maxHeight: 120 };
 
   const opponentSeats = seats.filter((seat) => players[seat.playerIndex]?.id !== "human");
   const opponentsBounds =
@@ -179,10 +193,10 @@ export function GameTable({
           pointerEvents="box-none"
           style={{
             position: "absolute",
-            left: felt.x + centerPadX,
-            width: Math.max(0, felt.width - centerPadX * 2),
-            top: felt.y + centerPadY,
-            height: Math.max(0, felt.height - centerPadY * 2),
+            left: openCenter?.x ?? felt.x + centerPadX,
+            width: openCenter?.width ?? Math.max(0, felt.width - centerPadX * 2),
+            top: openCenter?.y ?? felt.y + centerPadY,
+            height: openCenter?.height ?? Math.max(0, felt.height - centerPadY * 2),
             alignItems: "center",
             justifyContent: "center",
             zIndex: 5,
@@ -229,14 +243,13 @@ export function GameTable({
               showDice={isHuman || showDice}
               highlightValues={highlightValues}
               onesWild={onesWild}
-              lastAction={lastActions.get(player.id)}
               seatWidth={seat.width}
               seatHeight={seat.height}
               dieSizePx={seat.dieSize}
               diceColumns={seat.diceColumns}
               compactSeat
               sizeTier={sizeTier}
-              outwardAlign={seat.outwardAlign}
+              shuffling={shuffling}
             />
           </View>
         );

@@ -53,6 +53,8 @@ interface GameStore {
   soundEnabled: boolean;
   tutorialCompleted: boolean;
   animatingReveal: boolean;
+  /** Dice are tumbling after a new round is dealt. */
+  animatingShuffle: boolean;
   tutorialMode: boolean;
   tutorialStep: number;
   showTutorialPrompt: boolean;
@@ -84,6 +86,8 @@ const DEFAULT_SETTINGS: GameSettings = {
 
 const AI_THINK_DELAY_MIN = 800;
 const AI_THINK_DELAY_MAX = 2000;
+/** How long dice tumble after a new round is dealt. */
+export const SHUFFLE_DURATION_MS = 900;
 
 function aiDelay(): Promise<void> {
   const ms = AI_THINK_DELAY_MIN + Math.random() * (AI_THINK_DELAY_MAX - AI_THINK_DELAY_MIN);
@@ -95,6 +99,29 @@ function fixedDelay(ms: number): Promise<void> {
 }
 
 let tutorialAiRng: RNGFunction | null = null;
+let shuffleTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearShuffleTimer(): void {
+  if (shuffleTimer != null) {
+    clearTimeout(shuffleTimer);
+    shuffleTimer = null;
+  }
+}
+
+function finishShuffle(
+  set: (partial: Partial<GameStore> | ((state: GameStore) => Partial<GameStore>)) => void,
+  get: () => GameStore,
+  startAI: boolean,
+): void {
+  shuffleTimer = null;
+  if (!get().animatingShuffle) return;
+  set({ animatingShuffle: false });
+  if (!startAI) return;
+  const state = get().gameState;
+  if (state && !state.gameOver && state.players[state.currentPlayerIndex].isAI) {
+    void processAITurns(set, get);
+  }
+}
 
 export const useGameStore = create<GameStore>((set, get) => {
   if (typeof window !== "undefined") {
@@ -115,6 +142,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     soundEnabled: true,
     tutorialCompleted: false,
     animatingReveal: false,
+    animatingShuffle: false,
     tutorialMode: false,
     tutorialStep: 0,
     showTutorialPrompt: false,
@@ -126,8 +154,9 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     startGame: () => {
       const { settings, tutorialCompleted, prefsLoaded } = get();
+      clearShuffleTimer();
       const state = createGame(settings);
-      set({ gameState: state, phase: "playing" });
+      set({ gameState: state, phase: "playing", animatingShuffle: false });
 
       if (prefsLoaded && !tutorialCompleted) {
         set({ showTutorialPrompt: true });
@@ -159,8 +188,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     placeBid: (bid) => {
-      const { gameState } = get();
-      if (!gameState || gameState.gameOver) return;
+      const { gameState, animatingShuffle } = get();
+      if (!gameState || gameState.gameOver || animatingShuffle) return;
 
       const action: GameAction = { type: "bid", playerId: "human", bid };
       const newState = applyAction(gameState, action);
@@ -171,8 +200,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     challenge: () => {
-      const { gameState } = get();
-      if (!gameState || gameState.gameOver) return;
+      const { gameState, animatingShuffle } = get();
+      if (!gameState || gameState.gameOver || animatingShuffle) return;
 
       const action: GameAction = { type: "challenge", playerId: "human" };
       const newState = applyAction(gameState, action);
@@ -184,8 +213,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     spotOn: () => {
-      const { gameState } = get();
-      if (!gameState || gameState.gameOver) return;
+      const { gameState, animatingShuffle } = get();
+      if (!gameState || gameState.gameOver || animatingShuffle) return;
 
       const action: GameAction = { type: "spot-on", playerId: "human" };
       const newState = applyAction(gameState, action);
@@ -203,19 +232,26 @@ export const useGameStore = create<GameStore>((set, get) => {
       const newState = startNewRound(gameState);
 
       if (newState.gameOver) {
-        set({ gameState: newState, phase: "game-over" });
+        clearShuffleTimer();
+        set({ gameState: newState, phase: "game-over", animatingShuffle: false });
         return;
       }
 
-      set({ gameState: newState, phase: "playing" });
-
-      if (newState.players[newState.currentPlayerIndex].isAI) {
-        void processAITurns(set, get);
-      }
+      clearShuffleTimer();
+      const startAI = newState.players[newState.currentPlayerIndex].isAI;
+      set({ gameState: newState, phase: "playing", animatingShuffle: true });
+      shuffleTimer = setTimeout(() => finishShuffle(set, get, startAI), SHUFFLE_DURATION_MS);
     },
 
     resetGame: () => {
-      set({ gameState: null, phase: "setup", tutorialMode: false, tutorialStep: 0 });
+      clearShuffleTimer();
+      set({
+        gameState: null,
+        phase: "setup",
+        tutorialMode: false,
+        tutorialStep: 0,
+        animatingShuffle: false,
+      });
     },
 
     toggleHints: () => {
@@ -240,6 +276,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     startTutorial: () => {
+      clearShuffleTimer();
       const rng = seededRng(TUTORIAL_SEED);
       tutorialAiRng = seededRng(TUTORIAL_AI_SEED);
       const state = createGame(TUTORIAL_SETTINGS, rng);
@@ -250,10 +287,12 @@ export const useGameStore = create<GameStore>((set, get) => {
         tutorialStep: 0,
         showTutorialPrompt: false,
         showHints: false,
+        animatingShuffle: false,
       });
     },
 
     skipTutorial: () => {
+      clearShuffleTimer();
       savePreference(PREFERENCE_KEYS.tutorialCompleted, true);
       set({
         tutorialCompleted: true,
@@ -262,6 +301,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         tutorialStep: 0,
         gameState: null,
         phase: "setup",
+        animatingShuffle: false,
       });
     },
 

@@ -55,13 +55,18 @@ function makeState(): GameState {
 }
 
 async function renderPanel(
-  overrides: { enabled?: boolean; sizeTier?: "compact" | "regular" | "roomy"; onBid?: jest.Mock } = {},
+  overrides: {
+    enabled?: boolean;
+    sizeTier?: "compact" | "regular" | "roomy";
+    onBid?: jest.Mock;
+    state?: GameState;
+  } = {},
 ) {
   const onBid = overrides.onBid ?? jest.fn();
   const view = await render(
     <ThemeProvider>
       <BidPanel
-        state={makeState()}
+        state={overrides.state ?? makeState()}
         onBid={onBid}
         showHints={false}
         enabled={overrides.enabled ?? true}
@@ -85,15 +90,26 @@ describe("BidPanel", () => {
 
   it("submits a bid from the full-width compact button", async () => {
     const { getByText, onBid } = await renderPanel({ sizeTier: "compact" });
-    fireEvent.press(getByText(/Bid 1×1/));
+    fireEvent.press(getByText(/Bid 1×1s/));
     expect(onBid).toHaveBeenCalledWith({ quantity: 1, faceValue: 1 } satisfies Bid);
+  });
+
+  it("defaults qty to one above the last bid and keeps that face", async () => {
+    const state = makeState();
+    state.currentBid = { quantity: 7, faceValue: 3 };
+    state.isFirstBidOfRound = false;
+    state.lastBidder = "ai-1";
+    const { getByText, onBid } = await renderPanel({ state });
+    await waitFor(() => expect(getByText(/Bid 8×3s/)).toBeTruthy());
+    fireEvent.press(getByText(/Bid 8×3s/));
+    expect(onBid).toHaveBeenCalledWith({ quantity: 8, faceValue: 3 } satisfies Bid);
   });
 
   it("changes face selection before bidding", async () => {
     const { getByLabelText, getByText, onBid } = await renderPanel();
     fireEvent.press(getByLabelText("Face 4"));
-    await waitFor(() => expect(getByText(/Bid 1×4/)).toBeTruthy());
-    fireEvent.press(getByText(/Bid 1×4/));
+    await waitFor(() => expect(getByText(/Bid 1×4s/)).toBeTruthy());
+    fireEvent.press(getByText(/Bid 1×4s/));
     expect(onBid).toHaveBeenCalledWith({ quantity: 1, faceValue: 4 });
   });
 

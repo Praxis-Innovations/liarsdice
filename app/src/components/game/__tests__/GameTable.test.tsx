@@ -6,6 +6,15 @@ import { ThemeProvider } from "../../../theme/ThemeProvider";
 import { GameTable } from "../GameTable";
 import { makePlayer } from "../testing/gameTestFixtures";
 
+jest.mock("moti", () => {
+  const { View } = require("react-native");
+  return {
+    MotiView: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <View {...props}>{children}</View>
+    ),
+  };
+});
+
 beforeEach(async () => {
   await AsyncStorage.clear();
 });
@@ -26,7 +35,6 @@ async function renderTable(
         currentPlayerId="human"
         showDice={false}
         onesWild
-        lastActions={new Map()}
         sizeTier="compact"
         {...overrides}
       />
@@ -70,9 +78,10 @@ describe("GameTable", () => {
     expect(bounds.maxHeight).toBeGreaterThan(0);
   });
 
-  it("marks the current player's turn badge", async () => {
+  it("highlights the current player's seat with an accent border", async () => {
     const view = await renderTable({ currentPlayerId: "ai-1" });
     layoutTable(view);
-    await waitFor(() => expect(view.getByText("TURN")).toBeTruthy());
+    await waitFor(() => expect(view.getByText("Silver Fox")).toBeTruthy());
+    expect(view.queryByText("TURN")).toBeNull();
   });
 });

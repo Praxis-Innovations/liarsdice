@@ -22,23 +22,27 @@ function IconButton({
   label,
   active,
   onPress,
+  compact = false,
   children,
 }: {
   label: string;
   active?: boolean;
   onPress: () => void;
+  compact?: boolean;
   children: React.ReactNode;
 }) {
   const { colors } = useTheme();
+  // Match MetaChip / StatusBadge height on phone (~24–26px).
+  const size = compact ? 26 : 32;
   return (
     <Pressable
       onPress={onPress}
       accessibilityLabel={label}
       hitSlop={6}
       style={{
-        width: 34,
-        height: 34,
-        borderRadius: 17,
+        width: size,
+        height: size,
+        borderRadius: size / 2,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: active ? `${colors.accent}28` : colors.surfaceRaised,
@@ -66,9 +70,11 @@ export function PlayTopBar({
 }: PlayTopBarProps) {
   const { colors, spacing } = useTheme();
 
+  const iconSize = compact ? 15 : 17;
+
   const backBtn = (
-    <IconButton label={tutorialMode ? "Exit tutorial" : "New game"} onPress={onBack}>
-      <Ionicons name="arrow-back" size={18} color={colors.textPrimary} />
+    <IconButton label={tutorialMode ? "Exit tutorial" : "New game"} onPress={onBack} compact={compact}>
+      <Ionicons name="arrow-back" size={iconSize} color={colors.textPrimary} />
     </IconButton>
   );
 
@@ -77,10 +83,11 @@ export function PlayTopBar({
       label={showHints ? "Disable hints" : "Enable hints"}
       active={showHints}
       onPress={onToggleHints}
+      compact={compact}
     >
       <Ionicons
         name={showHints ? "bulb" : "bulb-outline"}
-        size={18}
+        size={iconSize}
         color={showHints ? colors.accent : colors.textSecondary}
       />
     </IconButton>
@@ -93,7 +100,7 @@ export function PlayTopBar({
         ref={statusRef}
         collapsable={false}
         className="flex-row items-center"
-        style={{ gap: 8, marginBottom: dense ? 2 : spacing.xs, marginTop: 0 }}
+        style={{ gap: 8, marginBottom: 0, marginTop: 0 }}
       >
         {backBtn}
         <RoundChip state={state} dense />

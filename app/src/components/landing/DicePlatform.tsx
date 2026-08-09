@@ -5,13 +5,19 @@ import { useTheme } from "../../theme/ThemeProvider";
 export type {
   Breakpoint,
   DiceTableConfig,
+  HeroDieSpec,
+  HeroStageMetrics,
   PlatformMetrics,
 } from "./dicePlatformLayout";
 export {
+  buildHeroDiceSpecs,
+  createSeededRng,
   getBreakpoint,
   getDiceBand,
+  getHeroStageMetrics,
   getPlatformMetrics,
   placeDiceOnPlatform,
+  resolveLayoutWidth,
 } from "./dicePlatformLayout";
 
 /** Visual table / tray the dice land on (native fallback; web uses Three.js halo). */
