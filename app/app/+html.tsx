@@ -28,7 +28,11 @@ export default function Root({ children }: PropsWithChildren) {
         <title>{SITE_TITLE}</title>
         <meta name="description" content={SITE_DESCRIPTION} />
         <link rel="canonical" href={SITE_URL} />
+        {/* ICO first — browsers/crawlers still request /favicon.ico by default.
+            SVG is the crisp source; apple-touch covers iOS home-screen. */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
         <meta name="theme-color" content="#FFFBF3" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#14101F" media="(prefers-color-scheme: dark)" />
