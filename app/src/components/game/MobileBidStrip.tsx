@@ -2,14 +2,10 @@ import React, { useEffect, useRef } from "react";
 import { ScrollView, Text, View } from "react-native";
 import type { GameAction, GameState } from "../../engine/types";
 import { useTheme } from "../../theme/ThemeProvider";
+import { shortName } from "./shortName";
 
 function bidActions(history: GameAction[]): GameAction[] {
   return history.filter((a) => a.type === "bid" && a.bid);
-}
-
-function shortName(full: string, max = 14): string {
-  if (full.length <= max) return full;
-  return `${full.slice(0, max - 1)}…`;
 }
 
 function playerLabel(state: GameState, playerId: string): string {
@@ -37,8 +33,6 @@ export function MobileBidStrip({ state }: { state: GameState }) {
       <View
         style={{
           borderRadius: radii.md,
-          borderWidth: 1,
-          borderColor: colors.border,
           backgroundColor: colors.surfaceRaised,
           paddingVertical: 12,
           paddingHorizontal: spacing.md,
@@ -79,10 +73,8 @@ export function MobileBidStrip({ state }: { state: GameState }) {
     <View
       style={{
         borderRadius: radii.md,
-        borderWidth: 1.5,
-        borderColor: colors.accent,
         backgroundColor: colors.surfaceRaised,
-        paddingHorizontal: spacing.sm,
+        paddingHorizontal: spacing.md,
         paddingTop: 8,
         paddingBottom: 8,
         height: 148,
@@ -107,7 +99,7 @@ export function MobileBidStrip({ state }: { state: GameState }) {
         <ScrollView
           ref={scrollRef}
           style={{ flexGrow: 0, flexShrink: 1 }}
-          contentContainerStyle={{ gap: 4, paddingBottom: 4 }}
+          contentContainerStyle={{ gap: 4, paddingBottom: 4, paddingRight: 12, paddingLeft: 2 }}
           showsVerticalScrollIndicator={prior.length > 4}
           nestedScrollEnabled
         >

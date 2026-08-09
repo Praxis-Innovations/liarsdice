@@ -1,4 +1,5 @@
-import React from "react";
+import { MotiView } from "moti";
+import React, { useEffect, useState } from "react";
 import { View, useWindowDimensions } from "react-native";
 import { getBreakpoint } from "../../lib/breakpoints";
 import { useTheme } from "../../theme/ThemeProvider";
@@ -14,6 +15,8 @@ const SIZE_PX: Record<"phone" | "tablet" | "laptop", Record<Size, number>> = {
 
 const PAD: Record<Size, number> = { sm: 6, md: 10, lg: 12 };
 const GAP: Record<Size, number> = { sm: 4, md: 6, lg: 8 };
+
+const FACES: DieFace[] = [1, 2, 3, 4, 5, 6];
 
 interface DiceRowProps {
   dice: DieFace[];
@@ -33,6 +36,99 @@ interface DiceRowProps {
   noWrap?: boolean;
   /** 1px ring (table seats) instead of 2px — keeps dice inside compact cards. */
   tight?: boolean;
+  /** Tumbling animation after dice are re-dealt. */
+  shuffling?: boolean;
+}
+
+function ShufflingDieSlot({
+  value,
+  index,
+  hidden,
+  shuffling,
+  isHighlight,
+  isWild,
+  revealing,
+  px,
+  ring,
+  accent,
+  secondary,
+  primary,
+  textPrimary,
+  border,
+}: {
+  value: DieFace;
+  index: number;
+  hidden: boolean;
+  shuffling: boolean;
+  isHighlight: boolean;
+  isWild: boolean;
+  revealing: boolean;
+  px: number;
+  ring: number;
+  accent: string;
+  secondary: string;
+  primary: string;
+  textPrimary: string;
+  border: string;
+}) {
+  const [displayFace, setDisplayFace] = useState<DieFace>(value);
+
+  useEffect(() => {
+    if (!shuffling || hidden) {
+      setDisplayFace(value);
+      return;
+    }
+    // Cycle random faces, settle on the dealt value when shuffling ends.
+    let tick = 0;
+    const id = setInterval(() => {
+      tick += 1;
+      setDisplayFace(FACES[(index * 3 + tick) % FACES.length]);
+    }, 70);
+    return () => {
+      clearInterval(id);
+      setDisplayFace(value);
+    };
+  }, [shuffling, hidden, value, index]);
+
+  const shown = !hidden;
+  const face = shown ? (shuffling ? displayFace : value) : null;
+  // Don't spin hidden cups — only visible dice tumble.
+  const animateShuffle = shuffling && shown;
+
+  return (
+    <MotiView
+      accessibilityLabel={shown ? `Die face ${value}` : "Hidden die"}
+      animate={
+        animateShuffle
+          ? {
+              rotate: `${index % 2 === 0 ? 360 : -360}deg`,
+              scale: 1.08,
+              translateY: index % 2 === 0 ? -4 : 4,
+            }
+          : { rotate: "0deg", scale: isHighlight ? 1.08 : 1, translateY: 0 }
+      }
+      transition={
+        animateShuffle
+          ? { type: "timing", duration: 180, loop: true }
+          : { type: "timing", duration: 280 }
+      }
+      style={{
+        borderRadius: px * 0.28,
+        borderWidth: isHighlight ? Math.max(2, ring + 1) : ring,
+        borderColor: isHighlight ? accent : isWild ? secondary : "transparent",
+        backgroundColor: isHighlight ? `${accent}55` : "transparent",
+        padding: isHighlight ? 1 : 0,
+        opacity: revealing && !isHighlight && !shuffling ? 0.42 : 1,
+      }}
+    >
+      <Die
+        face={face}
+        color={shown ? (isHighlight ? accent : primary) : border}
+        pipColor={shown && isHighlight ? textPrimary : "#FFFFFF"}
+        size={px}
+      />
+    </MotiView>
+  );
 }
 
 /** Dice on a minimal board: theme surface + single border. */
@@ -48,6 +144,7 @@ export function DiceRow({
   bare = false,
   noWrap = true,
   tight = false,
+  shuffling = false,
 }: DiceRowProps) {
   const { colors, radii } = useTheme();
   const { width } = useWindowDimensions();
@@ -70,33 +167,33 @@ export function DiceRow({
     >
       {dice.map((value, i) => {
         const shown = !hidden;
-        const isHighlight = shown && !!highlightValues?.includes(value);
+        const isHighlight = shown && !shuffling && !!highlightValues?.includes(value);
         const isWild =
-          shown && !!wildValue && value === 1 && !highlightValues?.includes(1 as DieFace);
+          shown &&
+          !shuffling &&
+          !!wildValue &&
+          value === 1 &&
+          !highlightValues?.includes(1 as DieFace);
         const revealing = shown && !!highlightValues?.length;
 
         return (
-          <View
+          <ShufflingDieSlot
             key={i}
-            accessibilityLabel={shown ? `Die face ${value}` : "Hidden die"}
-            style={{
-              borderRadius: px * 0.28,
-              borderWidth: isHighlight ? Math.max(2, ring + 1) : ring,
-              borderColor: isHighlight ? colors.accent : isWild ? colors.secondary : "transparent",
-              // Soft halo so matching dice pop during round resolve.
-              backgroundColor: isHighlight ? `${colors.accent}55` : "transparent",
-              padding: isHighlight ? 1 : 0,
-              opacity: revealing && !isHighlight ? 0.42 : 1,
-              transform: isHighlight ? [{ scale: 1.08 }] : undefined,
-            }}
-          >
-            <Die
-              face={shown ? value : null}
-              color={shown ? (isHighlight ? colors.accent : colors.primary) : colors.border}
-              pipColor={shown && isHighlight ? colors.textPrimary : "#FFFFFF"}
-              size={px}
-            />
-          </View>
+            value={value}
+            index={i}
+            hidden={!!hidden}
+            shuffling={shuffling}
+            isHighlight={isHighlight}
+            isWild={isWild}
+            revealing={revealing}
+            px={px}
+            ring={ring}
+            accent={colors.accent}
+            secondary={colors.secondary}
+            primary={colors.primary}
+            textPrimary={colors.textPrimary}
+            border={colors.border}
+          />
         );
       })}
     </View>

@@ -89,7 +89,7 @@ describe("RoundResult", () => {
     const { getByText, getByRole } = await renderResult(state);
 
     expect(getByRole("heading", { name: "Liar!" })).toBeTruthy();
-    expect(getByText("You wins")).toBeTruthy();
+    expect(getByText("You win")).toBeTruthy();
     expect(getByText("4×3")).toBeTruthy();
     expect(getByText("2")).toBeTruthy();
     expect(getByText(/Silver Fox loses a die/)).toBeTruthy();
@@ -131,7 +131,7 @@ describe("RoundResult", () => {
       diceGained: false,
     });
     const { getByText } = await renderResult(state);
-    const outcomeEl = getByText("You wins");
+    const outcomeEl = getByText("You win");
     const style = Array.isArray(outcomeEl.props.style)
       ? Object.assign({}, ...outcomeEl.props.style)
       : outcomeEl.props.style;
@@ -179,5 +179,52 @@ describe("RoundResult", () => {
     await waitFor(() => {
       expect(view.queryByText(/Liar!|Spot On!/)).toBeNull();
     });
+  });
+
+  it("renders the desktop strip layout with Next Round", async () => {
+    const state = makeState({
+      challenger: "human",
+      challengedPlayer: "ai-1",
+      challengeType: "liar",
+      currentBid: { quantity: 4, faceValue: 3 },
+      allDice: {},
+      actualCount: 2,
+      challengerWins: true,
+      loser: "ai-1",
+      diceGained: false,
+    });
+    const onContinue = jest.fn();
+    const view = await render(
+      <ThemeProvider>
+        <RoundResult state={state} onContinue={onContinue} animating={false} compact={false} />
+      </ThemeProvider>,
+    );
+    await waitFor(() => expect(view.getByText("Liar!")).toBeTruthy());
+    expect(view.getByText("You win")).toBeTruthy();
+    expect(view.getByText("4×3")).toBeTruthy();
+    fireEvent.press(view.getByText("Next Round"));
+    expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders fillDock phone layout with consequence banner", async () => {
+    const state = makeState({
+      challenger: "human",
+      challengedPlayer: "ai-1",
+      challengeType: "liar",
+      currentBid: { quantity: 4, faceValue: 3 },
+      allDice: {},
+      actualCount: 2,
+      challengerWins: true,
+      loser: "ai-1",
+      diceGained: false,
+    });
+    const view = await render(
+      <ThemeProvider>
+        <RoundResult state={state} onContinue={jest.fn()} animating={false} compact fillDock />
+      </ThemeProvider>,
+    );
+    await waitFor(() => expect(view.getByText("Liar!")).toBeTruthy());
+    expect(view.getByText(/Silver Fox loses a die/)).toBeTruthy();
+    expect(view.getByText("Next Round")).toBeTruthy();
   });
 });

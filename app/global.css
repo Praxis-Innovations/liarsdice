@@ -1,18 +1,3 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Match theme background so wide gutters never flash pure white before RN paints. */
-html,
-body,
-#root {
-  background-color: #fffbf3;
-}
-
-@media (prefers-color-scheme: dark) {
-  html,
-  body,
-  #root {
-    background-color: #14101f;
-  }
-}

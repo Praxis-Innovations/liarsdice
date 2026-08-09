@@ -74,7 +74,8 @@ export function Button({
         {
           backgroundColor: variantStyle.backgroundColor,
           borderColor: variantStyle.borderColor,
-          borderWidth: variant === "ghost" || variant === "danger" ? 2 : 0,
+          // Always 2px so outlined (danger/ghost) and filled variants share the same box size.
+          borderWidth: 2,
           borderRadius: radii.pill,
           paddingVertical: compact ? spacing.sm : spacing.md,
           paddingHorizontal: compact ? spacing.md : spacing.xl,

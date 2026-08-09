@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef } from "react";
-import { View, useWindowDimensions } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { LayoutChangeEvent, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGameStore } from "../../engine/gameStore";
 import type { DieValue } from "../../engine/types";
@@ -21,6 +21,8 @@ import { RoundResult } from "./RoundResult";
 import { TableBidCenter } from "./TableBidCenter";
 
 const MAX_BOARD_WIDTH = 960;
+/** Play/setup/game-over always use this share of the viewport under the header. */
+const CONTENT_HEIGHT_RATIO = 0.9;
 
 export function GameBoard() {
   const gameState = useGameStore((s) => s.gameState);
@@ -28,6 +30,7 @@ export function GameBoard() {
   const settings = useGameStore((s) => s.settings);
   const showHints = useGameStore((s) => s.showHints);
   const animatingReveal = useGameStore((s) => s.animatingReveal);
+  const animatingShuffle = useGameStore((s) => s.animatingShuffle);
   const tutorialMode = useGameStore((s) => s.tutorialMode);
   const tutorialStep = useGameStore((s) => s.tutorialStep);
   const showTutorialPrompt = useGameStore((s) => s.showTutorialPrompt);
@@ -50,14 +53,21 @@ export function GameBoard() {
   const headerOffset = useHeaderOffset();
   const bp = getBreakpoint(width);
   const compact = bp === "phone";
-  const availableHeight = Math.max(0, windowHeight - headerOffset);
+  const insetBottom = Math.max(insets.bottom, 0);
+  // Viewport under the global header, minus home-indicator — 90% is content, 10% split top/bottom.
+  const playViewport = Math.max(0, windowHeight - headerOffset);
+  const usableHeight = Math.max(0, playViewport - insetBottom);
+  const contentBudget = Math.round(usableHeight * CONTENT_HEIGHT_RATIO);
+  const frameAir = Math.max(0, (usableHeight - contentBudget) / 2);
+  const availableHeight = usableHeight;
   const pagePad = compact ? spacing.md + 4 : spacing.md;
   const dense = availableHeight < 580;
   const setupDensity: 0 | 1 | 2 = compact ? 2 : availableHeight < 720 ? 1 : 0;
   /** Phone stays tight; tablet/desktop get roomier play chrome. */
   const sizeTier: "compact" | "regular" | "roomy" =
     compact || (dense && bp === "tablet") ? "compact" : bp === "laptop" ? "roomy" : "regular";
-
+  const tableMinH = sizeTier === "compact" ? 160 : 210;
+  const sectionGap = sizeTier === "compact" ? 6 : spacing.sm;
   const gameContainerRef = useRef<View>(null) as React.RefObject<View>;
   const gameStatusRef = useRef<View>(null) as React.RefObject<View>;
   const humanPanelRef = useRef<View>(null) as React.RefObject<View>;
@@ -67,6 +77,8 @@ export function GameBoard() {
   const bidPanelRef = useRef<View>(null) as React.RefObject<View>;
   const actionControlsRef = useRef<View>(null) as React.RefObject<View>;
   const roundResultRef = useRef<View>(null) as React.RefObject<View>;
+  /** Keep the bottom chrome height stable when swapping controls ↔ result (mobile). */
+  const [controlsDockH, setControlsDockH] = useState(0);
 
   const setTutorialMeasurements = useTutorialHighlightStore((s) => s.setMeasurements);
   const clearTutorialMeasurements = useTutorialHighlightStore((s) => s.clearMeasurements);
@@ -144,19 +156,29 @@ export function GameBoard() {
     continueToNextRound();
   }, [tutorialMode, tutorialStep, advanceTutorialStep, gameState, resetGame, continueToNextRound]);
 
+  const onControlsDockLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      if (phase === "round-result") return;
+      const h = Math.round(e.nativeEvent.layout.height);
+      if (h > 0 && Math.abs(h - controlsDockH) > 1) setControlsDockH(h);
+    },
+    [phase, controlsDockH],
+  );
+
   const shellStyle = {
     flex: 1,
     width: "100%" as const,
     backgroundColor: colors.background,
   };
-  const boardStyle = (clip: boolean, edgePad?: { top?: number; bottom?: number }) => ({
+  const boardStyle = (clip: boolean) => ({
     flex: 1,
     width: "100%" as const,
     maxWidth: MAX_BOARD_WIDTH,
     alignSelf: "center" as const,
     paddingHorizontal: pagePad,
-    paddingBottom: edgePad?.bottom ?? Math.max(insets.bottom, pagePad),
-    paddingTop: edgePad?.top ?? pagePad,
+    // Equal leftover air above/below the 90% content frame (plus home indicator).
+    paddingTop: frameAir,
+    paddingBottom: frameAir + insetBottom,
     overflow: (clip ? "hidden" : "visible") as "hidden" | "visible",
   });
 
@@ -165,14 +187,13 @@ export function GameBoard() {
     opts?: {
       boardRef?: React.RefObject<View>;
       clip?: boolean;
-      edgePad?: { top?: number; bottom?: number };
     },
   ) => (
     <View style={shellStyle}>
       <View
         ref={opts?.boardRef}
         collapsable={false}
-        style={boardStyle(opts?.clip ?? false, opts?.edgePad)}
+        style={boardStyle(opts?.clip ?? false)}
       >
         {content}
       </View>
@@ -181,7 +202,7 @@ export function GameBoard() {
 
   if (phase === "setup" || !gameState) {
     return wrapBoard(
-      <View style={{ flex: 1, justifyContent: "center" }}>
+      <View style={{ flex: 1, justifyContent: "center", minHeight: 0 }}>
         <GameSetup
           settings={settings}
           onUpdateSettings={updateSettings}
@@ -195,7 +216,7 @@ export function GameBoard() {
 
   if (phase === "game-over" && !tutorialMode) {
     return wrapBoard(
-      <View style={{ flex: 1, justifyContent: "center" }}>
+      <View style={{ flex: 1, justifyContent: "center", minHeight: 0 }}>
         <GameOver state={gameState} onPlayAgain={resetGame} />
       </View>,
     );
@@ -204,18 +225,8 @@ export function GameBoard() {
   const isHumanTurn = gameState.players[gameState.currentPlayerIndex].id === "human";
   const showingResult = phase === "round-result";
   const currentPlayerId = gameState.players[gameState.currentPlayerIndex].id;
-  const controlsEnabled = isHumanTurn && phase === "playing";
-
-  const lastActions = new Map<string, string>();
-  for (const action of gameState.roundHistory) {
-    if (action.type === "bid" && action.bid) {
-      lastActions.set(action.playerId, `${action.bid.quantity} × ${action.bid.faceValue}s`);
-    } else if (action.type === "challenge") {
-      lastActions.set(action.playerId, "Liar!");
-    } else if (action.type === "spot-on") {
-      lastActions.set(action.playerId, "Spot On!");
-    }
-  }
+  // Hold inputs while dice tumble so the player never bids on scrambled faces.
+  const controlsEnabled = isHumanTurn && phase === "playing" && !animatingShuffle;
 
   // Count toward the bid: face value, plus wild ones when applicable.
   const resultBid = gameState.lastRoundResult?.currentBid ?? gameState.currentBid;
@@ -226,18 +237,15 @@ export function GameBoard() {
         : [resultBid.faceValue]
       : undefined;
 
-  // Tiny equal air; bottom also clears the home-indicator inset when present.
-  const playAir = compact ? 2 : spacing.sm;
-  // Phone: table fills leftover height (no big centered voids). Wider: capped + centered.
-  const tableHeight = Math.round(availableHeight * 0.68);
-
   return wrapBoard(
     <>
       <View
         style={{
           flex: 1,
-          justifyContent: compact ? "flex-start" : "center",
           minHeight: 0,
+          maxHeight: contentBudget,
+          width: "100%",
+          gap: sectionGap,
         }}
       >
         <PlayTopBar
@@ -252,22 +260,13 @@ export function GameBoard() {
           onToggleHints={toggleHints}
         />
 
+        {/* Table absorbs leftover height inside the 90% frame. */}
         <View
-          style={
-            compact
-              ? {
-                  flex: 1,
-                  width: "100%",
-                  minHeight: 160,
-                  maxHeight: Math.round(availableHeight * 0.52),
-                }
-              : {
-                  height: tableHeight,
-                  width: "100%",
-                  flexShrink: 1,
-                  minHeight: sizeTier === "compact" ? 160 : 210,
-                }
-          }
+          style={{
+            flex: 1,
+            width: "100%",
+            minHeight: tableMinH,
+          }}
         >
           <GameTable
             players={gameState.players}
@@ -275,74 +274,64 @@ export function GameBoard() {
             showDice={showingResult}
             highlightValues={highlightValues}
             onesWild={gameState.onesWild}
-            lastActions={lastActions}
             revealedDice={showingResult ? gameState.lastRoundResult?.allDice : undefined}
             dense={dense}
             sizeTier={sizeTier}
+            shuffling={animatingShuffle}
             humanSeatRef={humanPanelRef}
             tableRef={tableRef}
             opponentsRef={opponentsRef}
             renderCenter={({ maxWidth, maxHeight }) => {
-              // Phone: leave the felt empty — bids / results sit under the table.
-              if (compact) return null;
-              if (showingResult && gameState.lastRoundResult) {
-                return (
-                  <View ref={roundResultRef} collapsable={false}>
-                    <RoundResult
-                      state={gameState}
-                      onContinue={handleResultContinue}
-                      animating={animatingReveal}
-                      compact={false}
-                      maxWidth={maxWidth}
-                      maxHeight={maxHeight}
-                    />
-                  </View>
-                );
-              }
-              if (!showingResult) {
-                return (
-                  <View ref={bidChromeRef} collapsable={false}>
-                    <TableBidCenter
-                      state={gameState}
-                      dense={false}
-                      sizeTier={sizeTier}
-                      maxWidth={maxWidth}
-                      maxHeight={maxHeight}
-                    />
-                  </View>
-                );
-              }
-              return null;
+              // Phone: felt stays empty during play; show Round over after a challenge.
+              if (compact && !showingResult) return null;
+              return (
+                <View ref={bidChromeRef} collapsable={false}>
+                  <TableBidCenter
+                    state={gameState}
+                    dense={false}
+                    sizeTier={sizeTier}
+                    maxWidth={maxWidth}
+                    maxHeight={maxHeight}
+                    roundOver={showingResult}
+                  />
+                </View>
+              );
             }}
           />
         </View>
 
-        {compact && showingResult && gameState.lastRoundResult ? (
+        {showingResult && gameState.lastRoundResult ? (
           <View
             ref={roundResultRef}
             collapsable={false}
-            style={{ width: "100%", marginTop: spacing.xs, flexShrink: 0 }}
+            style={{
+              width: "100%",
+              flexShrink: 0,
+              // Lock to the controls dock height so the table doesn't jump on mobile.
+              ...(compact && controlsDockH > 0
+                ? { height: controlsDockH, minHeight: controlsDockH }
+                : null),
+            }}
           >
             <RoundResult
               state={gameState}
               onContinue={handleResultContinue}
               animating={animatingReveal}
-              compact
+              compact={compact}
+              fillDock={compact}
               maxWidth={width - pagePad * 2}
             />
           </View>
         ) : (
           <View
+            onLayout={onControlsDockLayout}
             style={{
-              gap: sizeTier === "compact" ? 6 : spacing.sm,
-              marginTop: sizeTier === "compact" ? spacing.xs : spacing.sm,
+              gap: sectionGap,
               flexShrink: 0,
-              paddingTop: sizeTier === "compact" ? 6 : spacing.sm,
-              borderTopWidth: 1,
-              borderTopColor: colors.border,
+              width: "100%",
             }}
           >
-            {compact && !showingResult ? (
+            {compact ? (
               <View ref={bidChromeRef} collapsable={false}>
                 <MobileBidStrip state={gameState} />
               </View>
@@ -376,10 +365,6 @@ export function GameBoard() {
     {
       boardRef: gameContainerRef,
       clip: true,
-      edgePad: {
-        top: playAir,
-        bottom: playAir + Math.max(insets.bottom, 0),
-      },
     },
   );
 }

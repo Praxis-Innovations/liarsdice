@@ -39,6 +39,14 @@ describe("TableBidCenter", () => {
     expect(view.getByText("No bid yet")).toBeTruthy();
   });
 
+  it("shows Round over after a challenge resolves", async () => {
+    const view = await render(
+      <TableBidCenter state={makeGameState()} sizeTier="roomy" roundOver />,
+    );
+    expect(view.getByText("Round over")).toBeTruthy();
+    expect(view.queryByText("Open the round")).toBeNull();
+  });
+
   it("pins the current bid and lists prior bids", async () => {
     const view = await render(
       <TableBidCenter

@@ -4,7 +4,7 @@ import { DICE_PER_PLAYER } from "../../engine/constants";
 import type { DieValue, Player } from "../../engine/types";
 import { useTheme } from "../../theme/ThemeProvider";
 import { DiceRow } from "./DiceDisplay";
-import { fitDieInSeat, type OutwardAlign, type PlaySizeTier } from "./tableSeating";
+import { fitDieInSeat, type PlaySizeTier } from "./tableSeating";
 
 interface PlayerPanelProps {
   player: Player;
@@ -13,14 +13,13 @@ interface PlayerPanelProps {
   showDice: boolean;
   highlightValues?: DieValue[];
   onesWild: boolean;
-  lastAction?: string;
   seatWidth?: number;
   seatHeight?: number;
   dieSizePx?: number;
   compactSeat?: boolean;
   diceColumns?: number;
   sizeTier?: PlaySizeTier;
-  outwardAlign?: OutwardAlign;
+  shuffling?: boolean;
 }
 
 export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function PlayerPanel(
@@ -37,7 +36,7 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
     compactSeat = false,
     diceColumns = 5,
     sizeTier = "compact",
-    outwardAlign = "center",
+    shuffling = false,
   },
   ref,
 ) {
@@ -54,17 +53,25 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
         ? { width: "100%" as const, maxWidth: "100%" as const }
         : { flexGrow: 1, flexBasis: 140, maxWidth: "100%" as const };
 
-  const pad = compactSeat ? (sizeTier === "compact" ? 8 : 10) : spacing.sm;
-  const nameSize = compactSeat ? (sizeTier === "roomy" ? 19 : sizeTier === "regular" ? 17 : 16) : isHuman ? 16 : 15;
-  const chip = sizeTier === "roomy" ? 32 : sizeTier === "regular" ? 30 : 28;
+  const pad = compactSeat ? (sizeTier === "compact" ? 6 : 10) : spacing.sm;
+  const nameSize = compactSeat
+    ? sizeTier === "roomy"
+      ? 19
+      : sizeTier === "regular"
+        ? 17
+        : 12
+    : isHuman
+      ? 16
+      : 15;
+  const chip = sizeTier === "roomy" ? 32 : sizeTier === "regular" ? 30 : 22;
   const displayName = isHuman ? "You" : player.name;
 
   // Always fit a single row of dice inside the card width.
   const cols = Math.max(diceColumns, DICE_PER_PLAYER);
-  const dieCap = dieSizePx ?? (sizeTier === "roomy" ? 26 : sizeTier === "regular" ? 20 : 15);
+  const dieCap = dieSizePx ?? (sizeTier === "roomy" ? 26 : sizeTier === "regular" ? 20 : 14);
   const fittedDie =
     compactSeat && seatWidth != null
-      ? fitDieInSeat(seatWidth, seatHeight ?? 80, cols, DICE_PER_PLAYER, dieCap, 8)
+      ? fitDieInSeat(seatWidth, seatHeight ?? 80, cols, DICE_PER_PLAYER, dieCap, 8, sizeTier)
       : dieCap;
 
   if (player.isEliminated) {
@@ -131,66 +138,39 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
       {compactSeat ? (
         <View
           style={{
-            flexDirection: outwardAlign === "right" ? "row-reverse" : "row",
             alignItems: "center",
-            gap: sizeTier === "compact" ? 6 : 8,
+            justifyContent: "center",
             width: "100%",
             minHeight: chip,
           }}
         >
           <Text
             style={{
-              color: colors.textPrimary,
+              color: isCurrentTurn ? colors.accent : colors.textPrimary,
               fontFamily: typography.bodySemibold.fontFamily,
               fontSize: nameSize,
-              flex: 1,
-              minWidth: 0,
+              textAlign: "center",
+              width: "100%",
             }}
             numberOfLines={1}
           >
             {displayName}
           </Text>
-          {isCurrentTurn ? (
-            <View
-              style={{
-                paddingHorizontal: 5,
-                paddingVertical: 2,
-                borderRadius: radii.pill,
-                backgroundColor: `${colors.accent}33`,
-                flexShrink: 0,
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.accent,
-                  fontFamily: typography.bodySemibold.fontFamily,
-                  fontSize: 11,
-                  letterSpacing: 0.3,
-                }}
-              >
-                TURN
-              </Text>
-            </View>
-          ) : null}
         </View>
       ) : (
-        <View className="flex-row items-center justify-between" style={{ gap: 4 }}>
+        <View className="flex-row items-center justify-center" style={{ gap: 4 }}>
           <Text
             style={{
               color: isCurrentTurn ? colors.accent : colors.textPrimary,
               fontFamily: typography.bodySemibold.fontFamily,
               fontSize: nameSize,
+              textAlign: "center",
               flexShrink: 1,
             }}
             numberOfLines={1}
           >
             {displayName}
           </Text>
-          {isCurrentTurn ? (
-            <Text style={{ color: colors.accent, fontFamily: typography.caption.fontFamily, fontSize: 10 }}>
-              turn
-            </Text>
-          ) : null}
         </View>
       )}
 
@@ -215,6 +195,7 @@ export const PlayerPanel = React.forwardRef<View, PlayerPanelProps>(function Pla
           bare
           noWrap
           tight
+          shuffling={shuffling}
         />
       </View>
     </View>

@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { ScrollView, Text, View } from "react-native";
 import type { GameAction, GameState } from "../../engine/types";
 import { useTheme } from "../../theme/ThemeProvider";
+import { shortName } from "./shortName";
 import type { PlaySizeTier } from "./tableSeating";
 
 interface TableBidCenterProps {
@@ -10,15 +11,12 @@ interface TableBidCenterProps {
   sizeTier?: PlaySizeTier;
   maxHeight?: number;
   maxWidth?: number;
+  /** After a challenge/Spot On — replace the bid log with a round-over label. */
+  roundOver?: boolean;
 }
 
 function bidActions(history: GameAction[]): GameAction[] {
   return history.filter((a) => a.type === "bid" && a.bid);
-}
-
-function shortName(full: string, max = 12): string {
-  if (full.length <= max) return full;
-  return `${full.slice(0, max - 1)}…`;
 }
 
 /** Center-table bid log — prior bids scroll; current bid stays pinned. */
@@ -28,13 +26,14 @@ export function TableBidCenter({
   sizeTier = "compact",
   maxHeight = 200,
   maxWidth = 200,
+  roundOver = false,
 }: TableBidCenterProps) {
   const { colors, radii, typography } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
   const bids = bidActions(state.roundHistory);
   const pad = sizeTier === "compact" ? 10 : sizeTier === "regular" ? 14 : 16;
   const cardMaxH = Math.max(sizeTier === "compact" ? 96 : 110, maxHeight);
-  const tierCap = sizeTier === "roomy" ? 325 : sizeTier === "regular" ? 275 : 168;
+  const tierCap = sizeTier === "roomy" ? 440 : sizeTier === "regular" ? 310 : 168;
   const cardMaxW = Math.max(sizeTier === "compact" ? 140 : 165, Math.min(maxWidth, tierCap));
   const currentSize = sizeTier === "roomy" ? 35 : sizeTier === "regular" ? 30 : dense ? 18 : 22;
   const priorSize = sizeTier === "roomy" ? 19 : sizeTier === "regular" ? 17 : dense ? 13 : 15;
@@ -43,12 +42,43 @@ export function TableBidCenter({
   const current = bids.length > 0 ? bids[bids.length - 1] : null;
 
   useEffect(() => {
-    if (prior.length === 0) return;
+    if (prior.length === 0 || roundOver) return;
     // Keep the newest prior bid in view as the round grows.
     requestAnimationFrame(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
     });
-  }, [prior.length]);
+  }, [prior.length, roundOver]);
+
+  if (roundOver) {
+    return (
+      <View
+        pointerEvents="none"
+        style={{
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: pad + 4,
+          paddingVertical: pad,
+          borderRadius: radii.md,
+          backgroundColor: colors.surfaceRaised,
+          maxWidth: cardMaxW,
+          maxHeight: cardMaxH,
+          borderWidth: 1,
+          borderColor: colors.border,
+        }}
+      >
+        <Text
+          style={{
+            color: colors.accent,
+            fontFamily: typography.h3.fontFamily,
+            fontSize: sizeTier === "roomy" ? 28 : sizeTier === "regular" ? 24 : 20,
+            textAlign: "center",
+          }}
+        >
+          Round over
+        </Text>
+      </View>
+    );
+  }
 
   if (bids.length === 0 || !current) {
     return (
@@ -61,8 +91,6 @@ export function TableBidCenter({
           paddingVertical: pad,
           borderRadius: radii.md,
           backgroundColor: colors.surfaceRaised,
-          borderWidth: 1,
-          borderColor: colors.border,
           maxWidth: cardMaxW,
           maxHeight: cardMaxH,
         }}
@@ -108,8 +136,6 @@ export function TableBidCenter({
         maxHeight: cardMaxH,
         borderRadius: radii.md,
         backgroundColor: colors.surfaceRaised,
-        borderWidth: 1.5,
-        borderColor: colors.accent,
         paddingHorizontal: pad,
         paddingTop: pad - 2,
         paddingBottom: pad - 2,
@@ -134,7 +160,7 @@ export function TableBidCenter({
         <ScrollView
           ref={scrollRef}
           style={{ flexGrow: 0, flexShrink: 1, maxHeight: historyMaxH }}
-          contentContainerStyle={{ gap: 4, paddingBottom: 4 }}
+          contentContainerStyle={{ gap: 4, paddingBottom: 4, paddingRight: 12, paddingLeft: 2 }}
           showsVerticalScrollIndicator
           nestedScrollEnabled
           keyboardShouldPersistTaps="handled"

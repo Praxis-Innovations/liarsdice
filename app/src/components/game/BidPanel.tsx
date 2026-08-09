@@ -1,5 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { LayoutChangeEvent, Pressable, Text, View } from "react-native";
 import { probabilityAtLeastWithKnown } from "../../engine/probability";
 import { getLegalBidRange, isLegalBid } from "../../engine/rules";
 import type { Bid, DieValue, GameState } from "../../engine/types";
@@ -19,6 +20,22 @@ interface BidPanelProps {
 }
 
 const FACES: DieValue[] = [1, 2, 3, 4, 5, 6];
+/** Caption line (12px type + margin) shared so Qty / Face / Bid columns align. */
+const CAPTION_BLOCK = 18;
+
+/** Default qty: open at 1, otherwise one above the last bid (most common raise). */
+function defaultBidQuantity(
+  currentBid: Bid | null,
+  range: { minQuantity: number; maxQuantity: number },
+): number {
+  if (!currentBid) return range.minQuantity;
+  return Math.min(Math.max(currentBid.quantity + 1, range.minQuantity), range.maxQuantity);
+}
+
+/** Default face: open at min face, otherwise keep the last bid's face. */
+function defaultBidFace(currentBid: Bid | null, range: { minFaceValue: DieValue }): DieValue {
+  return currentBid?.faceValue ?? range.minFaceValue;
+}
 
 export function BidPanel({
   state,
@@ -27,15 +44,21 @@ export function BidPanel({
   enabled = true,
   sizeTier = "compact",
 }: BidPanelProps) {
-  const { colors, spacing, typography } = useTheme();
+  const { colors, spacing, typography, isDark } = useTheme();
+  // Light: ivory dice. Dark: violet chips (reads better on purple surfaces).
+  const faceDieColor = isDark ? "#A78BFA" : "#FFF8EE";
+  const faceDiePip = isDark ? "#FFFFFF" : colors.textPrimary;
+  const faceDieSelect = isDark ? "#A78BFA" : colors.textSecondary;
   const range = getLegalBidRange(state.currentBid, state);
-  const [quantity, setQuantity] = useState(range.minQuantity);
-  const [faceValue, setFaceValue] = useState<DieValue>(range.minFaceValue);
+  const [quantity, setQuantity] = useState(() => defaultBidQuantity(state.currentBid, range));
+  const [faceValue, setFaceValue] = useState<DieValue>(() => defaultBidFace(state.currentBid, range));
+  // Phone: measure the face strip so six chips fit exactly in the table width.
+  const [facesRowW, setFacesRowW] = useState(0);
 
   useEffect(() => {
     const newRange = getLegalBidRange(state.currentBid, state);
-    setQuantity(newRange.minQuantity);
-    setFaceValue(newRange.minFaceValue);
+    setQuantity(defaultBidQuantity(state.currentBid, newRange));
+    setFaceValue(defaultBidFace(state.currentBid, newRange));
   }, [state.currentBid, state.roundNumber]);
 
   const bid: Bid = { quantity, faceValue };
@@ -56,67 +79,116 @@ export function BidPanel({
   const qtySize = sizeTier === "roomy" ? 35 : sizeTier === "regular" ? 30 : 24;
   const compactControls = sizeTier === "compact";
   const faceGap = sizeTier === "compact" ? 4 : 8;
-  const faceCell = faceSize + 6;
-  // Exact width of the six face chips so the label shares that box.
-  const facesWidth = faceCell * FACES.length + faceGap * (FACES.length - 1);
+  const preferredFaceCell = faceSize + 6;
+  const faceRowWidth = (cell: number) => cell * FACES.length + faceGap * (FACES.length - 1);
+  // Exact width of the six face chips so the label shares that box (tablet+).
+  const facesWidth = faceRowWidth(preferredFaceCell);
+  // Mobile: shrink chips if Qty + Face would overflow the centered row.
+  const qtyReserve = 110;
+  const fittedFaceCell =
+    compactControls && facesRowW > 0
+      ? Math.max(
+          22,
+          Math.min(
+            preferredFaceCell,
+            Math.floor(
+              (facesRowW - qtyReserve - faceGap * (FACES.length - 1)) / FACES.length,
+            ),
+          ),
+        )
+      : preferredFaceCell;
+  const fittedDieSize = Math.max(14, fittedFaceCell - 6);
+  const controlRowH = compactControls ? fittedFaceCell : preferredFaceCell;
 
-  const caption = (label: string, width?: number) => (
+  const onFacesRowLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0 && Math.abs(w - facesRowW) > 0.5) setFacesRowW(w);
+  };
+
+  const caption = (label: string, width?: number | `${number}%`) => (
     <Text
       style={{
         color: colors.textSecondary,
         fontFamily: typography.caption.fontFamily,
         fontSize: 12,
+        lineHeight: 16,
         textAlign: "center",
         width: width ?? "100%",
-        marginBottom: 2,
+        height: CAPTION_BLOCK,
       }}
     >
       {label}
     </Text>
   );
 
-  const faceChips = (
-    <View style={{ flexDirection: "row", width: facesWidth, gap: faceGap }}>
-      {FACES.map((face) => {
-        const faceLocked = !!(
-          state.isPalificoRound &&
-          state.currentBid &&
-          face !== state.currentBid.faceValue
-        );
-        const disabled = !enabled || faceLocked;
-        const selected = face === faceValue;
-        return (
-          <Pressable
-            key={face}
-            disabled={disabled}
-            onPress={() => setFaceValue(face)}
-            accessibilityLabel={`Face ${face}`}
-            style={{
-              width: faceCell,
-              height: faceCell,
-              borderRadius: 8,
-              alignItems: "center",
-              justifyContent: "center",
-              opacity: disabled ? 0.35 : 1,
-              backgroundColor: selected ? `${colors.primary}33` : "transparent",
+  const faceChips = (cell: number, diePx: number) => {
+    const rowW = faceRowWidth(cell);
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          width: rowW,
+          gap: faceGap,
+          height: cell,
+          justifyContent: "flex-start",
+          flexWrap: "nowrap",
+        }}
+      >
+        {FACES.map((face) => {
+          const faceLocked = !!(
+            state.isPalificoRound &&
+            state.currentBid &&
+            face !== state.currentBid.faceValue
+          );
+          const disabled = !enabled || faceLocked;
+          const selected = face === faceValue;
+          return (
+            <Pressable
+              key={face}
+              disabled={disabled}
+              onPress={() => setFaceValue(face)}
+              accessibilityLabel={`Face ${face}`}
+              style={{
+                width: cell,
+                height: cell,
+                flexGrow: 0,
+                flexShrink: 0,
+                borderRadius: 8,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: disabled ? 0.35 : 1,
+              backgroundColor: selected
+                ? isDark
+                  ? `${faceDieSelect}33`
+                  : `${colors.textSecondary}22`
+                : "transparent",
               borderWidth: selected ? 2 : 1,
-              borderColor: selected ? colors.primary : colors.border,
+              borderColor: selected ? faceDieSelect : colors.border,
             }}
           >
             <Die
               face={face}
-              color={colors.primary}
-              pipColor={colors.primaryText}
-              size={faceSize - 2}
+              color={faceDieColor}
+              pipColor={faceDiePip}
+              size={diePx}
             />
-          </Pressable>
-        );
-      })}
-    </View>
-  );
+            </Pressable>
+          );
+        })}
+      </View>
+    );
+  };
 
   const qtyControls = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        height: controlRowH,
+      }}
+    >
       <StepperButton
         label="-"
         compact={compactControls}
@@ -143,18 +215,33 @@ export function BidPanel({
     </View>
   );
 
-  const bidButton = (
+  const bidIcon = (
+    <Ionicons
+      name="arrow-up-circle"
+      size={compactControls ? 16 : 18}
+      color={colors.primaryText}
+    />
+  );
+
+  // Mobile: match Liar!/Spot On! height. Tablet+: match the dice row.
+  const bidButton = (matchDiceHeight: boolean) => (
     <Button
-      label={!enabled ? "Waiting…" : legal ? `Bid ${quantity}×${faceValue}` : "Invalid"}
+      label={!enabled ? "Waiting…" : legal ? `Bid ${quantity}×${faceValue}s` : "Invalid"}
       disabled={!legal}
       fullWidth
       compact={compactControls}
       onPress={() => legal && onBid(bid)}
+      icon={bidIcon}
+      style={
+        matchDiceHeight
+          ? { height: controlRowH, paddingVertical: 0, justifyContent: "center" }
+          : { paddingVertical: 12 }
+      }
     />
   );
 
   return (
-    <View style={{ gap: sizeTier === "compact" ? 8 : 12, opacity: enabled ? 1 : 0.85 }}>
+    <View style={{ gap: sizeTier === "compact" ? 8 : 12, opacity: enabled ? 1 : 0.85, width: "100%" }}>
       {compactControls ? (
         <>
           <View
@@ -165,53 +252,46 @@ export function BidPanel({
               gap: spacing.md,
               width: "100%",
             }}
+            onLayout={onFacesRowLayout}
           >
-            <View style={{ alignItems: "center" }}>
+            <View style={{ alignItems: "center", flexShrink: 0 }}>
               {caption("Qty")}
               {qtyControls}
             </View>
-            <View style={{ width: facesWidth, alignItems: "center" }}>
-              {caption("Face", facesWidth)}
-              {faceChips}
+            <View style={{ alignItems: "center", flexShrink: 0 }}>
+              {caption("Face", faceRowWidth(fittedFaceCell))}
+              {faceChips(fittedFaceCell, fittedDieSize)}
             </View>
           </View>
-          <View style={{ width: "100%" }}>{bidButton}</View>
+          <View style={{ width: "100%" }}>{bidButton(false)}</View>
         </>
       ) : (
-        <View className="flex-row flex-wrap items-end" style={{ gap: spacing.sm }}>
-          <View style={{ gap: 2 }}>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontFamily: typography.caption.fontFamily,
-                fontSize: 12,
-              }}
-            >
-              Qty
-            </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            gap: spacing.sm,
+            width: "100%",
+          }}
+        >
+          <View style={{ alignItems: "center", flexShrink: 0 }}>
+            {caption("Qty")}
             {qtyControls}
           </View>
-          <View style={{ gap: 2, flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontFamily: typography.caption.fontFamily,
-                fontSize: 12,
-              }}
-            >
-              Face
-            </Text>
-            {faceChips}
+          <View style={{ alignItems: "center", flexShrink: 0 }}>
+            {caption("Face", facesWidth)}
+            {faceChips(preferredFaceCell, faceSize - 2)}
           </View>
           <View
             style={{
-              minWidth: 175,
-              maxWidth: sizeTier === "roomy" ? 225 : 200,
-              flexGrow: 0,
-              justifyContent: "flex-end",
+              marginLeft: "auto",
+              width: sizeTier === "roomy" ? 200 : 180,
+              flexShrink: 0,
             }}
           >
-            {bidButton}
+            {/* Spacer matches Qty/Face captions so the button lines up with the dice. */}
+            <View style={{ height: CAPTION_BLOCK }} />
+            {bidButton(true)}
           </View>
         </View>
       )}
