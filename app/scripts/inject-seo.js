@@ -335,11 +335,20 @@ function inlineCriticalCss(dir = DIST_DIR) {
       let html = fs.readFileSync(full, "utf8");
       const before = html;
       for (const [filename, css] of Object.entries(cssContents)) {
-        const linkRe = new RegExp(
-          `<link[^>]*href="[^"]*${filename.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[^>]*>`,
+        const escaped = filename.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        // Replace <link rel="stylesheet"> with inlined <style>, but only once.
+        const stylesheetRe = new RegExp(
+          `<link[^>]*rel="stylesheet"[^>]*href="[^"]*${escaped}"[^>]*>`,
+        );
+        html = html.replace(stylesheetRe, `<style>${css}</style>`);
+        // Remove the corresponding <link rel="preload" as="style"> — no point
+        // preloading a resource that's already inlined.
+        const preloadRe = new RegExp(
+          `<link[^>]*rel="preload"[^>]*href="[^"]*${escaped}"[^>]*as="style"[^>]*>|` +
+          `<link[^>]*href="[^"]*${escaped}"[^>]*rel="preload"[^>]*as="style"[^>]*>`,
           "g",
         );
-        html = html.replace(linkRe, `<style>${css}</style>`);
+        html = html.replace(preloadRe, "");
       }
       if (html !== before) {
         fs.writeFileSync(full, html, "utf8");
@@ -380,13 +389,9 @@ function optimizeHtmlPerf(dir = DIST_DIR) {
       html = html.replace(/<link rel="preload" href="[^"]*" as="font"[^>]*>/g, "");
       html = html.replace(/font-display:\s*swap/g, "font-display:optional");
 
-      // Re-inject preloads for above-fold font weights (H1, body, subtitle, CTA).
-      const criticalFonts = [
-        "Fredoka_700Bold", "Fredoka_700",
-        "Manrope_400Regular", "Manrope_400",
-        "Manrope_600SemiBold", "Manrope_600",
-        "Manrope_700Bold", "Manrope_700",
-      ];
+      // Re-inject preloads for the two critical above-fold font weights only.
+      // Fewer preloads = less bandwidth contention on slow mobile networks.
+      const criticalFonts = ["Fredoka_700Bold", "Fredoka_700", "Manrope_400Regular", "Manrope_400"];
       const preloadTags = [];
       for (const url of allFontUrls) {
         if (criticalFonts.some((name) => url.includes(name))) {
