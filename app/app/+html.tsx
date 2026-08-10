@@ -64,12 +64,30 @@ export default function Root({ children }: PropsWithChildren) {
           }}
         />
 
-        {/* Avoid white flash before RN paints (hurts FCP filmstrip / LCP). */}
+        {/* Avoid white flash before RN paints (hurts FCP filmstrip / LCP).
+            --bg is set by the blocking theme script below; falls back to light. */}
         <style
           dangerouslySetInnerHTML={{
             __html:
-              "html,body,#root{background-color:#FFFBF3}html{color-scheme:light dark}" +
+              "html,body,#root{background-color:var(--bg,#FFFBF3)}" +
+              "html.dark,html.dark body,html.dark #root{color-scheme:dark}" +
+              "html{color-scheme:light dark}" +
               "body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}",
+          }}
+        />
+
+        {/* Blocking theme-detection: reads stored preference (or OS dark mode)
+            and sets the dark class + --bg custom property before first paint.
+            Standard pattern for class-based dark mode (Tailwind, next-themes). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){try{var s=localStorage.getItem("@liarsdice/theme-mode");' +
+              'var d=s==="dark"||(s!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);' +
+              'if(d){document.documentElement.classList.add("dark");' +
+              'document.documentElement.style.setProperty("--bg","#14101F")}' +
+              'else{document.documentElement.style.setProperty("--bg","#FFFBF3")}' +
+              "}catch(e){document.documentElement.style.setProperty(\"--bg\",\"#FFFBF3\")}})()",
           }}
         />
 
