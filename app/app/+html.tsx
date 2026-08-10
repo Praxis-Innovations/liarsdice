@@ -91,6 +91,18 @@ export default function Root({ children }: PropsWithChildren) {
           }}
         />
 
+        {/* Stamp real viewport size before React hydrates so
+            useHydrationSafeWindowDimensions can read it on first render,
+            preventing the laptop→phone layout shift (CLS). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){var d=document.documentElement;' +
+              'd.setAttribute("data-vw",String(window.innerWidth));' +
+              'd.setAttribute("data-vh",String(window.innerHeight))})()',
+          }}
+        />
+
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>

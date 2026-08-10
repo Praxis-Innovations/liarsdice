@@ -4,18 +4,34 @@ import { Platform, useWindowDimensions, type ScaledSize } from "react-native";
 const SSR_SIZE: ScaledSize = { width: 0, height: 0, scale: 1, fontScale: 1 };
 
 /**
- * Expo static export renders with width/height 0 (see `resolveLayoutWidth` → 1280).
- * On the client, `useWindowDimensions()` returns the real viewport on the *first*
- * paint, so Hero/Header/etc. emit a different tree than the SSR HTML and React
- * throws minified error #418 (hydration mismatch).
+ * Read viewport dimensions stamped by the blocking <script> in +html.tsx.
+ * On the server (SSG) or if the script hasn't run, falls back to SSR_SIZE.
+ */
+function getInitialSize(): ScaledSize {
+  if (Platform.OS !== "web" || typeof document === "undefined") {
+    return SSR_SIZE;
+  }
+  const root = document.documentElement;
+  const w = parseInt(root.getAttribute("data-vw") || "0", 10);
+  const h = parseInt(root.getAttribute("data-vh") || "0", 10);
+  if (w > 0 && h > 0) {
+    return { width: w, height: h, scale: 1, fontScale: 1 };
+  }
+  return SSR_SIZE;
+}
+
+/**
+ * Hydration-safe viewport dimensions for web.
  *
- * First render matches SSR (0×0). `useLayoutEffect` then applies live dimensions
- * before the browser paints, avoiding a visible desktop→mobile flash.
+ * A blocking script in +html.tsx stamps data-vw/data-vh on <html> before
+ * React mounts. The initial useState reads those so the first render
+ * matches the real viewport — no two-phase layout shift (CLS).
+ * useLayoutEffect keeps dimensions live on resize.
  */
 export function useHydrationSafeWindowDimensions(): ScaledSize {
   const live = useWindowDimensions();
   const [size, setSize] = useState<ScaledSize>(() =>
-    Platform.OS === "web" ? SSR_SIZE : live,
+    Platform.OS === "web" ? getInitialSize() : live,
   );
 
   useLayoutEffect(() => {

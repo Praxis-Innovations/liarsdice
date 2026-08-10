@@ -57,11 +57,11 @@ export function createSeededRng(seed: number): RNGFunction {
 }
 
 /**
- * Prefer a real viewport width; fall back to a laptop default so static/web
- * first paint never treats width=0 as a phone (which centers copy, then flips left).
+ * Prefer a real viewport width; fall back to a phone default (375) so the
+ * SSR/static first paint matches the mobile layout that most users and PSI see.
  */
 export function resolveLayoutWidth(width: number): number {
-  return width > 0 ? width : 1280;
+  return width > 0 ? width : 375;
 }
 
 function platformBox(

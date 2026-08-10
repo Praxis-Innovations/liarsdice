@@ -293,9 +293,28 @@ function rewriteSiteUrlInHtml(dir = DIST_DIR) {
 }
 
 /**
+ * Extract font file URLs from @font-face rules or preload link tags in HTML.
+ * Returns a map of font-family substring → URL.
+ */
+function extractFontUrls(html) {
+  const urls = {};
+  const preloadRe = /<link rel="preload" href="([^"]*)" as="font"[^>]*>/g;
+  let m;
+  while ((m = preloadRe.exec(html)) !== null) {
+    urls[m[1]] = m[1];
+  }
+  const faceRe = /url\(["']?([^"')]+\.(?:ttf|woff2?))["']?\)/g;
+  while ((m = faceRe.exec(html)) !== null) {
+    urls[m[1]] = m[1];
+  }
+  return Object.values(urls);
+}
+
+/**
  * Lighthouse/FCP: expo-font emits `font-display:auto` (FOIT) and preloads every
  * weight. Swap fonts immediately, and on the landing page only preload the two
- * weights that paint the H1 + body copy.
+ * weights that paint the H1 + body copy. Also inline the small NativeWind CSS
+ * to eliminate the render-blocking stylesheet request.
  */
 function optimizeHtmlPerf(dir = DIST_DIR) {
   let files = 0;
@@ -314,11 +333,42 @@ function optimizeHtmlPerf(dir = DIST_DIR) {
     html = html.replace(/font-display:\s*auto/g, "font-display:swap");
 
     if (entry.name === "index.html") {
-      // Don't preload fonts — and use font-display:optional so a late Fredoka
-      // download cannot restyle the hero after first paint (Speed Index killer).
+      // Extract font URLs before stripping preloads so we can re-inject critical ones.
+      const allFontUrls = extractFontUrls(html);
+
+      // Strip ALL font preloads, then selectively re-add critical ones.
       html = html.replace(/<link rel="preload" href="[^"]*" as="font"[^>]*>/g, "");
       html = html.replace(/font-display:\s*swap/g, "font-display:optional");
 
+      // Re-inject preloads for the two critical font weights (H1 + body).
+      const criticalFonts = ["Fredoka_700Bold", "Fredoka_700", "Manrope_400Regular", "Manrope_400"];
+      const preloadTags = [];
+      for (const url of allFontUrls) {
+        if (criticalFonts.some((name) => url.includes(name))) {
+          const ext = url.endsWith(".woff2") ? "font/woff2" : "font/ttf";
+          preloadTags.push(`<link rel="preload" href="${url}" as="font" type="${ext}" crossorigin>`);
+        }
+      }
+      if (preloadTags.length > 0) {
+        html = html.replace("</head>", preloadTags.join("\n") + "\n</head>");
+      }
+
+      // Inline the NativeWind CSS to eliminate the render-blocking stylesheet request.
+      const cssLinkRe = /<link rel="stylesheet" href="(\/[^"]*\.css)"[^>]*>/;
+      const cssMatch = html.match(cssLinkRe);
+      if (cssMatch) {
+        const cssHref = cssMatch[1];
+        const cssPath = path.join(DIST_DIR, cssHref);
+        if (fs.existsSync(cssPath)) {
+          const cssContent = fs.readFileSync(cssPath, "utf8");
+          html = html.replace(cssMatch[0], `<style>${cssContent}</style>`);
+          // Also remove the preload hint for this CSS since it's now inlined.
+          const preloadPattern = new RegExp(
+            `<link rel="preload" href="${cssHref.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[^>]*>`,
+          );
+          html = html.replace(preloadPattern, "");
+        }
+      }
     }
 
     if (html !== before) {
