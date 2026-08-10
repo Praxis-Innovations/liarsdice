@@ -135,7 +135,7 @@ describe("RoundResult", () => {
     const style = Array.isArray(outcomeEl.props.style)
       ? Object.assign({}, ...outcomeEl.props.style)
       : outcomeEl.props.style;
-    expect(style.color).toBe("#00B894");
+    expect(style.color).toBe("#007A63");
   });
 
   it("colors outcome red when human loses", async () => {

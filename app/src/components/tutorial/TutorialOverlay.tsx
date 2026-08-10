@@ -1,7 +1,8 @@
 import { MotiView } from "moti";
 import React, { useId } from "react";
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Defs, Mask, Rect as SvgRect } from "react-native-svg";
+import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useGameStore } from "../../engine/gameStore";
 import { useTheme } from "../../theme/ThemeProvider";
 import { describeTutorialRoundResult, TUTORIAL_STEPS, type TutorialStep } from "./tutorialSteps";
@@ -79,7 +80,7 @@ function CutoutBackdrop({
   interactive: boolean;
 }) {
   const { colors, radii } = useTheme();
-  const { width: screenW, height: screenH } = useWindowDimensions();
+  const { width: screenW, height: screenH } = useHydrationSafeWindowDimensions();
   const maskId = useId().replace(/:/g, "");
   const corner = radii.md;
 
@@ -209,7 +210,7 @@ export function TutorialOverlay({
   onSkip,
 }: TutorialOverlayProps) {
   const { colors, radii, spacing, typography } = useTheme();
-  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
+  const { height: screenHeight, width: screenWidth } = useHydrationSafeWindowDimensions();
   const gameState = useGameStore((s) => s.gameState);
   const containerHeight = screenHeight - containerOffset.y;
 

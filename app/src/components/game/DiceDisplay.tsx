@@ -1,7 +1,8 @@
 import { MotiView } from "moti";
 import React, { useEffect, useState } from "react";
-import { View, useWindowDimensions } from "react-native";
+import { View } from "react-native";
 import { getBreakpoint } from "../../lib/breakpoints";
+import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Die, type DieFace } from "../shared/Die";
 
@@ -147,7 +148,7 @@ export function DiceRow({
   shuffling = false,
 }: DiceRowProps) {
   const { colors, radii } = useTheme();
-  const { width } = useWindowDimensions();
+  const { width } = useHydrationSafeWindowDimensions();
   const bp = getBreakpoint(width);
   const px = dieSizePx ?? SIZE_PX[bp][size];
   const gap = dieSizePx != null ? (tight ? 3 : 4) : GAP[size];

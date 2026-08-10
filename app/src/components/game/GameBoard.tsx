@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { LayoutChangeEvent, View, useWindowDimensions } from "react-native";
+import { LayoutChangeEvent, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGameStore } from "../../engine/gameStore";
 import type { DieValue } from "../../engine/types";
 import { getBreakpoint } from "../../lib/breakpoints";
+import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useTheme } from "../../theme/ThemeProvider";
 import { useHeaderOffset } from "../shared/Header";
 import { TutorialWelcome } from "../tutorial/TutorialWelcome";
@@ -48,7 +49,7 @@ export function GameBoard() {
   const advanceTutorialStep = useGameStore((s) => s.advanceTutorialStep);
 
   const { colors, spacing } = useTheme();
-  const { width, height: windowHeight } = useWindowDimensions();
+  const { width, height: windowHeight } = useHydrationSafeWindowDimensions();
   const insets = useSafeAreaInsets();
   const headerOffset = useHeaderOffset();
   const bp = getBreakpoint(width);

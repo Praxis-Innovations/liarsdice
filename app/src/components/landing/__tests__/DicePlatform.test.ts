@@ -22,9 +22,9 @@ describe("getBreakpoint", () => {
 });
 
 describe("resolveLayoutWidth", () => {
-  it("falls back to a laptop width when the viewport is unknown", () => {
-    expect(resolveLayoutWidth(0)).toBe(1280);
-    expect(resolveLayoutWidth(-1)).toBe(1280);
+  it("falls back to a phone width when the viewport is unknown", () => {
+    expect(resolveLayoutWidth(0)).toBe(375);
+    expect(resolveLayoutWidth(-1)).toBe(375);
     expect(resolveLayoutWidth(390)).toBe(390);
   });
 });
@@ -123,11 +123,10 @@ describe("getHeroStageMetrics", () => {
     expect(stage.platform.surfaceTop).toBeGreaterThan(stage.heroHeight * 0.5);
   });
 
-  it("treats width=0 as laptop so SSR/first paint is not phone-centered", () => {
+  it("treats width=0 as phone so SSR matches the mobile layout PSI tests", () => {
     const stage = getHeroStageMetrics(0, 900, 64);
-    expect(stage.layoutWidth).toBe(1280);
-    expect(stage.bp).toBe("laptop");
-    expect(stage.platform.left).toBeGreaterThan(1280 * 0.35);
+    expect(stage.layoutWidth).toBe(375);
+    expect(stage.bp).toBe("phone");
   });
 
   it("keeps compact hero full-height while the copy band ends at 80%", () => {
