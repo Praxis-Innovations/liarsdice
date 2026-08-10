@@ -110,9 +110,10 @@ improve:
   `DicePlatform.tsx`: `getBreakpoint`, `getPlatformMetrics`, `getDiceBand`,
   `placeDiceOnPlatform` — unit-tested). Always 6 dice;
   sizes scale down on smaller widths. Soft spotlight SVG is shared; blur uses web-only CSS
-  `filter`. **Web** dice/table: vanilla Three.js in `CssDice3D.web.tsx` (filename is historical —
-  not CSS 3D; do not add `@react-three/*`). **Native** dice: SVG + Reanimated via
-  `CssDice3D.tsx` → `ScatteredDice`. Keep that platform split so iOS/Android never load WebGL.
+  `filter`. **Web** dice: static SVG via `HeroDiceStage.web.tsx` → `Die` component (no Three.js,
+  no animation — dice paint instantly at final positions). **Native** dice: SVG + Reanimated via
+  `CssDice3D.tsx` → `ScatteredDice` (toss animation preserved). Platform split maintained via
+  Metro `.web.tsx` file resolution.
   Do not commit `web/` Next.js leftovers — product web is Expo static export under `app/`.
 - **Breakpoints** (shared in `src/lib/breakpoints.ts`, Tailwind-aligned):
   - phone `<768` (`md`), tablet `768–1023`, laptop/desktop `≥1024` (`lg`)

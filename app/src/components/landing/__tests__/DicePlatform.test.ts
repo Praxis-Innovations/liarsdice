@@ -5,7 +5,6 @@ import {
   getDiceBand,
   getHeroStageMetrics,
   getPlatformMetrics,
-  isHeroDiceTossComplete,
   placeDiceOnPlatform,
   resolveLayoutWidth,
 } from "../dicePlatformLayout";
@@ -201,9 +200,3 @@ describe("buildHeroDiceSpecs", () => {
   });
 });
 
-describe("isHeroDiceTossComplete", () => {
-  it("gates the WebGL idle stop after the last die lands", () => {
-    expect(isHeroDiceTossComplete(1.4, 0.44, 1.05)).toBe(false);
-    expect(isHeroDiceTossComplete(1.49, 0.44, 1.05)).toBe(true);
-  });
-});
