@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useColorScheme } from "react-native";
+import { Platform, useColorScheme } from "react-native";
 import { RADII, SPACING, TYPOGRAPHY, ThemeColors, darkColors, lightColors } from "./tokens";
 
 export type ThemeMode = "light" | "dark" | "system";
@@ -62,6 +62,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setIsDark(resolveIsDark("system", liveColorScheme));
     }
   }, [liveColorScheme, themeMode, storageReady]);
+
+  // Keep <html class="dark"> in sync for NativeWind (tailwind darkMode: "class").
+  // App chrome still paints via tokens below — this only satisfies css-interop
+  // and any rare `dark:` utilities.
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
 
   const setThemeMode = useCallback(
     (mode: ThemeMode) => {

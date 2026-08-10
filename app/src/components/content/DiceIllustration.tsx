@@ -186,7 +186,7 @@ export function GameScenario({ title, players, bid, result, highlightValues = []
             paddingVertical: spacing.sm,
           }}
         >
-          <Text style={{ fontFamily: typography.bodySemibold.fontFamily, fontSize: 18, color: colors.accent }}>
+          <Text style={{ fontFamily: typography.bodySemibold.fontFamily, fontSize: 18, color: colors.accentText }}>
             Current bid: {bid}
           </Text>
         </View>

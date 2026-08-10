@@ -4,23 +4,30 @@ import Head from "expo-router/head";
 import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import { View } from "react-native";
+import React, { Suspense, lazy, useEffect } from "react";
+import { Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Header } from "../src/components/shared/Header";
-import { TutorialHost } from "../src/components/tutorial/TutorialHost";
 import { AuthProvider } from "../src/context/AuthContext";
+import { silenceWebConsoleNoise } from "../src/lib/silenceWebConsoleNoise";
 import { fontsToLoad } from "../src/theme/fonts";
 import { ThemeProvider, useTheme } from "../src/theme/ThemeProvider";
 
+silenceWebConsoleNoise();
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const AUTH_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password", "/reset-password", "/home", "/profile"];
+
+/** Game/tutorial code stays out of the marketing-route critical path. */
+const TutorialHost = lazy(() =>
+  import("../src/components/tutorial/TutorialHost").then((m) => ({ default: m.TutorialHost })),
+);
 
 function RootInner() {
   const pathname = usePathname();
   const { isDark, colors } = useTheme();
   const showHeader = !AUTH_PREFIXES.some((p) => pathname.startsWith(p));
+  const onPlayRoute = pathname === "/play";
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -36,7 +43,11 @@ function RootInner() {
           contentStyle: { flex: 1, backgroundColor: colors.background },
         }}
       />
-      <TutorialHost />
+      {onPlayRoute ? (
+        <Suspense fallback={null}>
+          <TutorialHost />
+        </Suspense>
+      ) : null}
       <StatusBar style={isDark ? "light" : "dark"} />
     </View>
   );
@@ -51,7 +62,10 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) {
+  // Never block first paint on web fonts — LCP dies if we return null here.
+  // Native still waits briefly so splash covers the swap. Web relies on
+  // inject-seo's font-display:optional + system-ui fallback until fonts resolve.
+  if (Platform.OS !== "web" && !fontsLoaded && !fontError) {
     return null;
   }
 

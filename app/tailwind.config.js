@@ -1,10 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  // "media": OS/browser color-scheme for any rare `dark:` Tailwind utilities.
-  // App chrome/colors use ThemeProvider (manual light/dark toggle + system).
-  // Do NOT switch to "class" expecting it to track ThemeProvider — they are
-  // separate systems; themed UI should keep using useTheme().colors inline.
-  darkMode: "media",
+  // "class": required on web — NativeWind/css-interop throws if anything calls
+  // colorScheme.set() while darkMode is "media" (Expo can hit that path when
+  // the stylesheet injects after the runtime boots). ThemeProvider toggles the
+  // `dark` class on <html>. Themed UI still uses useTheme().colors inline;
+  // do not drive brand colors through `dark:` utilities.
+  darkMode: "class",
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./src/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {

@@ -15,15 +15,6 @@ jest.mock("../CssDice3D", () => ({
   ScatteredCssDice: (props: Record<string, unknown>) => mockScatteredCssDice(props),
 }));
 
-jest.mock("moti", () => {
-  const { View } = require("react-native");
-  return {
-    MotiView: ({ children, ...props }: { children?: React.ReactNode }) => (
-      <View {...props}>{children}</View>
-    ),
-  };
-});
-
 jest.mock("expo-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
 }));

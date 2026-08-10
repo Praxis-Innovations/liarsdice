@@ -1,9 +1,9 @@
-import { MotiView } from "moti";
 import React from "react";
-import { Text, View, useWindowDimensions } from "react-native";
+import { Text, View } from "react-native";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import { headingProps } from "../../lib/heading";
 import { isCompactWidth } from "../../lib/breakpoints";
+import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useTheme } from "../../theme/ThemeProvider";
 
 function RollIcon({ color }: { color: string }) {
@@ -82,7 +82,7 @@ const STEPS = [
 
 export function HowToPlay() {
   const { colors, spacing, typography } = useTheme();
-  const { width } = useWindowDimensions();
+  const { width } = useHydrationSafeWindowDimensions();
   const isNarrow = isCompactWidth(width);
 
   return (
@@ -102,12 +102,9 @@ export function HowToPlay() {
         </Text>
 
         <View className={isNarrow ? "flex-col" : "flex-row flex-wrap"} style={{ gap: spacing.lg, justifyContent: "center" }}>
-          {STEPS.map((step, index) => (
-            <MotiView
+          {STEPS.map((step) => (
+            <View
               key={step.title}
-              from={{ opacity: 0, translateY: 24 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: "timing", duration: 450, delay: 150 + index * 120 }}
               style={{
                 backgroundColor: colors.surfaceRaised,
                 borderRadius: 24,
@@ -147,7 +144,7 @@ export function HowToPlay() {
               >
                 {step.body}
               </Text>
-            </MotiView>
+            </View>
           ))}
         </View>
       </View>

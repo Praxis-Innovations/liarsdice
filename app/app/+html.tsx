@@ -1,15 +1,15 @@
 import { ScrollViewStyleReset } from "expo-router/html";
 import { type PropsWithChildren } from "react";
 
-// TODO: replace with the real production domain once it's decided/deployed
-// (see docs/DEPLOY_WEB_BACKEND.md). Used for canonical/OG URLs and referenced
-// by public/robots.txt + public/sitemap.xml — keep all three in sync.
-const SITE_URL = "https://liarsdice.example.com";
+// Production origin — keep in sync with app/scripts/inject-seo.js,
+// public/robots.txt, and public/sitemap.xml (inject-seo rewrites the latter
+// two into dist/ on export so they can't drift).
+const SITE_URL = "https://liarsdice.com";
 const SITE_NAME = "Liar's Dice";
 const SITE_TITLE = "Liar's Dice — Bluff Your Way to Victory";
 const SITE_DESCRIPTION =
   "Play Liar's Dice online free, instantly — no download, no account required. Bid boldly, call bluffs, and outwit AI opponents in this classic dice game.";
-const OG_IMAGE = `${SITE_URL}/og-image.png`;
+const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 // Expo Router's static web export bakes this file's markup into every
 // exported HTML page (app/dist/*.html) as-is, unlike per-route
@@ -61,6 +61,15 @@ export default function Root({ children }: PropsWithChildren) {
               url: SITE_URL,
               description: SITE_DESCRIPTION,
             }),
+          }}
+        />
+
+        {/* Avoid white flash before RN paints (hurts FCP filmstrip / LCP). */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              "html,body,#root{background-color:#FFFBF3}html{color-scheme:light dark}" +
+              "body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}",
           }}
         />
 

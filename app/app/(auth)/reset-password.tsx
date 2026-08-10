@@ -8,7 +8,6 @@ import { Text } from "react-native";
 import { AuthCard } from "../../src/components/auth/AuthCard";
 import { TextField } from "../../src/components/ui/TextField";
 import { Button } from "../../src/components/ui/Button";
-import { supabase } from "../../src/lib/supabase";
 import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function ResetPasswordScreen() {
@@ -19,7 +18,7 @@ export default function ResetPasswordScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (submitting || !supabase) return;
+    if (submitting) return;
     if (password.length < 8) {
       setError("Password must be at least 8 characters");
       return;
@@ -27,6 +26,11 @@ export default function ResetPasswordScreen() {
     setError(null);
     setSubmitting(true);
     try {
+      const { supabase } = await import("../../src/lib/supabase");
+      if (!supabase) {
+        setError("Auth not configured");
+        return;
+      }
       const { error: update_error } = await supabase.auth.updateUser({ password });
       if (update_error) setError(update_error.message);
       else setDone(true);

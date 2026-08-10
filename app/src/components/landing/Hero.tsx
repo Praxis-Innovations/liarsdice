@@ -1,14 +1,13 @@
 import { Link } from "expo-router";
-import { MotiView } from "moti";
 import React, { useMemo } from "react";
-import { Platform, Text, View, useWindowDimensions } from "react-native";
+import { Platform, Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { headingProps } from "../../lib/heading";
+import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useHeaderOffset } from "../shared/Header";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Button } from "../ui/Button";
 import { type ScatteredDieConfig } from "./AnimatedDice";
-import { ScatteredCssDice } from "./CssDice3D";
 import {
   DicePlatform,
   buildHeroDiceSpecs,
@@ -16,6 +15,7 @@ import {
   getHeroStageMetrics,
   type DiceTableConfig,
 } from "./DicePlatform";
+import { HeroDiceStage } from "./HeroDiceStage";
 
 /** Fixed marketing palette — keeps WebGL from remounting when theme hydrates/toggles. */
 const HERO_DICE_PALETTE = ["#FF5A5F", "#00B894", "#FFC145"] as const;
@@ -23,7 +23,7 @@ const HERO_TABLE_HALO = "#1C1730";
 
 export function Hero() {
   const { colors, spacing, typography, isDark } = useTheme();
-  const { width, height } = useWindowDimensions();
+  const { width, height } = useHydrationSafeWindowDimensions();
   const headerOffset = useHeaderOffset();
 
   const stage = useMemo(
@@ -95,7 +95,7 @@ export function Hero() {
       >
         <Text
           style={{
-            color: colors.accent,
+            color: colors.accentText,
             fontFamily: typography.bodySemibold.fontFamily,
             fontSize: typography.caption.fontSize,
             letterSpacing: 1.8,
@@ -154,7 +154,6 @@ export function Hero() {
           fontFamily: typography.caption.fontFamily,
           fontSize: typography.caption.fontSize,
           marginTop: spacing.md,
-          opacity: 0.7,
           textAlign: isCompact ? "center" : "left",
           alignSelf: "stretch",
         }}
@@ -263,7 +262,7 @@ export function Hero() {
             backgroundColor: "transparent",
           }}
         >
-          <ScatteredCssDice
+          <HeroDiceStage
             dice={scatteredDice}
             pipColor="#FFFFFF"
             width={layoutWidth}
@@ -290,14 +289,9 @@ export function Hero() {
             backgroundColor: "transparent",
           }}
         >
-          <MotiView
-            from={{ translateY: 20 }}
-            animate={{ translateY: 0 }}
-            transition={{ type: "timing", duration: 600 }}
-            style={{ width: "100%", maxWidth: 600, backgroundColor: "transparent" }}
-          >
+          <View style={{ width: "100%", maxWidth: 600, backgroundColor: "transparent" }}>
             {marketingStack}
-          </MotiView>
+          </View>
         </View>
       </View>
     );
@@ -395,7 +389,7 @@ export function Hero() {
           overflow: "visible",
         }}
       >
-        <ScatteredCssDice
+        <HeroDiceStage
           dice={scatteredDice}
           pipColor="#FFFFFF"
           width={layoutWidth}
@@ -417,14 +411,9 @@ export function Hero() {
           alignItems: "flex-start",
         }}
       >
-        <MotiView
-          from={{ translateY: 20 }}
-          animate={{ translateY: 0 }}
-          transition={{ type: "timing", duration: 600 }}
-          style={{ width: "100%", maxWidth: 600 }}
-        >
+        <View style={{ width: "100%", maxWidth: 600 }}>
           {marketingStack}
-        </MotiView>
+        </View>
       </View>
     </View>
   );

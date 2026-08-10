@@ -4,11 +4,12 @@
  */
 import React, { useEffect, useRef } from "react";
 import { View } from "react-native";
-import * as THREE from "three";
-import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { DieFace } from "../shared/Die";
 import type { DiceTableConfig } from "./DicePlatform";
 import { isHeroDiceTossComplete } from "./dicePlatformLayout";
+import { createRoundedBoxGeometry } from "./roundedBoxGeometry";
+
+type ThreeNS = typeof import("three");
 
 type DieData = {
   face: DieFace;
@@ -93,7 +94,7 @@ function toWorld(left: number, top: number, size: number, width: number, height:
   };
 }
 
-function createTable(table: DiceTableConfig, canvasWidth: number, canvasHeight: number): THREE.Group {
+function createTable(THREE: ThreeNS, table: DiceTableConfig, canvasWidth: number, canvasHeight: number) {
   const surfaceY = canvasHeight / 2 - table.surfaceTop;
   const centerX = table.left + table.width / 2 - canvasWidth / 2;
   const padDepth = Math.min(220, Math.max(130, table.width * 0.34));
@@ -139,17 +140,17 @@ function createTable(table: DiceTableConfig, canvasWidth: number, canvasHeight: 
   return group;
 }
 
-function disposeObject3D(root: THREE.Object3D) {
-  const extras = root.userData?.disposables as Array<THREE.Material | THREE.Texture | THREE.BufferGeometry> | undefined;
+function disposeObject3D(THREE: ThreeNS, root: InstanceType<ThreeNS["Object3D"]>) {
+  const extras = root.userData?.disposables as Array<{ dispose: () => void }> | undefined;
   extras?.forEach((item) => item.dispose());
 
-  root.traverse((obj: THREE.Object3D) => {
+  root.traverse((obj) => {
     if (!(obj instanceof THREE.Mesh)) return;
     obj.geometry?.dispose();
     const material = obj.material;
     const materials = Array.isArray(material) ? material : material ? [material] : [];
     for (const mat of materials) {
-      const mapped = mat as THREE.MeshBasicMaterial;
+      const mapped = mat as InstanceType<ThreeNS["MeshBasicMaterial"]>;
       mapped.map?.dispose();
       mat.dispose();
     }
@@ -158,41 +159,44 @@ function disposeObject3D(root: THREE.Object3D) {
 
 type Side = "front" | "back" | "top" | "bottom" | "right" | "left";
 
-const SIDE_ORIENT: Record<Side, { position: THREE.Vector3; quaternion: THREE.Quaternion }> = {
-  front: {
-    position: new THREE.Vector3(0, 0, 0.5),
-    quaternion: new THREE.Quaternion(),
-  },
-  back: {
-    position: new THREE.Vector3(0, 0, -0.5),
-    quaternion: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI, 0)),
-  },
-  top: {
-    position: new THREE.Vector3(0, 0.5, 0),
-    quaternion: new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)),
-  },
-  bottom: {
-    position: new THREE.Vector3(0, -0.5, 0),
-    quaternion: new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)),
-  },
-  right: {
-    position: new THREE.Vector3(0.5, 0, 0),
-    quaternion: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)),
-  },
-  left: {
-    position: new THREE.Vector3(-0.5, 0, 0),
-    quaternion: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0)),
-  },
-};
+function sideOrient(THREE: ThreeNS): Record<Side, { position: InstanceType<ThreeNS["Vector3"]>; quaternion: InstanceType<ThreeNS["Quaternion"]> }> {
+  return {
+    front: {
+      position: new THREE.Vector3(0, 0, 0.5),
+      quaternion: new THREE.Quaternion(),
+    },
+    back: {
+      position: new THREE.Vector3(0, 0, -0.5),
+      quaternion: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI, 0)),
+    },
+    top: {
+      position: new THREE.Vector3(0, 0.5, 0),
+      quaternion: new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)),
+    },
+    bottom: {
+      position: new THREE.Vector3(0, -0.5, 0),
+      quaternion: new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)),
+    },
+    right: {
+      position: new THREE.Vector3(0.5, 0, 0),
+      quaternion: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)),
+    },
+    left: {
+      position: new THREE.Vector3(-0.5, 0, 0),
+      quaternion: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0)),
+    },
+  };
+}
 
 function addFacePips(
-  group: THREE.Group,
+  THREE: ThreeNS,
+  group: InstanceType<ThreeNS["Group"]>,
   side: Side,
   value: DieFace,
   pipColor: string,
-  pipGeo: THREE.CircleGeometry,
+  pipGeo: InstanceType<ThreeNS["CircleGeometry"]>,
 ) {
-  const { position, quaternion } = SIDE_ORIENT[side];
+  const { position, quaternion } = sideOrient(THREE)[side];
   const pivot = new THREE.Group();
   pivot.position.copy(position);
   pivot.quaternion.copy(quaternion);
@@ -217,14 +221,21 @@ function addFacePips(
   group.add(pivot);
 }
 
-/** One solid rounded cube + flat face pips. */
-function createDie(color: string, face: DieFace, pipColor: string): THREE.Group {
+/** One solid rounded cube + flat face pips. Geometry is built from the already
+ * loaded `three` namespace (no second async import) so Metro won't park `three`
+ * in the eagerly loaded `__common` chunk. */
+function createDie(
+  THREE: ThreeNS,
+  color: string,
+  face: DieFace,
+  pipColor: string,
+) {
   const group = new THREE.Group();
   const faces = faceValues(face);
 
-  // Casino-style: modest fillet (0.14) so it stays cube-like, not a cushion
+  // Casino-style: modest fillet (0.14) so it stays cube-like, not a cushion.
   const body = new THREE.Mesh(
-    new RoundedBoxGeometry(1, 1, 1, 7, 0.14),
+    createRoundedBoxGeometry(THREE, 1, 1, 1, 7, 0.14),
     new THREE.MeshStandardMaterial({
       color,
       roughness: 0.45,
@@ -238,7 +249,7 @@ function createDie(color: string, face: DieFace, pipColor: string): THREE.Group 
   const pipGeo = new THREE.CircleGeometry(0.072, 24);
 
   (Object.keys(faces) as Side[]).forEach((side) => {
-    addFacePips(group, side, faces[side], pipColor, pipGeo);
+    addFacePips(THREE, group, side, faces[side], pipColor, pipGeo);
   });
 
   return group;
@@ -259,7 +270,7 @@ function easeGravity(t: number) {
  * Rest flat on the bottom face (pitch/roll = 0). Yaw varies by index/face so
  * neighbors don't look identical; `face` itself is applied in `faceValues` as TOP.
  */
-function landEuler(face: DieFace, index: number, _restZ: number): THREE.Euler {
+function landEuler(THREE: ThreeNS, face: DieFace, index: number) {
   const yaw =
     (index % 2 === 0 ? 0.54 : -0.54) + ((index % 3) - 1) * 0.07 + (face - 3.5) * 0.04;
   return new THREE.Euler(0, yaw, 0, "XYZ");
@@ -290,7 +301,13 @@ export function ScatteredCssDice({
     let cancelled = false;
     let cleanupScene: (() => void) | undefined;
 
-    const mount = () => {
+    const mount = async () => {
+      if (cancelled) return;
+
+      // Parent (`HeroDiceStage.web`) already idle-deferred loading this module.
+      // Single async import — a second chunk that also imports `three` forces
+      // Metro to put the library into the eagerly loaded `__common` bundle.
+      const THREE = await import("three");
       if (cancelled) return;
 
       const raw = hostRef.current as unknown as HTMLElement | { getNode?: () => HTMLElement } | null;
@@ -302,7 +319,7 @@ export function ScatteredCssDice({
             : null;
 
       if (!host) {
-        requestAnimationFrame(mount);
+        requestAnimationFrame(() => { void mount(); });
         return;
       }
 
@@ -321,16 +338,16 @@ export function ScatteredCssDice({
       canvas.style.zIndex = "0";
       host.appendChild(canvas);
 
-      let renderer: THREE.WebGLRenderer;
+      let renderer: InstanceType<ThreeNS["WebGLRenderer"]>;
       try {
-        renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
       } catch (err) {
         console.error("[HeroDice3D] WebGL unavailable", err);
         canvas.remove();
         return;
       }
 
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 768 ? 1.25 : 1.5));
       renderer.setSize(width, height, false);
       renderer.setClearColor(0x000000, 0);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -370,24 +387,24 @@ export function ScatteredCssDice({
             surfaceTop: table.surfaceTop + verticalOffset,
           }
         : undefined;
-      const tableMesh = sceneTable ? createTable(sceneTable, width, height) : null;
+      const tableMesh = sceneTable ? createTable(THREE, sceneTable, width, height) : null;
       if (tableMesh) scene.add(tableMesh);
 
       type AnimDie = {
-        mesh: THREE.Group;
-        start: THREE.Vector3;
-        land: THREE.Vector3;
-        startQuat: THREE.Quaternion;
-        landQuat: THREE.Quaternion;
+        mesh: InstanceType<ThreeNS["Group"]>;
+        start: InstanceType<ThreeNS["Vector3"]>;
+        land: InstanceType<ThreeNS["Vector3"]>;
+        startQuat: InstanceType<ThreeNS["Quaternion"]>;
+        landQuat: InstanceType<ThreeNS["Quaternion"]>;
         size: number;
         delay: number;
       };
 
       const animDice: AnimDie[] = dice.map((die, index) => {
-        const mesh = createDie(die.color, die.face, pipColor);
+        const mesh = createDie(THREE, die.color, die.face, pipColor);
         const land = toWorld(die.left ?? 0, (die.top ?? 0) + verticalOffset, die.size, width, height);
         const tableDepth = die.tableDepth ?? 0;
-        const euler = landEuler(die.face, index, 0);
+        const euler = landEuler(THREE, die.face, index);
         // Fall from above the land pose (throwDistance in px), clamped to the
         // canvas top so compact + laptop share the same toss feel.
         const canvasTopY = height / 2 - die.size / 2;
@@ -467,18 +484,18 @@ export function ScatteredCssDice({
         if (frame) cancelAnimationFrame(frame);
         animDice.forEach((d) => {
           scene.remove(d.mesh);
-          disposeObject3D(d.mesh);
+          disposeObject3D(THREE, d.mesh);
         });
         if (tableMesh) {
           scene.remove(tableMesh);
-          disposeObject3D(tableMesh);
+          disposeObject3D(THREE, tableMesh);
         }
         renderer.dispose();
         canvas.remove();
       };
     };
 
-    mount();
+    void mount();
 
     return () => {
       cancelled = true;

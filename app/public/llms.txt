@@ -1,0 +1,28 @@
+# Liar's Dice
+
+> Free online Liar's Dice (Dudo / Perudo): play instantly in the browser against AI, no download or account required. Official-style rules, strategy, history, and FAQ.
+
+Liar's Dice Online is a public-domain bluffing dice game. Each player hides dice under a cup, bids on how many of a face value are on the table (aces are usually wild), and can challenge a bluff or call Spot On. This site ships a playable single-player game plus long-form guides.
+
+## Play
+
+- [Play Liar's Dice](https://liarsdice.com/play): Start a free game against AI opponents in your browser
+
+## Learn
+
+- [How to Play](https://liarsdice.com/how-to-play): Step-by-step beginner tutorial for bidding, challenges, and winning
+- [Rules](https://liarsdice.com/rules): Complete official-style rules, wild aces, palifico, and Spot On
+- [Strategy](https://liarsdice.com/strategy): Probability, bluffing timing, and practical bidding tips
+- [FAQ](https://liarsdice.com/faq): Common questions about rules, equipment, and this free online version
+
+## Variants & history
+
+- [Dudo & Perudo Rules](https://liarsdice.com/dudo-perudo-rules): Regional names and rule differences for Dudo and Perudo
+- [Compare Variants](https://liarsdice.com/compare): Side-by-side comparison of common Liar's Dice variants
+- [History](https://liarsdice.com/history): Origins of Dudo, Perudo, and the modern game
+
+## Optional
+
+- [Home](https://liarsdice.com/): Marketing landing page and overview
+- [Sitemap](https://liarsdice.com/sitemap.xml): Machine-readable list of public URLs
+- [Robots](https://liarsdice.com/robots.txt): Crawler allow rules

@@ -1,10 +1,10 @@
 import { Link, usePathname } from "expo-router";
-import { MotiView } from "moti";
 import React, { useState } from "react";
-import { Pressable, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Line, Path } from "react-native-svg";
 import { isDesktopWidth } from "../../lib/breakpoints";
+import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Die } from "./Die";
 
@@ -79,7 +79,7 @@ function CloseIcon({ color, size = 24 }: { color: string; size?: number }) {
 
 export function Header() {
   const { colors, spacing, typography, isDark, toggleTheme } = useTheme();
-  const { width } = useWindowDimensions();
+  const { width } = useHydrationSafeWindowDimensions();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -232,12 +232,9 @@ export function Header() {
         )}
       </View>
 
-      {/* Mobile dropdown menu */}
+      {/* Mobile dropdown menu — plain Views so moti/reanimated stay off the chrome path. */}
       {!isDesktop && menuOpen && (
-        <MotiView
-          from={{ opacity: 0, translateY: -8 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "timing", duration: 200 }}
+        <View
           style={{
             position: "absolute",
             top: headerOffset,
@@ -251,46 +248,35 @@ export function Header() {
             zIndex: 99,
           }}
         >
-          {NAV_LINKS.map((link, index) => {
+          {NAV_LINKS.map((link) => {
             const active = pathname === link.href;
             return (
-              <MotiView
+              <Link
                 key={link.href}
-                from={{ opacity: 0, translateX: -12 }}
-                animate={{ opacity: 1, translateX: 0 }}
-                transition={{ type: "timing", duration: 200, delay: index * 40 }}
+                href={link.href}
+                onPress={() => setMenuOpen(false)}
+                style={{
+                  paddingVertical: 12,
+                  paddingHorizontal: spacing.md,
+                  borderRadius: 12,
+                  backgroundColor: active ? colors.accent : "transparent",
+                  overflow: "hidden",
+                }}
               >
-                <Link
-                  href={link.href}
-                  onPress={() => setMenuOpen(false)}
+                <Text
                   style={{
-                    paddingVertical: 12,
-                    paddingHorizontal: spacing.md,
-                    borderRadius: 12,
-                    backgroundColor: active ? colors.accent : "transparent",
-                    overflow: "hidden",
+                    fontFamily: typography.bodyMedium.fontFamily,
+                    fontSize: typography.body.fontSize,
+                    color: active ? onBrightText : colors.textPrimary,
                   }}
                 >
-                  <Text
-                    style={{
-                      fontFamily: typography.bodyMedium.fontFamily,
-                      fontSize: typography.body.fontSize,
-                      color: active ? onBrightText : colors.textPrimary,
-                    }}
-                  >
-                    {link.label}
-                  </Text>
-                </Link>
-              </MotiView>
+                  {link.label}
+                </Text>
+              </Link>
             );
           })}
 
-          <MotiView
-            from={{ opacity: 0, translateX: -12 }}
-            animate={{ opacity: 1, translateX: 0 }}
-            transition={{ type: "timing", duration: 200, delay: NAV_LINKS.length * 40 }}
-            style={{ marginTop: spacing.sm, marginBottom: spacing.xs }}
-          >
+          <View style={{ marginTop: spacing.sm, marginBottom: spacing.xs }}>
             <Link
               href={PLAY_HREF}
               onPress={() => setMenuOpen(false)}
@@ -315,8 +301,8 @@ export function Header() {
                 Play
               </Text>
             </Link>
-          </MotiView>
-        </MotiView>
+          </View>
+        </View>
       )}
     </View>
   );

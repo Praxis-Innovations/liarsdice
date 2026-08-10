@@ -1,7 +1,8 @@
 import { Link } from "expo-router";
 import React from "react";
-import { Text, View, useWindowDimensions } from "react-native";
+import { Text, View } from "react-native";
 import { isCompactWidth } from "../../lib/breakpoints";
+import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Die } from "./Die";
 
@@ -30,7 +31,7 @@ function DiceDivider({ colors }: { colors: ReturnType<typeof useTheme>["colors"]
 
 export function Footer() {
   const { colors, spacing, typography } = useTheme();
-  const { width } = useWindowDimensions();
+  const { width } = useHydrationSafeWindowDimensions();
   const isNarrow = isCompactWidth(width);
 
   return (
@@ -83,7 +84,7 @@ export function Footer() {
             style={{
               fontFamily: typography.bodySemibold.fontFamily,
               fontSize: 15,
-              color: colors.accent,
+              color: colors.accentText,
               letterSpacing: 1.5,
               textTransform: "uppercase",
               marginBottom: spacing.xs,
@@ -112,7 +113,7 @@ export function Footer() {
             style={{
               fontFamily: typography.bodySemibold.fontFamily,
               fontSize: 15,
-              color: colors.accent,
+              color: colors.accentText,
               letterSpacing: 1.5,
               textTransform: "uppercase",
               marginBottom: spacing.xs,

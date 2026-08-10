@@ -2,13 +2,19 @@
 // web.output: "static"), so this is what a search crawler or a link-preview bot sees —
 // unlike the (auth) and (app) routes, which gate on client-side auth state.
 import Head from "expo-router/head";
-import React from "react";
-import { ScrollView } from "react-native";
-import { CTABanner } from "../src/components/landing/CTABanner";
+import React, { Suspense, lazy } from "react";
+import { ScrollView, View } from "react-native";
 import { Hero } from "../src/components/landing/Hero";
-import { HowToPlay } from "../src/components/landing/HowToPlay";
 import { Footer } from "../src/components/shared/Footer";
 import { useTheme } from "../src/theme/ThemeProvider";
+
+/** Below-fold sections — split out of the first paint path. */
+const HowToPlay = lazy(() =>
+  import("../src/components/landing/HowToPlay").then((m) => ({ default: m.HowToPlay })),
+);
+const CTABanner = lazy(() =>
+  import("../src/components/landing/CTABanner").then((m) => ({ default: m.CTABanner })),
+);
 
 export default function LandingScreen() {
   const { colors } = useTheme();
@@ -24,8 +30,10 @@ export default function LandingScreen() {
       </Head>
       <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1 }}>
         <Hero />
-        <HowToPlay />
-        <CTABanner />
+        <Suspense fallback={<View style={{ minHeight: 320 }} />}>
+          <HowToPlay />
+          <CTABanner />
+        </Suspense>
         <Footer />
       </ScrollView>
     </>

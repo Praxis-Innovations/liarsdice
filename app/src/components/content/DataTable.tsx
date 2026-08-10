@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
-import { ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { BREAKPOINTS } from "../../lib/breakpoints";
+import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useTheme } from "../../theme/ThemeProvider";
 
 interface DataTableProps {
@@ -17,9 +18,10 @@ function cellWidthFor(label: string): number {
 
 export function DataTable({ columns, rows }: DataTableProps) {
   const { colors, radii, spacing, typography } = useTheme();
-  const { width } = useWindowDimensions();
+  const { width } = useHydrationSafeWindowDimensions();
   // Stack into cards below Tailwind md — tables need more horizontal room than chrome.
-  const isNarrow = width < BREAKPOINTS.md;
+  // width 0 during SSR/hydration matches export (wide table, not stacked cards).
+  const isNarrow = width > 0 && width < BREAKPOINTS.md;
   const colWidths = useMemo(() => columns.map((col) => cellWidthFor(col)), [columns]);
 
   if (isNarrow) {
@@ -39,7 +41,7 @@ export function DataTable({ columns, rows }: DataTableProps) {
           >
             <Text
               style={{
-                color: colors.accent,
+                color: colors.accentText,
                 fontFamily: typography.bodySemibold.fontFamily,
                 fontSize: typography.caption.fontSize,
                 marginBottom: 2,
@@ -119,7 +121,7 @@ export function DataTable({ columns, rows }: DataTableProps) {
               >
                 <Text
                   style={{
-                    color: colors.accent,
+                    color: colors.accentText,
                     fontFamily: typography.bodySemibold.fontFamily,
                     fontSize: 15,
                     letterSpacing: 0.2,

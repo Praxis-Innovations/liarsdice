@@ -9,11 +9,16 @@ export const lightColors = {
   border: "#F0DFC0",
   textPrimary: "#1C1730",
   textSecondary: "#6B6478",
-  primary: "#FF5A5F",
+  // Dark enough for white label text at WCAG AA 4.5:1 (was #FF5A5F @ ~3.0:1).
+  primary: "#D93A40",
   primaryText: "#FFFFFF",
-  secondary: "#00B894",
+  // Dark enough for white label text at WCAG AA 4.5:1 (was #00B894 @ ~2.5:1).
+  secondary: "#007A63",
   secondaryText: "#FFFFFF",
+  // Bright fill/decorative gold — do not use as text on cream surfaces.
   accent: "#FFC145",
+  // Readable gold for labels/eyebrows on background/surface (~4.6:1 on #FFF3DE).
+  accentText: "#B45309",
   danger: "#D62839",
 };
 
@@ -29,6 +34,8 @@ export const darkColors = {
   secondary: "#2DD4A7",
   secondaryText: "#0A241B",
   accent: "#FFD166",
+  // Same as accent — already passes on dark surfaces.
+  accentText: "#FFD166",
   danger: "#FF5468",
 };
 

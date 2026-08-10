@@ -67,7 +67,7 @@ export function BulletList({ items }: { items: React.ReactNode[] }) {
         <View key={i} className="flex-row" style={{ gap: spacing.xs }}>
           <Text
             style={{
-              color: colors.accent,
+              color: colors.accentText,
               fontFamily: typography.body.fontFamily,
               fontSize: typography.body.fontSize,
               lineHeight: typography.body.lineHeight,
@@ -100,7 +100,7 @@ export function NumberedList({ items }: { items: React.ReactNode[] }) {
         <View key={i} className="flex-row" style={{ gap: spacing.sm }}>
           <Text
             style={{
-              color: colors.accent,
+              color: colors.accentText,
               fontFamily: typography.bodySemibold.fontFamily,
               fontSize: typography.body.fontSize,
               lineHeight: typography.body.lineHeight,

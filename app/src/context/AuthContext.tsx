@@ -1,11 +1,9 @@
-import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
-import * as AppleAuthentication from "expo-apple-authentication";
-import * as Crypto from "expo-crypto";
+import type { AuthChangeEvent, Session, SupabaseClient, User } from "@supabase/supabase-js";
+import { usePathname } from "expo-router";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { clientPublicEnv } from "../config/env";
 import { getOAuthRedirectUrl, getResetPasswordRedirectUrl } from "../lib/webPaths";
-import { supabase } from "../lib/supabase";
 
 /**
  * `@react-native-google-signin/google-signin` calls a native module getter at import time,
@@ -21,6 +19,40 @@ function requireGoogleSignin(): GoogleSigninModule | null {
   } catch {
     return null;
   }
+}
+
+/** Routes that need a live Supabase client. Marketing pages skip the download. */
+const AUTH_ROUTE_PREFIXES = [
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
+  "/reset-password",
+  "/home",
+  "/profile",
+];
+
+function urlNeedsAuthClient(pathname: string): boolean {
+  if (Platform.OS !== "web") return true;
+  if (AUTH_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return true;
+  }
+  if (typeof window !== "undefined") {
+    const hash = window.location.hash;
+    // OAuth / recovery redirects land on `/` with tokens in the hash.
+    if (
+      hash.includes("access_token") ||
+      hash.includes("refresh_token") ||
+      hash.includes("type=recovery")
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function loadSupabase(): Promise<SupabaseClient | null> {
+  const { supabase } = await import("../lib/supabase");
+  return supabase;
 }
 
 interface AuthResult {
@@ -54,43 +86,68 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const pathname = usePathname();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRecoveryFlow, setIsRecoveryFlow] = useState(false);
+  const needsClient = urlNeedsAuthClient(pathname);
 
   useEffect(() => {
-    if (!supabase) {
+    if (!needsClient) {
       setLoading(false);
       return;
     }
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+    // Re-entering an auth route from marketing must block gates until getSession
+    // finishes — otherwise (app)/_layout sees loading=false + session=null and
+    // redirects to sign-in even when a persisted session exists.
+    setLoading(true);
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, newSession) => {
-      if (event === "PASSWORD_RECOVERY") setIsRecoveryFlow(true);
-      if (event === "SIGNED_OUT") {
-        setSession(null);
-        setIsRecoveryFlow(false);
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+
+    void loadSupabase().then((supabase) => {
+      if (cancelled) return;
+      if (!supabase) {
+        setLoading(false);
         return;
       }
-      setSession(newSession);
+
+      supabase.auth.getSession().then(({ data }) => {
+        if (cancelled) return;
+        setSession(data.session);
+        setLoading(false);
+      });
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, newSession) => {
+        if (event === "PASSWORD_RECOVERY") setIsRecoveryFlow(true);
+        if (event === "SIGNED_OUT") {
+          setSession(null);
+          setIsRecoveryFlow(false);
+          return;
+        }
+        setSession(newSession);
+      });
+      unsubscribe = () => subscription.unsubscribe();
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [needsClient]);
 
   const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+    const supabase = await loadSupabase();
     if (!supabase) return { error: "Auth not configured" };
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error?.message ?? null };
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, displayName: string): Promise<AuthResult> => {
+    const supabase = await loadSupabase();
     if (!supabase) return { error: "Auth not configured" };
     const trimmed_name = displayName.trim();
     if (!trimmed_name) return { error: "Display name is required" };
@@ -104,6 +161,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
+    const supabase = await loadSupabase();
     if (!supabase) return { error: "Auth not configured" };
 
     if (Platform.OS === "web") {
@@ -145,6 +203,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const signInWithApple = useCallback(async (): Promise<AuthResult> => {
+    const supabase = await loadSupabase();
     if (!supabase) return { error: "Auth not configured" };
 
     if (Platform.OS === "web") {
@@ -158,6 +217,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (Platform.OS !== "ios") return { error: "Sign in with Apple isn't available on this device." };
 
     try {
+      // Lazy-load native-only modules so web marketing routes don't pay for them.
+      const Crypto = await import("expo-crypto");
+      const AppleAuthentication = await import("expo-apple-authentication");
       // Supabase requires the *raw* nonce here, but the *hashed* (SHA-256) nonce when asking
       // Apple to sign in — Apple's identityToken embeds the hash, and Supabase re-hashes the
       // raw nonce server-side to compare against it. Do not swap these.
@@ -186,6 +248,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const resetPasswordForEmail = useCallback(async (email: string): Promise<AuthResult> => {
+    const supabase = await loadSupabase();
     if (!supabase) return { error: "Auth not configured" };
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return { error: "Enter your email" };
@@ -204,6 +267,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Best-effort: ignore failures clearing the cached Google account.
       }
     }
+    const supabase = await loadSupabase();
     if (supabase) await supabase.auth.signOut();
   }, []);
 

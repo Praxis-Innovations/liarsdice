@@ -45,22 +45,27 @@ improve:
   `role="heading"` + the web-only `aria-level` attribute) on the one true H1 per page and H2s for
   section titles. Don't flatten headings to plain styled `<Text>`. The `Section`/`SubSection`
   components in `src/components/content/Prose.tsx` already wire this up for content pages.
-- `app/public/robots.txt` and `app/public/sitemap.xml` must stay in sync with the real public
-  route list (currently `/`, `/play`, `/how-to-play`, `/rules`, `/strategy`,
-  `/dudo-perudo-rules`, `/compare`, `/history`, `/faq`). Auth routes (`/sign-up`,
-  `/sign-in`, `/forgot-password`) are intentionally omitted from `sitemap.xml` (and
-  from `inject-seo.js` ROUTES) until the auth feature is enabled. `robots.txt` is
-  still a broad `Allow: /` — do not claim auth routes are disallowed unless you add
-  explicit `Disallow` rules.
+- `app/public/robots.txt`, `app/public/sitemap.xml`, and `app/public/llms.txt` must
+  stay in sync with the real public route list (currently `/`, `/play`, `/how-to-play`,
+  `/rules`, `/strategy`, `/dudo-perudo-rules`, `/compare`, `/history`, `/faq`). Auth
+  routes (`/sign-up`, `/sign-in`, `/forgot-password`) are intentionally omitted from
+  `sitemap.xml` / `llms.txt` (and from `inject-seo.js` ROUTES) until the auth feature
+  is enabled. `robots.txt` is still a broad `Allow: /` — do not claim auth routes are
+  disallowed unless you add explicit `Disallow` rules. `llms.txt` is curated Markdown
+  for AI crawlers (one H1 + blockquote + absolute links); `inject-seo.js` rewrites it
+  into `dist/` on every `export:web`.
 - The JSON-LD structured data in `app/app/+html.tsx` (site-wide `WebSite`) and in
   `app/scripts/inject-seo.js` (per-route `Article`/`FAQPage`/`HowTo`/`BreadcrumbList`) must be
   kept accurate as the product evolves. `inject-seo.js`'s `FAQ_ITEMS` array must stay in sync with
   `app/app/(content)/faq.tsx`'s `FAQ_ITEMS` — it's duplicated there because the script is a plain
   Node/CJS script and can't import a `.tsx` module directly.
-- `SITE_URL` in both `app/app/+html.tsx` and `app/scripts/inject-seo.js` is currently a
-  placeholder (`https://liarsdice.example.com`) — update both (and `public/robots.txt` +
-  `public/sitemap.xml`) to the real production domain once one is deployed; see
-  `docs/DEPLOY_WEB_BACKEND.md`.
+- `SITE_URL` in both `app/app/+html.tsx` and `app/scripts/inject-seo.js` is
+  `https://liarsdice.com` — keep those (and `public/robots.txt` + `public/sitemap.xml` +
+  `public/llms.txt`) in sync if the production domain changes. `inject-seo.js` rewrites
+  `dist/sitemap.xml`, `dist/robots.txt`, and `dist/llms.txt` on every `export:web` so
+  the deployed files match `SITE_URL`.
+  The apex domain must DNS to the Vercel app (not a parking/builder host) or Search
+  Console will fetch the wrong sitemap; see `docs/DEPLOY_WEB_BACKEND.md`.
 - Never regress: this is an Expo Router **static web export** (`app.json` → `web.output:
   "static"`, bundler `metro`), not Next.js — there is no `next/head`, no `pages/` API routes, no
   Next middleware. SEO mechanisms are Expo-Router-specific: `expo-router/head`, `app/+html.tsx`,
@@ -87,9 +92,10 @@ improve:
   static HTML; after mount it loads `@liarsdice/theme-mode` from AsyncStorage (`light` |
   `dark` | `system`) and then follows that preference. The Header sun/moon control calls
   `toggleTheme()` (forces light/dark; does not cycle back to `system`). Inline `useTheme().colors`
-  styles follow the toggle. Keep `tailwind.config.js` `darkMode: "media"` — any future `dark:`
-  Tailwind classes would still track the OS, not the in-app toggle, so do not introduce
-  color-via-className for themed UI.
+  styles follow the toggle. Keep `tailwind.config.js` `darkMode: "class"` (required —
+  NativeWind throws on web if `colorScheme.set` runs under `darkMode: "media"`).
+  `ThemeProvider` syncs the `dark` class on `<html>`; do not drive brand colors through
+  `dark:` utilities — keep using `useTheme().colors` inline.
 - **Chrome**: global `Header` (`src/components/shared/Header.tsx`) and `Footer`
   (`src/components/shared/Footer.tsx`). Header is mounted from `app/app/_layout.tsx` (hidden on
   auth/`/home`/`/profile` prefixes), uses `useSafeAreaInsets()` so the bar clears notches on

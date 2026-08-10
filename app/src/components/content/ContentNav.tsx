@@ -28,7 +28,8 @@ export function ContentNav() {
             href={link.href}
             style={{
               backgroundColor: active ? colors.accent : colors.surface,
-              color: active ? colors.primaryText : colors.textSecondary,
+              // Dark ink on gold — white-on-accent fails WCAG AA.
+              color: active ? colors.textPrimary : colors.textSecondary,
               paddingHorizontal: spacing.md,
               paddingVertical: 6,
               borderRadius: 999,

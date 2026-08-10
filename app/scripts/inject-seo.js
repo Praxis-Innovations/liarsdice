@@ -12,16 +12,28 @@
 // <link rel="canonical">, OG/Twitter tags, and page-specific JSON-LD structured
 // data — all guaranteed present in the static file itself.
 //
-// Keep SITE_URL/SITE_NAME here in sync with app/app/+html.tsx (same TODO: this
-// is a placeholder domain until a real one is deployed — see CLAUDE.md).
+// Keep SITE_URL/SITE_NAME here in sync with app/app/+html.tsx.
 "use strict";
 
 const fs = require("fs");
 const path = require("path");
 
-const SITE_URL = "https://liarsdice.example.com";
+const SITE_URL = "https://liarsdice.com";
 const SITE_NAME = "Liar's Dice";
 const DIST_DIR = path.join(__dirname, "..", "dist");
+
+/** Crawlable public routes written into dist/sitemap.xml (path → priority). */
+const SITEMAP_URLS = [
+  { path: "/", changefreq: "weekly", priority: "1.0" },
+  { path: "/play", changefreq: "weekly", priority: "0.9" },
+  { path: "/how-to-play", changefreq: "monthly", priority: "0.8" },
+  { path: "/rules", changefreq: "monthly", priority: "0.8" },
+  { path: "/strategy", changefreq: "monthly", priority: "0.7" },
+  { path: "/dudo-perudo-rules", changefreq: "monthly", priority: "0.7" },
+  { path: "/compare", changefreq: "monthly", priority: "0.7" },
+  { path: "/history", changefreq: "monthly", priority: "0.7" },
+  { path: "/faq", changefreq: "monthly", priority: "0.7" },
+];
 
 // Keep in sync with the FAQ_ITEMS array in app/app/(content)/faq.tsx.
 const FAQ_ITEMS = [
@@ -226,6 +238,110 @@ function injectRoute(filePath, route) {
   return { path: route.path, title };
 }
 
+function writeSitemapRobotsAndLlms() {
+  const urls = SITEMAP_URLS.map(
+    ({ path: urlPath, changefreq, priority }) => `  <url>
+    <loc>${SITE_URL}${urlPath === "/" ? "/" : urlPath}</loc>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`,
+  ).join("\n");
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>
+`;
+  const robots = `User-agent: *
+Allow: /
+Disallow: /_sitemap
+
+Sitemap: ${SITE_URL}/sitemap.xml
+`;
+
+  fs.writeFileSync(path.join(DIST_DIR, "sitemap.xml"), sitemap, "utf8");
+  fs.writeFileSync(path.join(DIST_DIR, "robots.txt"), robots, "utf8");
+
+  // Single source of truth: app/public/llms.txt (rewrite origin so SITE_URL can't drift).
+  const publicLlmsPath = path.join(__dirname, "..", "public", "llms.txt");
+  if (fs.existsSync(publicLlmsPath)) {
+    const llms = fs
+      .readFileSync(publicLlmsPath, "utf8")
+      .replace(/https:\/\/liarsdice\.example\.com/g, SITE_URL)
+      .replace(/https:\/\/liarsdice\.com/g, SITE_URL);
+    fs.writeFileSync(path.join(DIST_DIR, "llms.txt"), llms, "utf8");
+  }
+}
+
+/** Walk dist/ and rewrite any leftover placeholder origin in baked HTML. */
+function rewriteSiteUrlInHtml(dir = DIST_DIR) {
+  const PLACEHOLDER = "https://liarsdice.example.com";
+  let count = 0;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      count += rewriteSiteUrlInHtml(full);
+      continue;
+    }
+    if (!entry.name.endsWith(".html")) continue;
+    const html = fs.readFileSync(full, "utf8");
+    if (!html.includes(PLACEHOLDER)) continue;
+    fs.writeFileSync(full, html.split(PLACEHOLDER).join(SITE_URL), "utf8");
+    count += 1;
+  }
+  return count;
+}
+
+/**
+ * Lighthouse/FCP: expo-font emits `font-display:auto` (FOIT) and preloads every
+ * weight. Swap fonts immediately, and on the landing page only preload the two
+ * weights that paint the H1 + body copy.
+ */
+function optimizeHtmlPerf(dir = DIST_DIR) {
+  let files = 0;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files += optimizeHtmlPerf(full);
+      continue;
+    }
+    if (!entry.name.endsWith(".html")) continue;
+
+    let html = fs.readFileSync(full, "utf8");
+    const before = html;
+    // optional on the landing page (set below); swap elsewhere so brand fonts
+    // still appear on content routes without blocking.
+    html = html.replace(/font-display:\s*auto/g, "font-display:swap");
+
+    if (entry.name === "index.html") {
+      // Don't preload fonts — and use font-display:optional so a late Fredoka
+      // download cannot restyle the hero after first paint (Speed Index killer).
+      html = html.replace(/<link rel="preload" href="[^"]*" as="font"[^>]*>/g, "");
+      html = html.replace(/font-display:\s*swap/g, "font-display:optional");
+
+      // Keep runtime/entry/layout/index as normal `defer` so React hydrates and
+      // Header chrome (menu/theme) works on the first tap. Only park the shared
+      // async chunk (`__common` — play-route reanimated/moti, etc.) until idle
+      // or first interaction so landing TBT isn't dominated by game chrome.
+      const commonMatch = html.match(
+        /<script src="(\/_expo\/static\/js\/web\/__common-[^"]+\.js)" defer><\/script>/,
+      );
+      if (commonMatch) {
+        const commonSrc = commonMatch[1];
+        html = html.replace(commonMatch[0], "");
+        const loader = `<script>(function(){var s=${JSON.stringify(commonSrc)};var done=false;function load(){if(done)return;done=true;if(document.querySelector('script[src="'+s+'"]'))return;var e=document.createElement("script");e.src=s;e.defer=true;document.body.appendChild(e);}["pointerdown","touchstart","keydown","scroll"].forEach(function(t){window.addEventListener(t,load,{once:true,passive:true,capture:true});});if("requestIdleCallback" in window)requestIdleCallback(load,{timeout:4000});else window.addEventListener("load",function(){setTimeout(load,1);});})();</script>`;
+        html = html.replace("</body>", `${loader}</body>`);
+      }
+    }
+
+    if (html !== before) {
+      fs.writeFileSync(full, html, "utf8");
+      files += 1;
+    }
+  }
+  return files;
+}
+
 function main() {
   if (!fs.existsSync(DIST_DIR)) {
     console.error(`inject-seo: dist directory not found at ${DIST_DIR} — run "expo export --platform web" first.`);
@@ -242,8 +358,19 @@ function main() {
     results.push(injectRoute(filePath, route));
   }
 
+  writeSitemapRobotsAndLlms();
+  const rewritten = rewriteSiteUrlInHtml();
+  const perfTouched = optimizeHtmlPerf();
+
   console.log(`inject-seo: injected per-route SEO metadata into ${results.length} file(s):`);
   for (const r of results) console.log(`  ${r.path} -> "${r.title}"`);
+  console.log(`inject-seo: wrote sitemap.xml + robots.txt + llms.txt for ${SITE_URL}`);
+  if (rewritten > 0) {
+    console.log(`inject-seo: replaced placeholder SITE_URL in ${rewritten} HTML file(s)`);
+  }
+  if (perfTouched > 0) {
+    console.log(`inject-seo: applied font-display/preload perf tweaks to ${perfTouched} HTML file(s)`);
+  }
 }
 
 main();
