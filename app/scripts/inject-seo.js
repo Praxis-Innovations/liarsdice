@@ -311,9 +311,50 @@ function extractFontUrls(html) {
 }
 
 /**
+ * Inline the small render-blocking CSS file Expo emits (web-*.css, ~9 KB).
+ * Eliminates one round-trip on the critical path, improving FCP on mobile.
+ */
+function inlineCriticalCss(dir = DIST_DIR) {
+  const cssDir = path.join(DIST_DIR, "_expo", "static", "css");
+  if (!fs.existsSync(cssDir)) return 0;
+  const cssFiles = fs.readdirSync(cssDir).filter((f) => f.startsWith("web-") && f.endsWith(".css"));
+  if (cssFiles.length === 0) return 0;
+
+  const cssContents = {};
+  for (const f of cssFiles) {
+    cssContents[f] = fs.readFileSync(path.join(cssDir, f), "utf8");
+  }
+
+  let count = 0;
+  function walk(d) {
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      const full = path.join(d, entry.name);
+      if (entry.isDirectory()) { walk(full); continue; }
+      if (!entry.name.endsWith(".html")) continue;
+
+      let html = fs.readFileSync(full, "utf8");
+      const before = html;
+      for (const [filename, css] of Object.entries(cssContents)) {
+        const linkRe = new RegExp(
+          `<link[^>]*href="[^"]*${filename.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[^>]*>`,
+          "g",
+        );
+        html = html.replace(linkRe, `<style>${css}</style>`);
+      }
+      if (html !== before) {
+        fs.writeFileSync(full, html, "utf8");
+        count += 1;
+      }
+    }
+  }
+  walk(dir);
+  return count;
+}
+
+/**
  * Lighthouse/FCP: expo-font emits `font-display:auto` (FOIT) and preloads every
- * weight. Swap fonts immediately, and on the landing page only preload the two
- * weights that paint the H1 + body copy.
+ * weight. Swap fonts immediately, and on the landing page only preload the
+ * above-fold font weights.
  */
 function optimizeHtmlPerf(dir = DIST_DIR) {
   let files = 0;
@@ -339,8 +380,13 @@ function optimizeHtmlPerf(dir = DIST_DIR) {
       html = html.replace(/<link rel="preload" href="[^"]*" as="font"[^>]*>/g, "");
       html = html.replace(/font-display:\s*swap/g, "font-display:optional");
 
-      // Re-inject preloads for the two critical font weights (H1 + body).
-      const criticalFonts = ["Fredoka_700Bold", "Fredoka_700", "Manrope_400Regular", "Manrope_400"];
+      // Re-inject preloads for above-fold font weights (H1, body, subtitle, CTA).
+      const criticalFonts = [
+        "Fredoka_700Bold", "Fredoka_700",
+        "Manrope_400Regular", "Manrope_400",
+        "Manrope_600SemiBold", "Manrope_600",
+        "Manrope_700Bold", "Manrope_700",
+      ];
       const preloadTags = [];
       for (const url of allFontUrls) {
         if (criticalFonts.some((name) => url.includes(name))) {
@@ -362,7 +408,64 @@ function optimizeHtmlPerf(dir = DIST_DIR) {
   return files;
 }
 
-function main() {
+/**
+ * Convert TTF fonts to WOFF2 in dist/ and rewrite HTML references.
+ * Cuts ~30-50% per font file, reducing total font payload by ~100-150 KB.
+ */
+async function convertFontsToWoff2(dir = DIST_DIR) {
+  let wawoff2;
+  try {
+    wawoff2 = require("wawoff2");
+  } catch {
+    return 0;
+  }
+
+  const ttfFiles = [];
+  function findTtf(d) {
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      const full = path.join(d, entry.name);
+      if (entry.isDirectory()) { findTtf(full); continue; }
+      if (entry.name.endsWith(".ttf")) ttfFiles.push(full);
+    }
+  }
+  findTtf(dir);
+  if (ttfFiles.length === 0) return 0;
+
+  const conversions = {};
+  for (const ttfPath of ttfFiles) {
+    const ttfData = fs.readFileSync(ttfPath);
+    const woff2Data = await wawoff2.compress(ttfData);
+    const woff2Path = ttfPath.replace(/\.ttf$/, ".woff2");
+    fs.writeFileSync(woff2Path, woff2Data);
+    const relTtf = "/" + path.relative(dir, ttfPath).split(path.sep).join("/");
+    const relWoff2 = "/" + path.relative(dir, woff2Path).split(path.sep).join("/");
+    conversions[relTtf] = relWoff2;
+  }
+
+  let htmlCount = 0;
+  function rewriteHtml(d) {
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      const full = path.join(d, entry.name);
+      if (entry.isDirectory()) { rewriteHtml(full); continue; }
+      if (!entry.name.endsWith(".html")) continue;
+
+      let html = fs.readFileSync(full, "utf8");
+      const before = html;
+      for (const [ttfUrl, woff2Url] of Object.entries(conversions)) {
+        html = html.split(ttfUrl).join(woff2Url);
+      }
+      html = html.replace(/font\/ttf/g, "font/woff2");
+      if (html !== before) {
+        fs.writeFileSync(full, html, "utf8");
+        htmlCount += 1;
+      }
+    }
+  }
+  rewriteHtml(dir);
+  return { fonts: Object.keys(conversions).length, html: htmlCount };
+}
+
+async function main() {
   if (!fs.existsSync(DIST_DIR)) {
     console.error(`inject-seo: dist directory not found at ${DIST_DIR} — run "expo export --platform web" first.`);
     process.exit(1);
@@ -380,6 +483,8 @@ function main() {
 
   writeSitemapRobotsAndLlms();
   const rewritten = rewriteSiteUrlInHtml();
+  const cssInlined = inlineCriticalCss();
+  const woff2Result = await convertFontsToWoff2();
   const perfTouched = optimizeHtmlPerf();
 
   console.log(`inject-seo: injected per-route SEO metadata into ${results.length} file(s):`);
@@ -387,6 +492,12 @@ function main() {
   console.log(`inject-seo: wrote sitemap.xml + robots.txt + llms.txt for ${SITE_URL}`);
   if (rewritten > 0) {
     console.log(`inject-seo: replaced placeholder SITE_URL in ${rewritten} HTML file(s)`);
+  }
+  if (cssInlined > 0) {
+    console.log(`inject-seo: inlined render-blocking CSS in ${cssInlined} HTML file(s)`);
+  }
+  if (woff2Result && woff2Result.fonts > 0) {
+    console.log(`inject-seo: converted ${woff2Result.fonts} TTF font(s) to WOFF2, updated ${woff2Result.html} HTML file(s)`);
   }
   if (perfTouched > 0) {
     console.log(`inject-seo: applied font-display/preload perf tweaks to ${perfTouched} HTML file(s)`);

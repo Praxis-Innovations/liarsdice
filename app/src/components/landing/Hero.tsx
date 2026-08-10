@@ -73,102 +73,107 @@ export function Hero() {
         overflow: "visible",
       }}
     >
-      {/* Decorative blur circles */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: -120,
-          right: -100,
-          width: 320,
-          height: 320,
-          borderRadius: 999,
-          backgroundColor: colors.primary,
-          opacity: isDark ? 0.12 : 0.05,
-        }}
-      />
-
-      {/* Native-only platform tray */}
-      {Platform.OS !== "web" ? (
-        <DicePlatform
-          left={platform.left}
-          top={platform.top}
-          width={platform.width}
-          height={platform.height}
-        />
-      ) : null}
-
-      {/* Spotlight cone — CSS-centered so SSR output stays centered at any viewport width */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: diceLineY - spotlightHeight - spotlightBlur,
-          height: spotlightHeight + spotlightBlur,
-          zIndex: 0,
-          alignItems: "center",
-        }}
-      >
-        <View
-          style={{
-            width: spotlightWidth + spotlightBlur * 2,
-            height: spotlightHeight + spotlightBlur,
-            ...(Platform.OS === "web" ? ({ filter: `blur(${spotlightBlur}px)` } as object) : null),
-          }}
-        >
-          <Svg
-            width="100%"
-            height="100%"
-            viewBox={`0 0 ${spotlightWidth + spotlightBlur * 2} ${spotlightHeight + spotlightBlur}`}
-            preserveAspectRatio="none"
-          >
-            <Defs>
-              <LinearGradient id="heroSpotlight" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={spotlightColor} stopOpacity={isDark ? 0.32 : 0.34} />
-                <Stop offset="0.55" stopColor={spotlightColor} stopOpacity={isDark ? 0.16 : 0.2} />
-                <Stop offset="1" stopColor={spotlightColor} stopOpacity={0} />
-              </LinearGradient>
-            </Defs>
-            <Path
-              d={`M${spotlightBlur + spotlightTopLeft} ${spotlightBlur} L${
-                spotlightBlur + spotlightTopLeft + spotlightTopWidth
-              } ${spotlightBlur} L${spotlightBlur + spotlightWidth} ${spotlightBlur + spotlightHeight} L${spotlightBlur} ${
-                spotlightBlur + spotlightHeight
-              } Z`}
-              fill="url(#heroSpotlight)"
-            />
-          </Svg>
-        </View>
-      </View>
-
-      {/* Dice stage — CSS-centered so SSR dice band stays centered at any viewport width */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: heroHeight,
-          zIndex: 1,
-          overflow: "visible",
-          backgroundColor: "transparent",
-          alignItems: "center",
-        }}
-      >
-        <View style={{ width: layoutWidth, height: heroHeight, overflow: "visible" }}>
-          <HeroDiceStage
-            dice={scatteredDice}
-            pipColor="#FFFFFF"
-            width={layoutWidth}
-            height={heroHeight}
-            table={table}
-            verticalOffset={0}
+      {/* Decorative elements hidden during SSR (width=0) to prevent
+          phone-sized decorations flashing before hydration resizes them. */}
+      {width > 0 && (
+        <>
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: -120,
+              right: -100,
+              width: 320,
+              height: 320,
+              borderRadius: 999,
+              backgroundColor: colors.primary,
+              opacity: isDark ? 0.12 : 0.05,
+            }}
           />
-        </View>
-      </View>
+
+          {/* Native-only platform tray */}
+          {Platform.OS !== "web" ? (
+            <DicePlatform
+              left={platform.left}
+              top={platform.top}
+              width={platform.width}
+              height={platform.height}
+            />
+          ) : null}
+
+          {/* Spotlight cone */}
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: diceLineY - spotlightHeight - spotlightBlur,
+              height: spotlightHeight + spotlightBlur,
+              zIndex: 0,
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                width: spotlightWidth + spotlightBlur * 2,
+                height: spotlightHeight + spotlightBlur,
+                ...(Platform.OS === "web" ? ({ filter: `blur(${spotlightBlur}px)` } as object) : null),
+              }}
+            >
+              <Svg
+                width="100%"
+                height="100%"
+                viewBox={`0 0 ${spotlightWidth + spotlightBlur * 2} ${spotlightHeight + spotlightBlur}`}
+                preserveAspectRatio="none"
+              >
+                <Defs>
+                  <LinearGradient id="heroSpotlight" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0" stopColor={spotlightColor} stopOpacity={isDark ? 0.32 : 0.34} />
+                    <Stop offset="0.55" stopColor={spotlightColor} stopOpacity={isDark ? 0.16 : 0.2} />
+                    <Stop offset="1" stopColor={spotlightColor} stopOpacity={0} />
+                  </LinearGradient>
+                </Defs>
+                <Path
+                  d={`M${spotlightBlur + spotlightTopLeft} ${spotlightBlur} L${
+                    spotlightBlur + spotlightTopLeft + spotlightTopWidth
+                  } ${spotlightBlur} L${spotlightBlur + spotlightWidth} ${spotlightBlur + spotlightHeight} L${spotlightBlur} ${
+                    spotlightBlur + spotlightHeight
+                  } Z`}
+                  fill="url(#heroSpotlight)"
+                />
+              </Svg>
+            </View>
+          </View>
+
+          {/* Dice stage */}
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: heroHeight,
+              zIndex: 1,
+              overflow: "visible",
+              backgroundColor: "transparent",
+              alignItems: "center",
+            }}
+          >
+            <View style={{ width: layoutWidth, height: heroHeight, overflow: "visible" }}>
+              <HeroDiceStage
+                dice={scatteredDice}
+                pipColor="#FFFFFF"
+                width={layoutWidth}
+                height={heroHeight}
+                table={table}
+                verticalOffset={0}
+              />
+            </View>
+          </View>
+        </>
+      )}
 
       {/* Centered content — always centered on all breakpoints */}
       <View
