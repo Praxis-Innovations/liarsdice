@@ -313,8 +313,7 @@ function extractFontUrls(html) {
 /**
  * Lighthouse/FCP: expo-font emits `font-display:auto` (FOIT) and preloads every
  * weight. Swap fonts immediately, and on the landing page only preload the two
- * weights that paint the H1 + body copy. Also inline the small NativeWind CSS
- * to eliminate the render-blocking stylesheet request.
+ * weights that paint the H1 + body copy.
  */
 function optimizeHtmlPerf(dir = DIST_DIR) {
   let files = 0;
@@ -353,22 +352,6 @@ function optimizeHtmlPerf(dir = DIST_DIR) {
         html = html.replace("</head>", preloadTags.join("\n") + "\n</head>");
       }
 
-      // Inline the NativeWind CSS to eliminate the render-blocking stylesheet request.
-      const cssLinkRe = /<link rel="stylesheet" href="(\/[^"]*\.css)"[^>]*>/;
-      const cssMatch = html.match(cssLinkRe);
-      if (cssMatch) {
-        const cssHref = cssMatch[1];
-        const cssPath = path.join(DIST_DIR, cssHref);
-        if (fs.existsSync(cssPath)) {
-          const cssContent = fs.readFileSync(cssPath, "utf8");
-          html = html.replace(cssMatch[0], `<style>${cssContent}</style>`);
-          // Also remove the preload hint for this CSS since it's now inlined.
-          const preloadPattern = new RegExp(
-            `<link rel="preload" href="${cssHref.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[^>]*>`,
-          );
-          html = html.replace(preloadPattern, "");
-        }
-      }
     }
 
     if (html !== before) {
