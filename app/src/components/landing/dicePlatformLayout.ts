@@ -257,15 +257,6 @@ export type HeroDieSpec = {
   colorIndex: number;
 };
 
-/** True once the slowest hero die has finished its toss (idle the WebGL RAF loop). */
-export function isHeroDiceTossComplete(
-  elapsedSec: number,
-  lastDelaySec: number,
-  durationSec: number,
-): boolean {
-  return elapsedSec >= lastDelaySec + durationSec;
-}
-
 /** Build a stable dice cast for the hero (positions + faces), seeded by layout. */
 export function buildHeroDiceSpecs(
   platform: PlatformMetrics,
