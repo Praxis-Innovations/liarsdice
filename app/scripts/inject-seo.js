@@ -319,19 +319,6 @@ function optimizeHtmlPerf(dir = DIST_DIR) {
       html = html.replace(/<link rel="preload" href="[^"]*" as="font"[^>]*>/g, "");
       html = html.replace(/font-display:\s*swap/g, "font-display:optional");
 
-      // Keep runtime/entry/layout/index as normal `defer` so React hydrates and
-      // Header chrome (menu/theme) works on the first tap. Only park the shared
-      // async chunk (`__common` — play-route reanimated/moti, etc.) until idle
-      // or first interaction so landing TBT isn't dominated by game chrome.
-      const commonMatch = html.match(
-        /<script src="(\/_expo\/static\/js\/web\/__common-[^"]+\.js)" defer><\/script>/,
-      );
-      if (commonMatch) {
-        const commonSrc = commonMatch[1];
-        html = html.replace(commonMatch[0], "");
-        const loader = `<script>(function(){var s=${JSON.stringify(commonSrc)};var done=false;function load(){if(done)return;done=true;if(document.querySelector('script[src="'+s+'"]'))return;var e=document.createElement("script");e.src=s;e.defer=true;document.body.appendChild(e);}["pointerdown","touchstart","keydown","scroll"].forEach(function(t){window.addEventListener(t,load,{once:true,passive:true,capture:true});});if("requestIdleCallback" in window)requestIdleCallback(load,{timeout:4000});else window.addEventListener("load",function(){setTimeout(load,1);});})();</script>`;
-        html = html.replace("</body>", `${loader}</body>`);
-      }
     }
 
     if (html !== before) {

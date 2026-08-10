@@ -30,11 +30,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
   const [storageReady, setStorageReady] = useState(false);
 
-  // First render is always light to match static HTML (no browser preference at
-  // build time). After mount we read the stored preference, then resolve.
-  // Do not apply OS dark until storage has been consulted — otherwise a saved
-  // "light" preference can flash dark for one frame.
-  const [isDark, setIsDark] = useState(false);
+  // On web the blocking script in +html.tsx may have already added class="dark"
+  // to <html>. Read that so the first React render matches what's painted.
+  // On native, start light (SplashScreen hides the resolution delay).
+  const [isDark, setIsDark] = useState(() => {
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      return document.documentElement.classList.contains("dark");
+    }
+    return false;
+  });
 
   useEffect(() => {
     let cancelled = false;
