@@ -49,77 +49,55 @@ describe("getDiceBand", () => {
 });
 
 describe("getPlatformMetrics", () => {
-  it("keeps phone/tablet platforms centered", () => {
+  it("keeps platforms centered on all breakpoints", () => {
     const phone = getPlatformMetrics(390, 700);
     expect(phone.left).toBeCloseTo((390 - phone.width) / 2, 5);
     expect(phone.surfaceTop).toBe(phone.top);
 
     const tablet = getPlatformMetrics(800, 800);
     expect(tablet.left).toBeCloseTo((800 - tablet.width) / 2, 5);
-  });
 
-  it("right-biases the laptop platform", () => {
     const laptop = getPlatformMetrics(1280, 800);
-    expect(laptop.left).toBeGreaterThan(1280 * 0.35);
-    expect(laptop.left + laptop.width).toBeLessThanOrEqual(1280);
+    expect(laptop.left).toBeCloseTo((1280 - laptop.width) / 2, 5);
     expect(laptop.surfaceTop).toBe(laptop.top);
   });
 });
 
 describe("getHeroStageMetrics", () => {
-  it("places phone dice at 80% of device height inside a full-height hero", () => {
+  it("pins dice near the bottom of the hero on phone", () => {
     const vh = 1200;
     const header = 64;
     const stage = getHeroStageMetrics(390, vh, header);
 
     expect(stage.bp).toBe("phone");
     expect(stage.heroHeight).toBe(vh - header);
-    expect(stage.flowBandHeight).toBe(stage.platform.surfaceTop);
-    expect(stage.diceCanvasOffset).toBe(header);
-
-    const diceScreenY = header + stage.platform.surfaceTop;
-    expect(diceScreenY / vh).toBeCloseTo(0.8, 2);
-
-    // Copy band is the space above the landing line → mid ≈ 40% of device.
-    const copyMidScreen = header + (stage.flowBandHeight ?? 0) / 2;
-    expect(copyMidScreen / vh).toBeCloseTo(0.4, 1);
+    expect(stage.diceLineY).toBe(stage.heroHeight - 48);
+    expect(stage.platform.surfaceTop).toBe(stage.diceLineY);
   });
 
-  it("grows the phone landing line with taller viewports", () => {
+  it("grows hero height with taller viewports", () => {
     const short = getHeroStageMetrics(390, 700, 64);
     const tall = getHeroStageMetrics(390, 1100, 64);
-    expect(tall.platform.surfaceTop).toBeGreaterThan(short.platform.surfaceTop);
-    expect(tall.flowBandHeight!).toBeGreaterThan(short.flowBandHeight!);
+    expect(tall.diceLineY).toBeGreaterThan(short.diceLineY);
     expect(tall.heroHeight).toBeGreaterThan(short.heroHeight);
   });
 
-  it("places tablet dice at 80% of device height like phone", () => {
+  it("pins dice near the bottom on tablet", () => {
     const vh = 900;
     const header = 64;
     const stage = getHeroStageMetrics(800, vh, header);
-    const diceScreenY = header + stage.platform.surfaceTop;
     expect(stage.bp).toBe("tablet");
-    expect(diceScreenY / vh).toBeCloseTo(0.8, 2);
+    expect(stage.diceLineY).toBe(stage.heroHeight - 56);
     expect(stage.heroHeight).toBe(vh - header);
   });
 
-  it("aligns laptop dice to the bottom of the centered copy block", () => {
+  it("pins dice near the bottom on laptop", () => {
     const vh = 1000;
     const header = 64;
     const stage = getHeroStageMetrics(1280, vh, header);
-    const copyBlock = 400;
-    const wrapperH = stage.contentTopPad + copyBlock + stage.contentBottomPad;
-    const wrapperTop = (stage.heroHeight - wrapperH) / 2;
-    const textBottom = wrapperTop + stage.contentTopPad + copyBlock;
-
     expect(stage.bp).toBe("laptop");
-    expect(stage.justifyContent).toBe("center");
-    expect(stage.flowBandHeight).toBeNull();
-    expect(stage.diceSlotHeight).toBeNull();
+    expect(stage.diceLineY).toBe(stage.heroHeight - 64);
     expect(stage.heroHeight).toBe(vh - header);
-    expect(stage.platform.surfaceTop).toBeCloseTo(textBottom + 56, 0);
-    // Dice sit below mid-hero (not mid-copy).
-    expect(stage.platform.surfaceTop).toBeGreaterThan(stage.heroHeight * 0.5);
   });
 
   it("treats width=0 as phone so SSR matches the mobile layout PSI tests", () => {
@@ -128,15 +106,12 @@ describe("getHeroStageMetrics", () => {
     expect(stage.bp).toBe("phone");
   });
 
-  it("keeps compact hero full-height while the copy band ends at 80%", () => {
-    const vh = 800;
-    const header = 64;
-    const stage = getHeroStageMetrics(390, vh, header);
-    expect(stage.heroHeight).toBe(vh - header);
-    expect(stage.flowBandHeight).toBe(0.8 * vh - header);
-    expect(stage.platform.surfaceTop).toBe(stage.flowBandHeight);
-    // Breathing room below the landing line inside the hero.
-    expect(stage.heroHeight).toBeGreaterThan(stage.platform.surfaceTop);
+  it("enforces minimum hero height", () => {
+    const phone = getHeroStageMetrics(390, 200, 64);
+    expect(phone.heroHeight).toBe(640);
+
+    const tablet = getHeroStageMetrics(800, 200, 64);
+    expect(tablet.heroHeight).toBe(560);
   });
 });
 
@@ -199,4 +174,3 @@ describe("buildHeroDiceSpecs", () => {
     }
   });
 });
-

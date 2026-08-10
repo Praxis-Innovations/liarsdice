@@ -108,8 +108,9 @@ improve:
   for headings.
 - **Landing hero**: `Hero.tsx` + responsive helpers in `dicePlatformLayout.ts` (re-exported from
   `DicePlatform.tsx`: `getBreakpoint`, `getPlatformMetrics`, `getDiceBand`,
-  `placeDiceOnPlatform` — unit-tested). Always 6 dice;
-  sizes scale down on smaller widths. Soft spotlight SVG is shared; blur uses web-only CSS
+  `placeDiceOnPlatform` — unit-tested). Unified centered layout on all breakpoints — content
+  centered in the hero, 6 dice pinned near the bottom. Sizes scale down on smaller widths.
+  Soft spotlight SVG cone fills the gap between content and dice; blur uses web-only CSS
   `filter`. **Web** dice: static SVG via `HeroDiceStage.web.tsx` → `Die` component (no Three.js,
   no animation — dice paint instantly at final positions). **Native** dice: SVG + Reanimated via
   `CssDice3D.tsx` → `ScatteredDice` (toss animation preserved). Platform split maintained via
