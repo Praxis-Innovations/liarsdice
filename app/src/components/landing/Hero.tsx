@@ -58,7 +58,6 @@ export function Hero() {
   // Spotlight: cone from above the content down to just above the dice.
   const spotlightPad = diceBand.maxSize * 0.35;
   const spotlightWidth = Math.min(layoutWidth, platform.width + spotlightPad * 2);
-  const spotlightLeft = (layoutWidth - spotlightWidth) / 2;
   const spotlightTopWidth = Math.max(64, spotlightWidth * 0.22);
   const spotlightTopLeft = (spotlightWidth - spotlightTopWidth) / 2;
   const spotlightBlur = 28;
@@ -99,65 +98,76 @@ export function Hero() {
         />
       ) : null}
 
-      {/* Spotlight cone — ends just above the dice row */}
+      {/* Spotlight cone — CSS-centered so SSR output stays centered at any viewport width */}
       <View
         pointerEvents="none"
         style={{
           position: "absolute",
-          left: spotlightLeft - spotlightBlur,
+          left: 0,
+          right: 0,
           top: diceLineY - spotlightHeight - spotlightBlur,
-          width: spotlightWidth + spotlightBlur * 2,
           height: spotlightHeight + spotlightBlur,
           zIndex: 0,
-          ...(Platform.OS === "web" ? ({ filter: `blur(${spotlightBlur}px)` } as object) : null),
+          alignItems: "center",
         }}
       >
-        <Svg
-          width="100%"
-          height="100%"
-          viewBox={`0 0 ${spotlightWidth + spotlightBlur * 2} ${spotlightHeight + spotlightBlur}`}
-          preserveAspectRatio="none"
+        <View
+          style={{
+            width: spotlightWidth + spotlightBlur * 2,
+            height: spotlightHeight + spotlightBlur,
+            ...(Platform.OS === "web" ? ({ filter: `blur(${spotlightBlur}px)` } as object) : null),
+          }}
         >
-          <Defs>
-            <LinearGradient id="heroSpotlight" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={spotlightColor} stopOpacity={isDark ? 0.32 : 0.34} />
-              <Stop offset="0.55" stopColor={spotlightColor} stopOpacity={isDark ? 0.16 : 0.2} />
-              <Stop offset="1" stopColor={spotlightColor} stopOpacity={0} />
-            </LinearGradient>
-          </Defs>
-          <Path
-            d={`M${spotlightBlur + spotlightTopLeft} ${spotlightBlur} L${
-              spotlightBlur + spotlightTopLeft + spotlightTopWidth
-            } ${spotlightBlur} L${spotlightBlur + spotlightWidth} ${spotlightBlur + spotlightHeight} L${spotlightBlur} ${
-              spotlightBlur + spotlightHeight
-            } Z`}
-            fill="url(#heroSpotlight)"
-          />
-        </Svg>
+          <Svg
+            width="100%"
+            height="100%"
+            viewBox={`0 0 ${spotlightWidth + spotlightBlur * 2} ${spotlightHeight + spotlightBlur}`}
+            preserveAspectRatio="none"
+          >
+            <Defs>
+              <LinearGradient id="heroSpotlight" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={spotlightColor} stopOpacity={isDark ? 0.32 : 0.34} />
+                <Stop offset="0.55" stopColor={spotlightColor} stopOpacity={isDark ? 0.16 : 0.2} />
+                <Stop offset="1" stopColor={spotlightColor} stopOpacity={0} />
+              </LinearGradient>
+            </Defs>
+            <Path
+              d={`M${spotlightBlur + spotlightTopLeft} ${spotlightBlur} L${
+                spotlightBlur + spotlightTopLeft + spotlightTopWidth
+              } ${spotlightBlur} L${spotlightBlur + spotlightWidth} ${spotlightBlur + spotlightHeight} L${spotlightBlur} ${
+                spotlightBlur + spotlightHeight
+              } Z`}
+              fill="url(#heroSpotlight)"
+            />
+          </Svg>
+        </View>
       </View>
 
-      {/* Dice stage — positioned so dice land at diceLineY */}
+      {/* Dice stage — CSS-centered so SSR dice band stays centered at any viewport width */}
       <View
         pointerEvents="none"
         style={{
           position: "absolute",
           top: 0,
           left: 0,
-          width: layoutWidth,
+          right: 0,
           height: heroHeight,
           zIndex: 1,
           overflow: "visible",
           backgroundColor: "transparent",
+          alignItems: "center",
         }}
       >
-        <HeroDiceStage
-          dice={scatteredDice}
-          pipColor="#FFFFFF"
-          width={layoutWidth}
-          height={heroHeight}
-          table={table}
-          verticalOffset={0}
-        />
+        <View style={{ width: layoutWidth, height: heroHeight, overflow: "visible" }}>
+          <HeroDiceStage
+            dice={scatteredDice}
+            pipColor="#FFFFFF"
+            width={layoutWidth}
+            height={heroHeight}
+            table={table}
+            verticalOffset={0}
+          />
+        </View>
       </View>
 
       {/* Centered content — always centered on all breakpoints */}
