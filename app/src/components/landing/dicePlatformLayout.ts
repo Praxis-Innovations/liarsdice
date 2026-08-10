@@ -23,26 +23,11 @@ export type DiceTableConfig = Pick<PlatformMetrics, "left" | "top" | "width" | "
 
 export type HeroStageMetrics = {
   bp: Breakpoint;
-  /** Width used for layout (never 0 — SSR / first-paint safe). */
   layoutWidth: number;
   heroHeight: number;
-  /**
-   * Dice platform. On laptop this is hero-absolute; on compact it is *local*
-   * to the in-flow dice slot (surfaceTop ≈ die max size).
-   */
   platform: PlatformMetrics;
-  contentTopPad: number;
-  contentBottomPad: number;
-  /**
-   * Compact flow layout: height of the column that ends at 80% of device
-   * height (text centered above, dice slot pinned to its bottom).
-   */
-  flowBandHeight: number | null;
-  /** Compact: height of the in-flow dice slot (die size + tray). */
-  diceSlotHeight: number | null;
-  justifyContent: "flex-start" | "center";
-  /** Dice canvas extends this far above the hero to start behind the nav (laptop). */
-  diceCanvasOffset: number;
+  /** Y where dice bottoms rest, in hero coordinates. */
+  diceLineY: number;
 };
 
 /** Deterministic 0..1 RNG for stable hero dice across remounts. */
@@ -78,14 +63,12 @@ function platformBox(
     return { left: (layoutWidth - width) / 2, width, height: 76 };
   }
   const width = Math.min(layoutWidth * 0.48, 640);
-  const left = Math.max(layoutWidth * 0.42, layoutWidth - width - 48);
-  return { left, width, height: 88 };
+  return { left: (layoutWidth - width) / 2, width, height: 88 };
 }
 
 /**
- * Hero + platform geometry from viewport percentages (screen-top based):
- * - Laptop: side-by-side absolute dice stage
- * - Phone/tablet: in-flow column — text centered above, dice slot at 80% device height
+ * Unified hero layout: centered content column on all breakpoints,
+ * dice pinned near the bottom of the hero.
  */
 export function getHeroStageMetrics(
   width: number,
@@ -99,58 +82,15 @@ export function getHeroStageMetrics(
   const vh = viewportHeight > 0 ? viewportHeight : 900;
   const heroHeight = Math.max(vh - headerOffset, bp === "phone" ? 640 : 560);
 
-  /** Convert a fraction of full screen height into hero-local Y. */
-  const fromScreen = (frac: number) => frac * vh - headerOffset;
+  const bottomMargin = bp === "phone" ? 48 : bp === "tablet" ? 56 : 64;
+  const diceLineY = heroHeight - bottomMargin;
 
-  if (bp === "laptop") {
-    // Side-by-side: vertically center the copy, park dice on the text baseline
-    // (bottom of the copy block) instead of mid-copy.
-    const contentTopPad = 64;
-    const contentBottomPad = 48;
-    const copyBlock = 400; // badge → caption estimate
-    const wrapperH = contentTopPad + copyBlock + contentBottomPad;
-    // Match justifyContent:center — wrapper sits in the middle of the hero.
-    const wrapperTop = Math.max(0, (heroHeight - wrapperH) / 2);
-    const textBottom = wrapperTop + contentTopPad + copyBlock;
-    // Drop a bit below the copy baseline so the tray clears the CTA/caption.
-    const stageTop = Math.min(
-      heroHeight - box.height - 20,
-      Math.max(band.maxSize + 40, textBottom + 56),
-    );
-    return {
-      bp,
-      layoutWidth,
-      heroHeight,
-      platform: {
-        left: box.left,
-        top: stageTop,
-        width: box.width,
-        height: box.height,
-        surfaceTop: stageTop,
-      },
-      contentTopPad,
-      contentBottomPad,
-      flowBandHeight: null,
-      diceSlotHeight: null,
-      justifyContent: "center",
-      diceCanvasOffset: headerOffset,
-    };
-  }
-
-  // Stacked mobile/tablet:
-  //   Hero is full viewport-minus-header (not an 80%-tall box).
-  //   Copy sits in the band above the landing line (mid ≈ 40% of device).
-  //   Dice surface is at 80% of *device* height in hero coordinates.
-  //   WebGL canvas is full-hero (plus nav offset) so the toss/camera match desktop.
-  const surfaceTop = Math.max(band.maxSize + 48, fromScreen(0.8));
-  const flowBandHeight = surfaceTop; // text column ends at the landing line
-  const diceSlotHeight = band.maxSize + box.height;
   const platform: PlatformMetrics = {
     left: box.left,
-    top: surfaceTop,
+    top: diceLineY,
     width: box.width,
     height: box.height,
-    surfaceTop,
+    surfaceTop: diceLineY,
   };
 
   return {
@@ -158,13 +98,7 @@ export function getHeroStageMetrics(
     layoutWidth,
     heroHeight,
     platform,
-    contentTopPad: 0,
-    contentBottomPad: 0,
-    flowBandHeight,
-    diceSlotHeight,
-    justifyContent: "flex-start",
-    // Fall from behind the nav — same extended canvas as laptop.
-    diceCanvasOffset: headerOffset,
+    diceLineY,
   };
 }
 
@@ -194,9 +128,8 @@ export function getDiceBand(
     return { count: 6, minSize: maxSize - 6, maxSize };
   }
 
-  // Laptop: ease from compact sizes near 1024px up to full size on wide screens.
   const t = Math.min(1, Math.max(0, (width - 1024) / 400));
-  const maxSize = Math.round(46 + t * 18); // 46 → 64
+  const maxSize = Math.round(46 + t * 18);
   const minSize = Math.round(maxSize - 10);
   return { count: 6, minSize, maxSize };
 }
@@ -218,7 +151,6 @@ export function placeDiceOnPlatform(
   const padX = 16;
   const usable = metrics.width - padX * 2;
   const slotW = usable / Math.max(1, count);
-  // Keep a breathing gap between neighbors so depth scatter doesn't look crowded.
   const fitMax = Math.max(28, slotW * 0.72);
   const cappedMax = Math.min(maxSize, fitMax);
   const cappedMin = Math.min(minSize, cappedMax - 4);
@@ -232,9 +164,7 @@ export function placeDiceOnPlatform(
       Math.max(slotLeft + (slotW - size) / 2 + jitterX, metrics.left + padX),
       metrics.left + metrics.width - padX - size,
     );
-    // Shared floor: every die's bottom sits on surfaceTop
     const top = metrics.surfaceTop - size;
-    // Alternate front/back rows with restrained jitter to avoid visual overlap.
     const row = i % 3 === 0 ? -0.72 : i % 3 === 1 ? 0.42 : -0.1;
     const tableDepth = row * depthRange + (rng() - 0.5) * 8;
     placed.push({ top, left, size, tableDepth });
@@ -280,7 +210,6 @@ export function buildHeroDiceSpecs(
       restRotate: "0deg",
       tossRotate: `${spins}deg`,
       throwOffsetX: -12 + rng() * 24,
-      // Full hero + header so native/SVG fallback also starts above the navbar.
       throwDistance: heroHeight + headerOffset + 40 + rng() * 80,
       colorIndex: index % 3,
     };
