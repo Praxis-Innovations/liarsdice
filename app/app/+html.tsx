@@ -91,9 +91,9 @@ export default function Root({ children }: PropsWithChildren) {
           }}
         />
 
-        {/* Stamp real viewport size before React hydrates so
-            useHydrationSafeWindowDimensions can read it on first render,
-            preventing the laptop→phone layout shift (CLS). */}
+        {/* Stamp real viewport size on the root element. Not read during
+            React's initial render (that must match SSR to avoid #418), but
+            available for non-React consumers and future use. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
