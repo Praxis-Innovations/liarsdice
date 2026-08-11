@@ -330,7 +330,29 @@ function extractFontUrls(html) {
  *
  * Do NOT use font-display:optional here — it permanently sticks to system/serif
  * fallbacks when TTFs miss the ~100ms block window (common on cold loads).
+ *
+ * Do NOT strip, defer, or lazily inject Expo Metro script tags (`__common`,
+ * entry, `_layout`, etc.). Parking `__common` behind idle/gesture boot caused
+ * "Requiring unknown module N" and a blank white page after hydrate.
  */
+function assertExpoScriptsIntact() {
+  const indexPath = path.join(DIST_DIR, "index.html");
+  if (!fs.existsSync(indexPath)) return;
+  const html = fs.readFileSync(indexPath, "utf8");
+  if (
+    /requestIdleCallback\s*\(\s*load/.test(html) ||
+    /setTimeout\s*\(\s*boot\s*,\s*20000\s*\)/.test(html) ||
+    (/__common-[^"]+\.js/.test(html) &&
+      !/<script src="\/_expo\/static\/js\/web\/__common-[^"]+\.js" defer><\/script>/.test(html))
+  ) {
+    console.error(
+      "inject-seo: refusing to ship index.html with deferred/idle Expo JS boot " +
+        '(causes "Requiring unknown module" / blank page).',
+    );
+    process.exit(1);
+  }
+}
+
 function optimizeHtmlPerf(dir = DIST_DIR) {
   let files = 0;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -393,6 +415,7 @@ function main() {
   writeSitemapRobotsAndLlms();
   const rewritten = rewriteSiteUrlInHtml();
   const perfTouched = optimizeHtmlPerf();
+  assertExpoScriptsIntact();
 
   console.log(`inject-seo: injected per-route SEO metadata into ${results.length} file(s):`);
   for (const r of results) console.log(`  ${r.path} -> "${r.title}"`);
