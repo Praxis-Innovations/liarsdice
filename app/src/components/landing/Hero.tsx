@@ -1,7 +1,7 @@
 import { Link } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import { Platform, Text, View } from "react-native";
-import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
+import Svg, { Defs, FeGaussianBlur, Filter, LinearGradient, Path, Stop } from "react-native-svg";
 import { headingProps } from "../../lib/heading";
 import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useHeaderOffset } from "../shared/Header";
@@ -24,6 +24,18 @@ export function Hero() {
   const { colors, spacing, typography, isDark } = useTheme();
   const { width, height } = useHydrationSafeWindowDimensions();
   const headerOffset = useHeaderOffset();
+  // Stack navigation keeps prior screens mounted. SVG paint-server IDs must
+  // therefore be unique for every Hero instance, not global constants.
+  const spotlightId = useId().replace(/:/g, "");
+  const spotlightBlurId = `heroSpotlightBlur-${spotlightId}`;
+  const spotlightGradientId = `heroSpotlight-${spotlightId}`;
+  // Use a stable first render for SSG/hydration, then reroll the hero dice
+  // client-side so each page load has a fresh table.
+  const [diceSeed, setDiceSeed] = useState(0);
+
+  useEffect(() => {
+    setDiceSeed(Math.floor(Math.random() * 0x7fffffff));
+  }, []);
 
   const stage = useMemo(
     () => getHeroStageMetrics(width, height, headerOffset),
@@ -39,8 +51,8 @@ export function Hero() {
   );
 
   const scatteredDice = useMemo<ScatteredDieConfig[]>(() => {
-    const seed = Math.round(layoutWidth) * 10 + (bp === "phone" ? 1 : bp === "tablet" ? 2 : 3);
-    const specs = buildHeroDiceSpecs(platform, diceBand, heroHeight, headerOffset, seed);
+    const breakpointOffset = bp === "phone" ? 1 : bp === "tablet" ? 2 : 3;
+    const specs = buildHeroDiceSpecs(platform, diceBand, heroHeight, headerOffset, diceSeed + breakpointOffset);
     return specs.map((spec) => ({
       face: spec.face,
       color: HERO_DICE_PALETTE[spec.colorIndex] ?? HERO_DICE_PALETTE[0],
@@ -53,15 +65,17 @@ export function Hero() {
       throwOffsetX: spec.throwOffsetX,
       throwDistance: spec.throwDistance,
     }));
-  }, [bp, diceBand, headerOffset, heroHeight, layoutWidth, platform]);
+  }, [bp, diceBand, diceSeed, headerOffset, heroHeight, platform]);
 
   // Spotlight: cone from above the content down to just above the dice.
   const spotlightPad = diceBand.maxSize * 0.35;
   const spotlightWidth = Math.min(layoutWidth, platform.width + spotlightPad * 2);
   const spotlightTopWidth = Math.max(64, spotlightWidth * 0.22);
   const spotlightTopLeft = (spotlightWidth - spotlightTopWidth) / 2;
+  // Apply blur within the SVG rather than with CSS. CSS filters can disappear
+  // after a React Native Web route transition in some browsers.
   const spotlightBlur = 28;
-  const spotlightColor = isDark ? colors.accent : "#A896C8";
+  const spotlightColor = isDark ? colors.accent : "#8B72B5";
   const spotlightHeight = Math.max(180, diceLineY - diceBand.maxSize);
 
   return (
@@ -87,6 +101,19 @@ export function Hero() {
           opacity: isDark ? 0.12 : 0.05,
         }}
       />
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          bottom: -230,
+          left: -190,
+          width: 520,
+          height: 520,
+          borderRadius: 999,
+          backgroundColor: colors.secondary,
+          opacity: isDark ? 0.12 : 0.055,
+        }}
+      />
 
       {/* Native-only platform tray */}
       {Platform.OS !== "web" ? (
@@ -98,7 +125,7 @@ export function Hero() {
         />
       ) : null}
 
-      {/* Spotlight cone — CSS-centered so SSR output stays centered at any viewport width */}
+      {/* Spotlight cone — SVG-centered so it remains visible after web navigation. */}
       <View
         pointerEvents="none"
         style={{
@@ -107,16 +134,15 @@ export function Hero() {
           right: 0,
           top: diceLineY - spotlightHeight - spotlightBlur,
           height: spotlightHeight + spotlightBlur,
-          zIndex: 0,
+          // Keep the cone above the hero background. On react-native-web,
+          // zIndex: 0 can be composited beneath the parent surface after a
+          // client-side route transition.
+          zIndex: 1,
           alignItems: "center",
         }}
       >
         <View
-          style={{
-            width: spotlightWidth + spotlightBlur * 2,
-            height: spotlightHeight + spotlightBlur,
-            ...(Platform.OS === "web" ? ({ filter: `blur(${spotlightBlur}px)` } as object) : null),
-          }}
+          style={{ width: spotlightWidth + spotlightBlur * 2, height: spotlightHeight + spotlightBlur }}
         >
           <Svg
             width="100%"
@@ -125,9 +151,12 @@ export function Hero() {
             preserveAspectRatio="none"
           >
             <Defs>
-              <LinearGradient id="heroSpotlight" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={spotlightColor} stopOpacity={isDark ? 0.32 : 0.34} />
-                <Stop offset="0.55" stopColor={spotlightColor} stopOpacity={isDark ? 0.16 : 0.2} />
+              <Filter id={spotlightBlurId} x="-20%" y="-20%" width="140%" height="140%">
+                <FeGaussianBlur stdDeviation={spotlightBlur / 2} />
+              </Filter>
+              <LinearGradient id={spotlightGradientId} x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={spotlightColor} stopOpacity={isDark ? 0.38 : 0.42} />
+                <Stop offset="0.55" stopColor={spotlightColor} stopOpacity={isDark ? 0.18 : 0.24} />
                 <Stop offset="1" stopColor={spotlightColor} stopOpacity={0} />
               </LinearGradient>
             </Defs>
@@ -137,7 +166,8 @@ export function Hero() {
               } ${spotlightBlur} L${spotlightBlur + spotlightWidth} ${spotlightBlur + spotlightHeight} L${spotlightBlur} ${
                 spotlightBlur + spotlightHeight
               } Z`}
-              fill="url(#heroSpotlight)"
+              fill={`url(#${spotlightGradientId})`}
+              filter={`url(#${spotlightBlurId})`}
             />
           </Svg>
         </View>
@@ -152,7 +182,7 @@ export function Hero() {
           left: 0,
           right: 0,
           height: heroHeight,
-          zIndex: 1,
+          zIndex: 2,
           overflow: "visible",
           backgroundColor: "transparent",
           alignItems: "center",
@@ -178,7 +208,7 @@ export function Hero() {
           alignItems: "center",
           paddingHorizontal: 24,
           paddingBottom: diceBand.maxSize + (isPhone ? 64 : 80),
-          zIndex: 2,
+          zIndex: 3,
           backgroundColor: "transparent",
         }}
       >
