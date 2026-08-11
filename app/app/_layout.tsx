@@ -4,7 +4,7 @@ import Head from "expo-router/head";
 import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { Suspense, lazy, useEffect } from "react";
+import React, { Suspense, lazy, useEffect, useLayoutEffect } from "react";
 import { Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Header } from "../src/components/shared/Header";
@@ -22,6 +22,11 @@ const AUTH_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password", "/reset-passw
 const TutorialHost = lazy(() =>
   import("../src/components/tutorial/TutorialHost").then((m) => ({ default: m.TutorialHost })),
 );
+
+function markAppReady() {
+  if (Platform.OS !== "web" || typeof document === "undefined") return;
+  document.documentElement.setAttribute("data-app-ready", "1");
+}
 
 function RootInner() {
   const pathname = usePathname();
@@ -62,11 +67,14 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  // Never block first paint on web fonts — LCP dies if we return null here.
-  // Native still waits briefly so splash covers the swap. Web paints with a
-  // system fallback first; inject-seo sets font-display:swap so Fredoka/Manrope
-  // replace it once the TTFs finish (never font-display:optional — that sticks
-  // on the fallback for the whole page load when fonts miss ~100ms).
+  // Web: body stays opacity:0 (see +html.tsx) until fonts resolve, then reveal.
+  // React has already painted with real viewport from data-vw, so the reveal
+  // skips the phone-SSR → desktop flash. No artificial delay — show ASAP.
+  useLayoutEffect(() => {
+    if (Platform.OS !== "web") return;
+    if (fontsLoaded || fontError) markAppReady();
+  }, [fontsLoaded, fontError]);
+
   if (Platform.OS !== "web" && !fontsLoaded && !fontError) {
     return null;
   }

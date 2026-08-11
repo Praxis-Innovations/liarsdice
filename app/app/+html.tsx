@@ -65,14 +65,18 @@ export default function Root({ children }: PropsWithChildren) {
         />
 
         {/* Avoid white flash before RN paints (hurts FCP filmstrip / LCP).
-            --bg is set by the blocking theme script below; falls back to light. */}
+            --bg is set by the blocking theme script below; falls back to light.
+            data-app-ready is set by RootLayout after fonts + hydrate so we skip
+            the phone-SSR → desktop-hydrate flicker. */}
         <style
           dangerouslySetInnerHTML={{
             __html:
               "html,body,#root{background-color:var(--bg,#FFFBF3)}" +
               "html.dark,html.dark body,html.dark #root{color-scheme:dark}" +
               "html{color-scheme:light dark}" +
-              "body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}",
+              "body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}" +
+              "html:not([data-app-ready]) body{opacity:0}" +
+              "html[data-app-ready] body{opacity:1}",
           }}
         />
 
