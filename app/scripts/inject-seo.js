@@ -18,7 +18,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const SITE_URL = "https://liarsdice.com";
+const SITE_URL = "https://liars-dice.app";
 const SITE_NAME = "Liar's Dice";
 const DIST_DIR = path.join(__dirname, "..", "dist");
 
@@ -265,17 +265,28 @@ Sitemap: ${SITE_URL}/sitemap.xml
   // Single source of truth: app/public/llms.txt (rewrite origin so SITE_URL can't drift).
   const publicLlmsPath = path.join(__dirname, "..", "public", "llms.txt");
   if (fs.existsSync(publicLlmsPath)) {
-    const llms = fs
-      .readFileSync(publicLlmsPath, "utf8")
-      .replace(/https:\/\/liarsdice\.example\.com/g, SITE_URL)
-      .replace(/https:\/\/liarsdice\.com/g, SITE_URL);
+    const llms = rewriteLegacyOrigins(fs.readFileSync(publicLlmsPath, "utf8"));
     fs.writeFileSync(path.join(DIST_DIR, "llms.txt"), llms, "utf8");
   }
 }
 
-/** Walk dist/ and rewrite any leftover placeholder origin in baked HTML. */
+/** Legacy / placeholder origins that must never ship in dist/. */
+const LEGACY_ORIGINS = [
+  "https://liarsdice.example.com",
+  "https://liarsdice.com",
+  "https://www.liarsdice.com",
+];
+
+function rewriteLegacyOrigins(text) {
+  let out = text;
+  for (const origin of LEGACY_ORIGINS) {
+    out = out.split(origin).join(SITE_URL);
+  }
+  return out;
+}
+
+/** Walk dist/ and rewrite any leftover placeholder / wrong-domain origin in baked HTML. */
 function rewriteSiteUrlInHtml(dir = DIST_DIR) {
-  const PLACEHOLDER = "https://liarsdice.example.com";
   let count = 0;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
@@ -285,8 +296,9 @@ function rewriteSiteUrlInHtml(dir = DIST_DIR) {
     }
     if (!entry.name.endsWith(".html")) continue;
     const html = fs.readFileSync(full, "utf8");
-    if (!html.includes(PLACEHOLDER)) continue;
-    fs.writeFileSync(full, html.split(PLACEHOLDER).join(SITE_URL), "utf8");
+    const next = rewriteLegacyOrigins(html);
+    if (next === html) continue;
+    fs.writeFileSync(full, next, "utf8");
     count += 1;
   }
   return count;
@@ -312,8 +324,12 @@ function extractFontUrls(html) {
 
 /**
  * Lighthouse/FCP: expo-font emits `font-display:auto` (FOIT) and preloads every
- * weight. Swap fonts immediately, and on the landing page only preload the two
- * weights that paint the H1 + body copy.
+ * weight. Swap fonts immediately so brand faces always appear once downloaded.
+ * On the landing page only preload the two weights that paint the H1 + body
+ * (keeps the critical path small); remaining weights still swap in.
+ *
+ * Do NOT use font-display:optional here — it permanently sticks to system/serif
+ * fallbacks when TTFs miss the ~100ms block window (common on cold loads).
  */
 function optimizeHtmlPerf(dir = DIST_DIR) {
   let files = 0;
@@ -327,9 +343,7 @@ function optimizeHtmlPerf(dir = DIST_DIR) {
 
     let html = fs.readFileSync(full, "utf8");
     const before = html;
-    // optional on the landing page (set below); swap elsewhere so brand fonts
-    // still appear on content routes without blocking.
-    html = html.replace(/font-display:\s*auto/g, "font-display:swap");
+    html = html.replace(/font-display:\s*(?:auto|optional)/g, "font-display:swap");
 
     if (entry.name === "index.html") {
       // Extract font URLs before stripping preloads so we can re-inject critical ones.
@@ -337,7 +351,6 @@ function optimizeHtmlPerf(dir = DIST_DIR) {
 
       // Strip ALL font preloads, then selectively re-add critical ones.
       html = html.replace(/<link rel="preload" href="[^"]*" as="font"[^>]*>/g, "");
-      html = html.replace(/font-display:\s*swap/g, "font-display:optional");
 
       // Re-inject preloads for the two critical font weights (H1 + body).
       const criticalFonts = ["Fredoka_700Bold", "Fredoka_700", "Manrope_400Regular", "Manrope_400"];
@@ -351,7 +364,6 @@ function optimizeHtmlPerf(dir = DIST_DIR) {
       if (preloadTags.length > 0) {
         html = html.replace("</head>", preloadTags.join("\n") + "\n</head>");
       }
-
     }
 
     if (html !== before) {

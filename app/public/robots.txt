@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /_sitemap
 
-Sitemap: https://liarsdice.com/sitemap.xml
+Sitemap: https://liars-dice.app/sitemap.xml

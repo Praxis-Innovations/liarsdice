@@ -4,7 +4,7 @@ import { type PropsWithChildren } from "react";
 // Production origin — keep in sync with app/scripts/inject-seo.js,
 // public/robots.txt, and public/sitemap.xml (inject-seo rewrites the latter
 // two into dist/ on export so they can't drift).
-const SITE_URL = "https://liarsdice.com";
+const SITE_URL = "https://liars-dice.app";
 const SITE_NAME = "Liar's Dice";
 const SITE_TITLE = "Liar's Dice — Bluff Your Way to Victory";
 const SITE_DESCRIPTION =

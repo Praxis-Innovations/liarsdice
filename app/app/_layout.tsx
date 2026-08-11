@@ -63,8 +63,10 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError]);
 
   // Never block first paint on web fonts — LCP dies if we return null here.
-  // Native still waits briefly so splash covers the swap. Web relies on
-  // inject-seo's font-display:optional + system-ui fallback until fonts resolve.
+  // Native still waits briefly so splash covers the swap. Web paints with a
+  // system fallback first; inject-seo sets font-display:swap so Fredoka/Manrope
+  // replace it once the TTFs finish (never font-display:optional — that sticks
+  // on the fallback for the whole page load when fonts miss ~100ms).
   if (Platform.OS !== "web" && !fontsLoaded && !fontError) {
     return null;
   }

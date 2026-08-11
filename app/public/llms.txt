@@ -6,23 +6,23 @@ Liar's Dice Online is a public-domain bluffing dice game. Each player hides dice
 
 ## Play
 
-- [Play Liar's Dice](https://liarsdice.com/play): Start a free game against AI opponents in your browser
+- [Play Liar's Dice](https://liars-dice.app/play): Start a free game against AI opponents in your browser
 
 ## Learn
 
-- [How to Play](https://liarsdice.com/how-to-play): Step-by-step beginner tutorial for bidding, challenges, and winning
-- [Rules](https://liarsdice.com/rules): Complete official-style rules, wild aces, palifico, and Spot On
-- [Strategy](https://liarsdice.com/strategy): Probability, bluffing timing, and practical bidding tips
-- [FAQ](https://liarsdice.com/faq): Common questions about rules, equipment, and this free online version
+- [How to Play](https://liars-dice.app/how-to-play): Step-by-step beginner tutorial for bidding, challenges, and winning
+- [Rules](https://liars-dice.app/rules): Complete official-style rules, wild aces, palifico, and Spot On
+- [Strategy](https://liars-dice.app/strategy): Probability, bluffing timing, and practical bidding tips
+- [FAQ](https://liars-dice.app/faq): Common questions about rules, equipment, and this free online version
 
 ## Variants & history
 
-- [Dudo & Perudo Rules](https://liarsdice.com/dudo-perudo-rules): Regional names and rule differences for Dudo and Perudo
-- [Compare Variants](https://liarsdice.com/compare): Side-by-side comparison of common Liar's Dice variants
-- [History](https://liarsdice.com/history): Origins of Dudo, Perudo, and the modern game
+- [Dudo & Perudo Rules](https://liars-dice.app/dudo-perudo-rules): Regional names and rule differences for Dudo and Perudo
+- [Compare Variants](https://liars-dice.app/compare): Side-by-side comparison of common Liar's Dice variants
+- [History](https://liars-dice.app/history): Origins of Dudo, Perudo, and the modern game
 
 ## Optional
 
-- [Home](https://liarsdice.com/): Marketing landing page and overview
-- [Sitemap](https://liarsdice.com/sitemap.xml): Machine-readable list of public URLs
-- [Robots](https://liarsdice.com/robots.txt): Crawler allow rules
+- [Home](https://liars-dice.app/): Marketing landing page and overview
+- [Sitemap](https://liars-dice.app/sitemap.xml): Machine-readable list of public URLs
+- [Robots](https://liars-dice.app/robots.txt): Crawler allow rules

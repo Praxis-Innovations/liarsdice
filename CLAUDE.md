@@ -60,12 +60,13 @@ improve:
   `app/app/(content)/faq.tsx`'s `FAQ_ITEMS` — it's duplicated there because the script is a plain
   Node/CJS script and can't import a `.tsx` module directly.
 - `SITE_URL` in both `app/app/+html.tsx` and `app/scripts/inject-seo.js` is
-  `https://liarsdice.com` — keep those (and `public/robots.txt` + `public/sitemap.xml` +
+  `https://liars-dice.app` — keep those (and `public/robots.txt` + `public/sitemap.xml` +
   `public/llms.txt`) in sync if the production domain changes. `inject-seo.js` rewrites
   `dist/sitemap.xml`, `dist/robots.txt`, and `dist/llms.txt` on every `export:web` so
-  the deployed files match `SITE_URL`.
-  The apex domain must DNS to the Vercel app (not a parking/builder host) or Search
-  Console will fetch the wrong sitemap; see `docs/DEPLOY_WEB_BACKEND.md`.
+  the deployed files match `SITE_URL`, and also rewrites legacy
+  `liarsdice.com` / placeholder origins out of baked HTML. The production domain must
+  DNS to the Vercel app (not a parking/builder host) or Search Console will fetch the
+  wrong sitemap; see `docs/DEPLOY_WEB_BACKEND.md`.
 - Never regress: this is an Expo Router **static web export** (`app.json` → `web.output:
   "static"`, bundler `metro`), not Next.js — there is no `next/head`, no `pages/` API routes, no
   Next middleware. SEO mechanisms are Expo-Router-specific: `expo-router/head`, `app/+html.tsx`,
