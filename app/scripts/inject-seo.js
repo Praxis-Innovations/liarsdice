@@ -33,6 +33,7 @@ const SITEMAP_URLS = [
   { path: "/compare", changefreq: "monthly", priority: "0.7" },
   { path: "/history", changefreq: "monthly", priority: "0.7" },
   { path: "/faq", changefreq: "monthly", priority: "0.7" },
+  { path: "/products", changefreq: "monthly", priority: "0.5" },
 ];
 
 // Keep in sync with the FAQ_ITEMS array in app/app/(content)/faq.tsx.
@@ -200,6 +201,15 @@ const ROUTES = {
     jsonLd: [
       article("The History of Liar's Dice: From Ancient South America to the Digital Age", "A comprehensive history of Liar's Dice, tracing the game from its pre-Columbian origins in South America through its global spread, Hollywood fame, and modern digital revival.", "/history"),
       breadcrumbList([{ name: "History", item: `${SITE_URL}/history` }]),
+    ],
+  },
+  "products.html": {
+    path: "/products",
+    title: "Our Products — Apps & Games by Praxis Innovations",
+    description:
+      "Explore the apps and games built by Praxis Innovations — from expense splitting with EvenX to classic board and dice games online.",
+    jsonLd: [
+      breadcrumbList([{ name: "Products", item: `${SITE_URL}/products` }]),
     ],
   },
 };

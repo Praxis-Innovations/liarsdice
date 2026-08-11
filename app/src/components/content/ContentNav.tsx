@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/compare", label: "Compare" },
   { href: "/history", label: "History" },
   { href: "/faq", label: "FAQ" },
+  { href: "/products", label: "Products" },
 ] as const;
 
 export function ContentNav() {

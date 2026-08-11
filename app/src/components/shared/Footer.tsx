@@ -14,6 +14,7 @@ const LEARN_LINKS = [
   { href: "/compare", label: "Compare Variants" },
   { href: "/history", label: "History" },
   { href: "/faq", label: "FAQ" },
+  { href: "/products", label: "Our Products" },
 ] as const;
 
 function DiceDivider({ colors }: { colors: ReturnType<typeof useTheme>["colors"] }) {

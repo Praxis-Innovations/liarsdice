@@ -21,6 +21,10 @@ Liar's Dice Online is a public-domain bluffing dice game. Each player hides dice
 - [Compare Variants](https://liars-dice.app/compare): Side-by-side comparison of common Liar's Dice variants
 - [History](https://liars-dice.app/history): Origins of Dudo, Perudo, and the modern game
 
+## More from Praxis Innovations
+
+- [Our Products](https://liars-dice.app/products): Other apps and games by Praxis Innovations
+
 ## Optional
 
 - [Home](https://liars-dice.app/): Marketing landing page and overview
