@@ -1,8 +1,7 @@
-import { usePathname } from "expo-router";
+import { Link, usePathname } from "expo-router";
 import React from "react";
 import { View } from "react-native";
 import { useTheme } from "../../theme/ThemeProvider";
-import { NavLink } from "../shared/NavLink";
 
 const LINKS = [
   { href: "/play", label: "Play" },
@@ -24,10 +23,9 @@ export function ContentNav() {
       {LINKS.map((link) => {
         const active = pathname === link.href;
         return (
-          <NavLink
+          <Link
             key={link.href}
             href={link.href}
-            prefetchOnMount={link.href !== "/play"}
             style={{
               backgroundColor: active ? colors.accent : colors.surface,
               // Dark ink on gold — white-on-accent fails WCAG AA.
@@ -41,7 +39,7 @@ export function ContentNav() {
             }}
           >
             {link.label}
-          </NavLink>
+          </Link>
         );
       })}
     </View>
