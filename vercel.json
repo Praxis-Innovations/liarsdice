@@ -2,6 +2,7 @@
   "buildCommand": "cd app && npm run export:web",
   "outputDirectory": "app/dist",
   "installCommand": "cd app && npm install",
+  "cleanUrls": true,
   "headers": [
     {
       "source": "/_expo/static/(.*)",

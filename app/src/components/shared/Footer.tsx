@@ -1,10 +1,10 @@
-import { Link } from "expo-router";
 import React from "react";
 import { Text, View } from "react-native";
 import { isCompactWidth } from "../../lib/breakpoints";
 import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Die } from "./Die";
+import { NavLink } from "./NavLink";
 
 const LEARN_LINKS = [
   { href: "/how-to-play", label: "How to Play" },
@@ -93,7 +93,7 @@ export function Footer() {
             Learn
           </Text>
           {LEARN_LINKS.map((link) => (
-            <Link
+            <NavLink
               key={link.href}
               href={link.href}
               style={{
@@ -103,7 +103,7 @@ export function Footer() {
               }}
             >
               {link.label}
-            </Link>
+            </NavLink>
           ))}
         </View>
 
@@ -121,8 +121,9 @@ export function Footer() {
           >
             Play
           </Text>
-          <Link
+          <NavLink
             href="/play"
+            prefetchOnMount={false}
             style={{
               fontFamily: typography.body.fontFamily,
               fontSize: 18,
@@ -130,7 +131,7 @@ export function Footer() {
             }}
           >
             Play vs AI
-          </Link>
+          </NavLink>
         </View>
       </View>
 

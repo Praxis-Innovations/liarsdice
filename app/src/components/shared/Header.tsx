@@ -7,6 +7,7 @@ import { isDesktopWidth } from "../../lib/breakpoints";
 import { useHydrationSafeWindowDimensions } from "../../lib/useHydrationSafeWindowDimensions";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Die } from "./Die";
+import { NavLink } from "./NavLink";
 
 const NAV_LINKS = [
   { href: "/how-to-play", label: "How to Play" },
@@ -124,7 +125,7 @@ export function Header() {
             {NAV_LINKS.map((link) => {
               const active = pathname === link.href;
               return (
-                <Link
+                <NavLink
                   key={link.href}
                   href={link.href}
                   style={{
@@ -144,7 +145,7 @@ export function Header() {
                   >
                     {link.label}
                   </Text>
-                </Link>
+                </NavLink>
               );
             })}
 
@@ -166,8 +167,9 @@ export function Header() {
             </Pressable>
 
             {/* Primary CTA — matches Button primary (primaryText), sized to the nav row */}
-            <Link
+            <NavLink
               href={PLAY_HREF}
+              prefetchOnMount={false}
               style={{
                 marginLeft: 8,
                 paddingHorizontal: 16,
@@ -189,7 +191,7 @@ export function Header() {
               >
                 Play
               </Text>
-            </Link>
+            </NavLink>
           </View>
         ) : (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -251,7 +253,7 @@ export function Header() {
           {NAV_LINKS.map((link) => {
             const active = pathname === link.href;
             return (
-              <Link
+              <NavLink
                 key={link.href}
                 href={link.href}
                 onPress={() => setMenuOpen(false)}
@@ -272,13 +274,14 @@ export function Header() {
                 >
                   {link.label}
                 </Text>
-              </Link>
+              </NavLink>
             );
           })}
 
           <View style={{ marginTop: spacing.sm, marginBottom: spacing.xs }}>
-            <Link
+            <NavLink
               href={PLAY_HREF}
+              prefetchOnMount={false}
               onPress={() => setMenuOpen(false)}
               style={{
                 paddingVertical: 12,
@@ -300,7 +303,7 @@ export function Header() {
               >
                 Play
               </Text>
-            </Link>
+            </NavLink>
           </View>
         </View>
       )}
