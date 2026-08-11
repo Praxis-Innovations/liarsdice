@@ -4,7 +4,8 @@ import Head from "expo-router/head";
 import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { Suspense, lazy, useEffect, useLayoutEffect } from "react";
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from "@react-navigation/native";
+import React, { Suspense, lazy, useEffect, useLayoutEffect, useMemo } from "react";
 import { Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Header } from "../src/components/shared/Header";
@@ -33,6 +34,20 @@ function RootInner() {
   const { isDark, colors } = useTheme();
   const showHeader = !AUTH_PREFIXES.some((p) => pathname.startsWith(p));
   const onPlayRoute = pathname === "/play";
+  const navigationTheme = useMemo(() => {
+    const baseTheme = isDark ? DarkTheme : DefaultTheme;
+
+    return {
+      ...baseTheme,
+      colors: {
+        ...baseTheme.colors,
+        background: colors.background,
+        card: colors.surfaceRaised,
+        text: colors.textPrimary,
+        border: colors.border,
+      },
+    };
+  }, [colors, isDark]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -42,12 +57,14 @@ function RootInner() {
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </Head>
       {showHeader && <Header />}
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { flex: 1, backgroundColor: colors.background },
-        }}
-      />
+      <NavigationThemeProvider value={navigationTheme}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { flex: 1, backgroundColor: "transparent" },
+          }}
+        />
+      </NavigationThemeProvider>
       {onPlayRoute ? (
         <Suspense fallback={null}>
           <TutorialHost />

@@ -32,6 +32,36 @@ module.exports = {
         lg: "24px",
         xl: "32px",
       },
+      keyframes: {
+        "content-card-enter": {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "modal-pop-in": {
+          "0%": { opacity: "0", transform: "scale(0.9)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        "fade-drop-in": {
+          "0%": { opacity: "0", transform: "translateY(-10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-rise-in": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-drop-in-sm": {
+          "0%": { opacity: "0", transform: "translateY(-8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "content-card-enter": "content-card-enter 400ms ease-out both",
+        "modal-pop-in": "modal-pop-in 300ms ease-out both",
+        "fade-drop-in": "fade-drop-in 300ms ease-out both",
+        "fade-rise-in": "fade-rise-in 220ms ease-out both",
+        "fade-drop-in-sm": "fade-drop-in-sm 220ms ease-out both",
+        "fade-rise-in-sm": "content-card-enter 220ms ease-out both",
+      },
     },
   },
   plugins: [],

@@ -1,10 +1,8 @@
 import { Stack } from "expo-router";
 
 export default function ContentLayout() {
-  // Transparent (not colors.background): React Navigation's native-stack applies
-  // contentStyle imperatively outside React's normal reconciliation, so a
-  // theme-dependent value here can go stale after the initial render on some
-  // routes/viewports. Transparent never needs to update — each screen's own
-  // ScrollView paints the real theme background underneath.
+  // The root NavigationThemeProvider paints the transition surface with the
+  // active app theme. Keeping individual screens transparent avoids stale
+  // native-stack contentStyle values after a theme change.
   return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" } }} />;
 }

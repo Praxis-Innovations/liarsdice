@@ -67,12 +67,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [liveColorScheme, themeMode, storageReady]);
 
-  // Keep <html class="dark"> in sync for NativeWind (tailwind darkMode: "class").
-  // App chrome still paints via tokens below — this only satisfies css-interop
-  // and any rare `dark:` utilities.
+  // Keep the document surface synchronized too. During web route transitions,
+  // React Navigation can briefly reveal html/body behind the incoming screen.
+  // `--bg` is initialized in +html.tsx before first paint, then maintained here
+  // for client-side theme changes.
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.style.setProperty("--bg", isDark ? darkColors.background : lightColors.background);
   }, [isDark]);
 
   const setThemeMode = useCallback(
