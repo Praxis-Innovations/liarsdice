@@ -153,7 +153,11 @@ export function Footer() {
             textAlign: "center",
           }}
         >
-          © {new Date().getFullYear()} Liar&apos;s Dice Online. Liar&apos;s Dice is a public domain game.
+          © {new Date().getFullYear()} Liar&apos;s Dice Online. A product of{" "}
+          <Link href="https://praxisinnovations.ca/" style={{ color: colors.primary, textDecorationLine: "underline" }}>
+            Praxis Innovations Inc.
+          </Link>
+          {" "}Liar&apos;s Dice is a public domain game.
         </Text>
       </View>
     </View>

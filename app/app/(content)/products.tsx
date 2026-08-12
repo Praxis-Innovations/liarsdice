@@ -1,9 +1,11 @@
 import Head from "expo-router/head";
 import React from "react";
-import { Linking, Platform, Pressable, Text, View } from "react-native";
+import { Image, Linking, Platform, Pressable, Text, View } from "react-native";
 import { ContentLayout } from "../../src/components/content/ContentLayout";
 import { Paragraph, Section } from "../../src/components/content/Prose";
 import { useTheme } from "../../src/theme/ThemeProvider";
+
+const LOGO_BASE = Platform.OS === "web" ? "" : "https://liars-dice.app";
 
 const PRODUCTS = [
   {
@@ -12,6 +14,7 @@ const PRODUCTS = [
     description:
       "An intuitive expense splitting app that makes sharing costs with friends, roommates, and groups effortless. Available on iOS and Android.",
     url: "https://evenx.io/",
+    logo: `${LOGO_BASE}/products/evenx-logo.png`,
   },
   {
     title: "PlaySequence",
@@ -19,6 +22,7 @@ const PRODUCTS = [
     description:
       "A cross-platform Sequence card game with real-time multiplayer, private rooms, bot practice, leaderboards, and coin rewards. Play online from any device.",
     url: "https://playsequence.app/",
+    logo: `${LOGO_BASE}/products/sequence-logo.png`,
   },
   {
     title: "Praxis Innovations",
@@ -26,10 +30,11 @@ const PRODUCTS = [
     description:
       "The team behind all our products. We build mobile apps and online games that are simple, polished, and fun to use.",
     url: "https://praxisinnovations.ca/",
+    logo: `${LOGO_BASE}/products/praxis-logo.png`,
   },
 ] as const;
 
-function ProductCard({ title, category, description, url }: (typeof PRODUCTS)[number]) {
+function ProductCard({ title, category, description, url, logo }: (typeof PRODUCTS)[number]) {
   const { colors, spacing, typography, radii } = useTheme();
 
   const handlePress = () => {
@@ -46,53 +51,87 @@ function ProductCard({ title, category, description, url }: (typeof PRODUCTS)[nu
       style={({ pressed }) => ({
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: pressed ? colors.primary : colors.border,
         borderRadius: radii.lg,
-        padding: spacing.lg,
-        gap: spacing.sm,
-        opacity: pressed ? 0.85 : 1,
+        overflow: "hidden",
+        opacity: pressed ? 0.9 : 1,
       })}
     >
-      <Text
+      {/* Logo area */}
+      <View
         style={{
-          fontFamily: typography.caption.fontFamily,
-          fontSize: typography.caption.fontSize,
-          color: colors.accent,
-          textTransform: "uppercase",
-          letterSpacing: 1,
+          backgroundColor: colors.surfaceRaised,
+          paddingVertical: spacing.lg,
+          alignItems: "center",
+          justifyContent: "center",
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
         }}
       >
-        {category}
-      </Text>
-      <Text
-        style={{
-          fontFamily: typography.h3.fontFamily,
-          fontSize: typography.h3.fontSize,
-          color: colors.textPrimary,
-        }}
-      >
-        {title}
-      </Text>
-      <Text
-        style={{
-          fontFamily: typography.body.fontFamily,
-          fontSize: typography.body.fontSize,
-          lineHeight: typography.body.lineHeight,
-          color: colors.textSecondary,
-        }}
-      >
-        {description}
-      </Text>
-      <Text
-        style={{
-          fontFamily: typography.bodySemibold.fontFamily,
-          fontSize: typography.body.fontSize,
-          color: colors.primary,
-          marginTop: spacing.xs,
-        }}
-      >
-        Visit {title} &rarr;
-      </Text>
+        <View
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: radii.md,
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
+          <Image
+            source={{ uri: logo }}
+            style={{ width: 52, height: 52 }}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
+
+      {/* Content */}
+      <View style={{ padding: spacing.lg, gap: spacing.sm }}>
+        <Text
+          style={{
+            fontFamily: typography.caption.fontFamily,
+            fontSize: typography.caption.fontSize,
+            color: colors.accent,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+          }}
+        >
+          {category}
+        </Text>
+        <Text
+          style={{
+            fontFamily: typography.h3.fontFamily,
+            fontSize: typography.h3.fontSize,
+            color: colors.textPrimary,
+          }}
+        >
+          {title}
+        </Text>
+        <Text
+          style={{
+            fontFamily: typography.body.fontFamily,
+            fontSize: typography.body.fontSize,
+            lineHeight: typography.body.lineHeight,
+            color: colors.textSecondary,
+          }}
+        >
+          {description}
+        </Text>
+        <Text
+          style={{
+            fontFamily: typography.bodySemibold.fontFamily,
+            fontSize: typography.body.fontSize,
+            color: colors.primary,
+            marginTop: spacing.xs,
+          }}
+        >
+          Visit {title} &rarr;
+        </Text>
+      </View>
     </Pressable>
   );
 }
