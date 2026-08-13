@@ -22,8 +22,6 @@ import { RoundResult } from "./RoundResult";
 import { TableBidCenter } from "./TableBidCenter";
 
 const MAX_BOARD_WIDTH = 960;
-/** Play/setup/game-over always use this share of the viewport under the header. */
-const CONTENT_HEIGHT_RATIO = 0.9;
 
 export function GameBoard() {
   const gameState = useGameStore((s) => s.gameState);
@@ -58,7 +56,9 @@ export function GameBoard() {
   // Viewport under the global header, minus home-indicator — 90% is content, 10% split top/bottom.
   const playViewport = Math.max(0, windowHeight - headerOffset);
   const usableHeight = Math.max(0, playViewport - insetBottom);
-  const contentBudget = Math.round(usableHeight * CONTENT_HEIGHT_RATIO);
+  // Phones use all available height — fixed controls (bid strip, bid panel, action bar)
+  // leave no room for the 10% air reservation and would crop the bottom on small devices.
+  const contentBudget = compact ? usableHeight : Math.round(usableHeight * 0.9);
   const frameAir = Math.max(0, (usableHeight - contentBudget) / 2);
   const availableHeight = usableHeight;
   const pagePad = compact ? spacing.md + 4 : spacing.md;
@@ -177,7 +177,6 @@ export function GameBoard() {
     maxWidth: MAX_BOARD_WIDTH,
     alignSelf: "center" as const,
     paddingHorizontal: pagePad,
-    // Equal leftover air above/below the 90% content frame (plus home indicator).
     paddingTop: frameAir,
     paddingBottom: frameAir + insetBottom,
     overflow: (clip ? "hidden" : "visible") as "hidden" | "visible",
@@ -334,7 +333,7 @@ export function GameBoard() {
           >
             {compact ? (
               <View ref={bidChromeRef} collapsable={false}>
-                <MobileBidStrip state={gameState} />
+                <MobileBidStrip state={gameState} dense={dense} />
               </View>
             ) : null}
             <View ref={bidPanelRef} collapsable={false}>

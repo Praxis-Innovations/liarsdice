@@ -16,10 +16,11 @@ function playerLabel(state: GameState, playerId: string): string {
 /**
  * Phone-only bid chrome under the table — vertical list so the felt stays clear.
  */
-export function MobileBidStrip({ state }: { state: GameState }) {
+export function MobileBidStrip({ state, dense = false }: { state: GameState; dense?: boolean }) {
   const { colors, radii, typography, spacing } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
   const bids = bidActions(state.roundHistory);
+  const stripHeight = dense ? 100 : 148;
 
   useEffect(() => {
     if (bids.length === 0) return;
@@ -37,7 +38,7 @@ export function MobileBidStrip({ state }: { state: GameState }) {
           paddingVertical: 12,
           paddingHorizontal: spacing.md,
           alignItems: "center",
-          height: 148,
+          height: stripHeight,
           justifyContent: "center",
         }}
       >
@@ -77,7 +78,7 @@ export function MobileBidStrip({ state }: { state: GameState }) {
         paddingHorizontal: spacing.md,
         paddingTop: 8,
         paddingBottom: 8,
-        height: 148,
+        height: stripHeight,
         justifyContent: "flex-end",
       }}
     >
