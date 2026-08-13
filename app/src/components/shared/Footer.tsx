@@ -14,6 +14,7 @@ const LEARN_LINKS = [
   { href: "/compare", label: "Compare Variants" },
   { href: "/history", label: "History" },
   { href: "/faq", label: "FAQ" },
+  { href: "/products", label: "Our Products" },
 ] as const;
 
 function DiceDivider({ colors }: { colors: ReturnType<typeof useTheme>["colors"] }) {
@@ -152,7 +153,11 @@ export function Footer() {
             textAlign: "center",
           }}
         >
-          © {new Date().getFullYear()} Liar&apos;s Dice Online. Liar&apos;s Dice is a public domain game.
+          © {new Date().getFullYear()} Liar&apos;s Dice Online. A product of{" "}
+          <Link href="https://praxisinnovations.ca/" style={{ color: colors.primary, textDecorationLine: "underline" }}>
+            Praxis Innovations Inc.
+          </Link>
+          {" "}Liar&apos;s Dice is a public domain game.
         </Text>
       </View>
     </View>
