@@ -177,7 +177,7 @@ export function GameBoard() {
     maxWidth: MAX_BOARD_WIDTH,
     alignSelf: "center" as const,
     paddingHorizontal: pagePad,
-    paddingTop: frameAir,
+    paddingTop: compact ? 4 : frameAir,
     paddingBottom: frameAir + insetBottom,
     overflow: (clip ? "hidden" : "visible") as "hidden" | "visible",
   });

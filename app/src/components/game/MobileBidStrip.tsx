@@ -20,7 +20,7 @@ export function MobileBidStrip({ state, dense = false }: { state: GameState; den
   const { colors, radii, typography, spacing } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
   const bids = bidActions(state.roundHistory);
-  const stripHeight = dense ? 100 : 148;
+  const stripHeight = dense ? 85 : 126;
 
   useEffect(() => {
     if (bids.length === 0) return;

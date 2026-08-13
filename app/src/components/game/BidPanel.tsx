@@ -296,21 +296,23 @@ export function BidPanel({
         </View>
       )}
 
-      {showHints && enabled && legal ? (
-        <Text
-          style={{
-            fontFamily: typography.caption.fontFamily,
-            fontSize: 11,
-            color: colors.textSecondary,
-            textAlign: compactControls ? "center" : "left",
-          }}
-        >
-          You hold {ownMatches} matching {ownMatches === 1 ? "die" : "dice"}. Chance:{" "}
-          <Text style={{ color: probColor, fontFamily: typography.bodySemibold.fontFamily }}>
-            {(probability * 100).toFixed(0)}%
+      <View style={{ height: 16 }}>
+        {showHints && enabled && legal ? (
+          <Text
+            style={{
+              fontFamily: typography.caption.fontFamily,
+              fontSize: 11,
+              color: colors.textSecondary,
+              textAlign: compactControls ? "center" : "left",
+            }}
+          >
+            You hold {ownMatches} matching {ownMatches === 1 ? "die" : "dice"}. Chance:{" "}
+            <Text style={{ color: probColor, fontFamily: typography.bodySemibold.fontFamily }}>
+              {(probability * 100).toFixed(0)}%
+            </Text>
           </Text>
-        </Text>
-      ) : null}
+        ) : null}
+      </View>
     </View>
   );
 }
