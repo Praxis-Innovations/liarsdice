@@ -28,9 +28,12 @@ export default function Root({ children }: PropsWithChildren) {
         <title>{SITE_TITLE}</title>
         <meta name="description" content={SITE_DESCRIPTION} />
         <link rel="canonical" href={SITE_URL} />
-        {/* ICO first — browsers/crawlers still request /favicon.ico by default.
-            SVG is the crisp source; apple-touch covers iOS home-screen. */}
+        {/* ICO: universal fallback (browsers/crawlers still request /favicon.ico).
+            PNG 512px: required for Google Search favicons (min 48px; SVG not used).
+            SVG: crisp vector for modern browsers, takes precedence over PNG/ICO.
+            apple-touch-icon: iOS home-screen bookmark. */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.png" type="image/png" sizes="512x512" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
