@@ -13,6 +13,7 @@ import { useAuth } from "../../src/context/AuthContext";
 import { useMultiplayerStore } from "../../src/store/multiplayerStore";
 import { headingProps } from "../../src/lib/heading";
 import { useTheme } from "../../src/theme/ThemeProvider";
+import { ChatPanel } from "../../src/components/chat/ChatPanel";
 
 type LobbyView = "menu" | "waiting" | "joining";
 
@@ -216,82 +217,102 @@ export default function LobbyScreen() {
 
   // ── Main menu ────────────────────────────────────────────────────────────────
   return (
-    <ScrollView
-      contentContainerStyle={{
-        flex: 1,
-        backgroundColor: colors.background,
-        padding: spacing.lg,
-        gap: spacing.sm,
-        justifyContent: "center",
-      }}
-    >
-      <Text
-        {...headingProps(1)}
-        style={{
-          fontFamily: typography.h2.fontFamily,
-          fontSize: typography.h2.fontSize,
-          color: colors.textPrimary,
-          marginBottom: spacing.md,
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.lg,
+          gap: spacing.sm,
         }}
       >
-        Play Liar&apos;s Dice
-      </Text>
-
-      <Button
-        label="Play online (random)"
-        loading={connecting}
-        disabled={connecting}
-        onPress={() => void handlePlayOnline()}
-        fullWidth
-        style={{ marginBottom: spacing.xs }}
-      />
-
-      <Button
-        label="Create private match"
-        variant="secondary"
-        loading={connecting}
-        disabled={connecting}
-        onPress={() => void handleCreatePrivate()}
-        fullWidth
-        style={{ marginBottom: spacing.xs }}
-      />
-
-      <Button
-        label="Join with code"
-        variant="secondary"
-        disabled={connecting}
-        onPress={() => setView("joining")}
-        fullWidth
-        style={{ marginBottom: spacing.xs }}
-      />
-
-      <View
-        style={{
-          height: 1,
-          backgroundColor: colors.border,
-          marginVertical: spacing.md,
-        }}
-      />
-
-      <Button
-        label="Play solo (vs AI)"
-        variant="ghost"
-        onPress={handleSoloPlay}
-        fullWidth
-      />
-
-      {store.phase === "error" && store.errorMessage ? (
         <Text
+          {...headingProps(1)}
           style={{
-            color: colors.danger,
-            fontFamily: typography.body.fontFamily,
-            marginTop: spacing.sm,
-            textAlign: "center",
+            fontFamily: typography.h2.fontFamily,
+            fontSize: typography.h2.fontSize,
+            color: colors.textPrimary,
+            marginBottom: spacing.md,
           }}
         >
-          {store.errorMessage}
+          Play Liar&apos;s Dice
         </Text>
-      ) : null}
-    </ScrollView>
+
+        <Button
+          label="Play online (random)"
+          loading={connecting}
+          disabled={connecting}
+          onPress={() => void handlePlayOnline()}
+          fullWidth
+          style={{ marginBottom: spacing.xs }}
+        />
+
+        <Button
+          label="Create private match"
+          variant="secondary"
+          loading={connecting}
+          disabled={connecting}
+          onPress={() => void handleCreatePrivate()}
+          fullWidth
+          style={{ marginBottom: spacing.xs }}
+        />
+
+        <Button
+          label="Join with code"
+          variant="secondary"
+          disabled={connecting}
+          onPress={() => setView("joining")}
+          fullWidth
+          style={{ marginBottom: spacing.xs }}
+        />
+
+        <View
+          style={{
+            height: 1,
+            backgroundColor: colors.border,
+            marginVertical: spacing.md,
+          }}
+        />
+
+        <Button
+          label="Play solo (vs AI)"
+          variant="ghost"
+          onPress={handleSoloPlay}
+          fullWidth
+        />
+
+        {store.phase === "error" && store.errorMessage ? (
+          <Text
+            style={{
+              color: colors.danger,
+              fontFamily: typography.body.fontFamily,
+              marginTop: spacing.sm,
+              textAlign: "center",
+            }}
+          >
+            {store.errorMessage}
+          </Text>
+        ) : null}
+
+        <Text
+          style={{
+            fontFamily: typography.bodyMedium.fontFamily,
+            fontSize: 13,
+            color: colors.textSecondary,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            marginTop: spacing.lg,
+          }}
+        >
+          Lobby chat
+        </Text>
+      </ScrollView>
+
+      {/* Global lobby chat — joins the shared liarsdice-lobby channel */}
+      <ChatPanel
+        channelTarget="liarsdice-lobby"
+        channelType={1}
+        placeholder="Chat with other players…"
+        maxHeight={240}
+      />
+    </View>
   );
 }

@@ -3,7 +3,7 @@
 // This is a self-contained UI — it does NOT reuse the solo GameBoard components
 // since those are tightly coupled to the solo gameStore interface.
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -20,6 +20,7 @@ import { Button } from "../ui/Button";
 import { Die } from "../shared/Die";
 import type { DieFace } from "../shared/Die";
 import type { DieValue, GameState } from "../../engine/types";
+import { ChatPanel } from "../chat/ChatPanel";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -293,8 +294,17 @@ export function MultiplayerBoard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const store = useMultiplayerStore();
+  const [chatOpen, setChatOpen] = useState(false);
 
-  const { phase, gameState, roundResult, myUserId, winnerId } = store;
+  const { phase, gameState, roundResult, myUserId, winnerId, matchId } = store;
+
+  // Join the match-scoped chat channel when a match is active.
+  useEffect(() => {
+    if (matchId && (phase === "lobby" || phase === "playing" || phase === "round-result")) {
+      void store.joinChannel(matchId, 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId]);
 
   const handleLeave = () => {
     store.leaveMatch();
@@ -501,17 +511,30 @@ export function MultiplayerBoard() {
         >
           {isMyTurn ? "Your turn" : `${currentPlayerName}'s turn`}
         </Text>
-        <Pressable onPress={handleLeave}>
-          <Text
-            style={{
-              fontFamily: typography.body.fontFamily,
-              fontSize: 13,
-              color: colors.textSecondary,
-            }}
-          >
-            Leave
-          </Text>
-        </Pressable>
+        <View style={{ flexDirection: "row", gap: spacing.sm, alignItems: "center" }}>
+          <Pressable onPress={() => setChatOpen((o) => !o)}>
+            <Text
+              style={{
+                fontFamily: typography.body.fontFamily,
+                fontSize: 13,
+                color: chatOpen ? colors.primary : colors.textSecondary,
+              }}
+            >
+              Chat
+            </Text>
+          </Pressable>
+          <Pressable onPress={handleLeave}>
+            <Text
+              style={{
+                fontFamily: typography.body.fontFamily,
+                fontSize: 13,
+                color: colors.textSecondary,
+              }}
+            >
+              Leave
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}>
@@ -542,7 +565,7 @@ export function MultiplayerBoard() {
             backgroundColor: colors.surfaceRaised,
             borderTopWidth: 1,
             borderTopColor: colors.border,
-            paddingBottom: insets.bottom || spacing.md,
+            paddingBottom: chatOpen ? 0 : insets.bottom || spacing.md,
           }}
         >
           <BidControls
@@ -556,7 +579,7 @@ export function MultiplayerBoard() {
         <View
           style={{
             padding: spacing.md,
-            paddingBottom: (insets.bottom || 0) + spacing.md,
+            paddingBottom: chatOpen ? spacing.md : (insets.bottom || 0) + spacing.md,
             backgroundColor: colors.surface,
             alignItems: "center",
             borderTopWidth: 1,
@@ -572,6 +595,13 @@ export function MultiplayerBoard() {
           >
             Waiting for {currentPlayerName}…
           </Text>
+        </View>
+      )}
+
+      {/* Chat panel — toggled via header button */}
+      {chatOpen && (
+        <View style={{ paddingBottom: insets.bottom || 0 }}>
+          <ChatPanel maxHeight={280} placeholder="Message your opponent…" />
         </View>
       )}
     </View>

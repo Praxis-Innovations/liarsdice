@@ -19,6 +19,15 @@ export type MultiplayerPhase =
   | "game-over"
   | "error";
 
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  username: string;
+  text: string;
+  createdAt: string;
+  isMe: boolean;
+}
+
 export interface MultiplayerStore {
   phase: MultiplayerPhase;
   matchId: string | null;
@@ -28,6 +37,10 @@ export interface MultiplayerStore {
   winnerId: string | null;
   errorMessage: string | null;
   socket: Socket | null;
+
+  // Chat
+  chatMessages: ChatMessage[];
+  chatChannelId: string | null;
 
   // Actions
   connect: (session: Session) => Promise<void>;
@@ -41,6 +54,11 @@ export interface MultiplayerStore {
   challenge: () => void;
   spotOn: () => void;
   reset: () => void;
+
+  // Chat actions
+  joinChannel: (target: string, type?: number) => Promise<void>;
+  leaveChannel: () => void;
+  sendChatMessage: (text: string) => void;
 }
 
 // ─── Store ───────────────────────────────────────────────────────────────────
@@ -54,6 +72,8 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   winnerId: null,
   errorMessage: null,
   socket: null,
+  chatMessages: [],
+  chatChannelId: null,
 
   connect: async (session: Session) => {
     const existing = get().socket;
@@ -101,6 +121,29 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         }
       };
 
+      socket.onchannelmessage = (msg) => {
+        const { myUserId: uid } = get();
+        let text = "";
+        try {
+          const parsed = typeof msg.content === "string"
+            ? (JSON.parse(msg.content) as { text?: string })
+            : (msg.content as { text?: string });
+          text = parsed.text ?? "";
+        } catch {
+          text = String(msg.content ?? "");
+        }
+        if (!text) return;
+        const chatMsg: ChatMessage = {
+          id: msg.message_id,
+          senderId: msg.sender_id,
+          username: msg.username,
+          text,
+          createdAt: msg.create_time,
+          isMe: msg.sender_id === uid,
+        };
+        set((state) => ({ chatMessages: [...state.chatMessages, chatMsg] }));
+      };
+
       socket.ondisconnect = () => {
         const { phase } = get();
         if (phase !== "idle") {
@@ -118,15 +161,14 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   },
 
   disconnect: () => {
-    const { socket } = get();
+    const { socket, chatChannelId } = get();
     if (socket) {
-      try {
-        socket.disconnect(false);
-      } catch {
-        // Best-effort.
+      if (chatChannelId) {
+        try { void socket.leaveChat(chatChannelId); } catch { /* best-effort */ }
       }
+      try { socket.disconnect(false); } catch { /* best-effort */ }
     }
-    set({ socket: null, phase: "idle", matchId: null, gameState: null });
+    set({ socket: null, phase: "idle", matchId: null, gameState: null, chatChannelId: null, chatMessages: [] });
   },
 
   createMatch: async (options = {}) => {
@@ -166,11 +208,12 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   },
 
   leaveMatch: () => {
-    const { socket, matchId } = get();
-    if (socket && matchId) {
-      void socket.leaveMatch(matchId);
+    const { socket, matchId, chatChannelId } = get();
+    if (socket) {
+      if (matchId) void socket.leaveMatch(matchId);
+      if (chatChannelId) { try { void socket.leaveChat(chatChannelId); } catch { /* best-effort */ } }
     }
-    set({ matchId: null, gameState: null, phase: "idle", roundResult: null, winnerId: null });
+    set({ matchId: null, gameState: null, phase: "idle", roundResult: null, winnerId: null, chatChannelId: null, chatMessages: [] });
   },
 
   sendReady: () => {
@@ -206,5 +249,30 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       winnerId: null,
       errorMessage: null,
     });
+  },
+
+  joinChannel: async (target, type = 1) => {
+    const { socket } = get();
+    if (!socket) return;
+    try {
+      const channel = await socket.joinChat(target, type, true, false);
+      set({ chatChannelId: channel.id, chatMessages: [] });
+    } catch {
+      // Chat join failed — non-fatal, game continues without chat.
+    }
+  },
+
+  leaveChannel: () => {
+    const { socket, chatChannelId } = get();
+    if (socket && chatChannelId) {
+      try { void socket.leaveChat(chatChannelId); } catch { /* best-effort */ }
+    }
+    set({ chatChannelId: null, chatMessages: [] });
+  },
+
+  sendChatMessage: (text) => {
+    const { socket, chatChannelId } = get();
+    if (!socket || !chatChannelId || !text.trim()) return;
+    void socket.writeChatMessage(chatChannelId, { text: text.trim() });
   },
 }));
