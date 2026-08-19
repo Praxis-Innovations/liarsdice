@@ -355,7 +355,17 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = (
       );
       state.phase = "ended";
 
-      // Record the win on the leaderboard (increment by 1).
+      // Award coins and record leaderboard win.
+      for (const userId of state.playerOrder) {
+        const isWinner = userId === winnerId;
+        const coins = isWinner ? 100 : 10; // winner: 100 coins; others: 10 participation
+        try {
+          nk.walletUpdate(userId, { coins }, { match: "game_complete", winner: isWinner }, true);
+        } catch {
+          logger.warn("Failed to update wallet for %s", userId);
+        }
+      }
+
       if (winnerId) {
         const winnerPresence = state.presences[winnerId];
         try {

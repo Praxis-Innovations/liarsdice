@@ -559,6 +559,15 @@ var matchLoop = (_ctx, logger, nk, dispatcher, _tick, state, messages) => {
         true
       );
       state.phase = "ended";
+      for (const userId of state.playerOrder) {
+        const isWinner = userId === winnerId;
+        const coins = isWinner ? 100 : 10;
+        try {
+          nk.walletUpdate(userId, { coins }, { match: "game_complete", winner: isWinner }, true);
+        } catch (e) {
+          logger.warn("Failed to update wallet for %s", userId);
+        }
+      }
       if (winnerId) {
         const winnerPresence = state.presences[winnerId];
         try {
