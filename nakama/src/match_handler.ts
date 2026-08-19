@@ -2,6 +2,7 @@ import { rollDice, startNewRound, applyAction, getActivePlayers } from "./engine
 import type { GameState, Player, GameAction, DieValue } from "./engine/types";
 import { DICE_PER_PLAYER } from "./engine/constants";
 import { MatchOpCode } from "./shared/types";
+import { sendPushToPlayers } from "./rpc/notifications";
 
 // ─── Match state ─────────────────────────────────────────────────────────────
 
@@ -379,6 +380,33 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = (
           logger.warn("Failed to record leaderboard win for %s", winnerId);
         }
       }
+
+      // Send Nakama in-app notifications and push notifications.
+      const winnerName = winnerId ? (state.presences[winnerId]?.username ?? "Someone") : "Someone";
+      for (const userId of state.playerOrder) {
+        const isWinner = userId === winnerId;
+        const subject = isWinner ? "You won! 🏆" : "Match over";
+        const content = isWinner
+          ? `You won +100 coins!`
+          : `${winnerName} wins. You earned +10 coins.`;
+        try {
+          nk.notificationSend(userId, subject, { body: content }, 1, undefined, true);
+        } catch {
+          logger.warn("Failed to send in-app notification to %s", userId);
+        }
+      }
+
+      // Push notifications to offline/backgrounded players.
+      sendPushToPlayers(
+        nk,
+        logger,
+        state.playerOrder,
+        winnerId ? `${winnerName} wins!` : "Match over",
+        winnerId
+          ? `${winnerName} has won the match. Tap to play again.`
+          : "The match has ended. Tap to play again.",
+        { screen: "lobby" },
+      );
     } else if (roundResolved) {
       state.pendingRoundAdvance = true;
     } else {

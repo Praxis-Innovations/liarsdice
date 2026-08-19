@@ -1,12 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
+import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "../../src/context/AuthContext";
+import { registerPushToken, setupNotificationListeners } from "../../src/lib/notifications";
 import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function AppLayout() {
   const { colors } = useTheme();
   const { session, loading } = useAuth();
+
+  // Register push token once when the authenticated session is available.
+  useEffect(() => {
+    if (!session) return;
+    void registerPushToken(session);
+    return setupNotificationListeners();
+  }, [session]);
 
   if (loading) {
     return (

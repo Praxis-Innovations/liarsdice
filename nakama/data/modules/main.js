@@ -321,6 +321,41 @@ var MatchOpCode = {
   PLAYER_LEFT: 105
 };
 
+// src/rpc/notifications.ts
+var EXPO_PUSH_URL = "https://api.expo.dev/v2/push/send";
+function sendPushToPlayers(nk, logger, userIds, title, body, data) {
+  if (userIds.length === 0) return;
+  const readRequests = userIds.map((uid) => ({
+    collection: "device",
+    key: "push_token",
+    userId: uid
+  }));
+  let objects = [];
+  try {
+    objects = nk.storageRead(readRequests);
+  } catch (e) {
+    logger.warn("sendPushToPlayers: failed to read storage tokens");
+    return;
+  }
+  const messages = [];
+  for (const obj of objects) {
+    try {
+      const { token } = JSON.parse(obj.value);
+      if (token) messages.push({ to: token, title, body, data });
+    } catch (e) {
+    }
+  }
+  if (messages.length === 0) return;
+  try {
+    nk.httpRequest(EXPO_PUSH_URL, "post", {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    }, JSON.stringify(messages));
+  } catch (e) {
+    logger.warn("sendPushToPlayers: Expo push request failed");
+  }
+}
+
 // src/match_handler.ts
 function makeGameState(state) {
   var _a, _b;
@@ -472,7 +507,7 @@ var matchLeave = (_ctx, logger, _nk, dispatcher, _tick, state, presences) => {
   return { state };
 };
 var matchLoop = (_ctx, logger, nk, dispatcher, _tick, state, messages) => {
-  var _a, _b;
+  var _a, _b, _c, _d;
   if (state.phase === "ended" && Object.keys(state.presences).length === 0) {
     return null;
   }
@@ -581,6 +616,25 @@ var matchLoop = (_ctx, logger, nk, dispatcher, _tick, state, messages) => {
           logger.warn("Failed to record leaderboard win for %s", winnerId);
         }
       }
+      const winnerName = winnerId ? (_d = (_c = state.presences[winnerId]) == null ? void 0 : _c.username) != null ? _d : "Someone" : "Someone";
+      for (const userId of state.playerOrder) {
+        const isWinner = userId === winnerId;
+        const subject = isWinner ? "You won! \u{1F3C6}" : "Match over";
+        const content = isWinner ? `You won +100 coins!` : `${winnerName} wins. You earned +10 coins.`;
+        try {
+          nk.notificationSend(userId, subject, { body: content }, 1, void 0, true);
+        } catch (e) {
+          logger.warn("Failed to send in-app notification to %s", userId);
+        }
+      }
+      sendPushToPlayers(
+        nk,
+        logger,
+        state.playerOrder,
+        winnerId ? `${winnerName} wins!` : "Match over",
+        winnerId ? `${winnerName} has won the match. Tap to play again.` : "The match has ended. Tap to play again.",
+        { screen: "lobby" }
+      );
     } else if (roundResolved) {
       state.pendingRoundAdvance = true;
     } else {
