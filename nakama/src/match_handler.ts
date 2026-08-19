@@ -239,7 +239,7 @@ export const matchLeave: nkruntime.MatchLeaveFunction<MatchState> = (
 export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = (
   _ctx,
   logger,
-  _nk,
+  nk,
   dispatcher,
   _tick,
   state,
@@ -354,6 +354,21 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = (
         true,
       );
       state.phase = "ended";
+
+      // Record the win on the leaderboard (increment by 1).
+      if (winnerId) {
+        const winnerPresence = state.presences[winnerId];
+        try {
+          nk.leaderboardRecordWrite(
+            "liarsdice_wins",
+            winnerId,
+            winnerPresence?.username,
+            1,
+          );
+        } catch {
+          logger.warn("Failed to record leaderboard win for %s", winnerId);
+        }
+      }
     } else if (roundResolved) {
       state.pendingRoundAdvance = true;
     } else {

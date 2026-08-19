@@ -306,7 +306,7 @@ function applyRoundResult(state, result) {
   });
 }
 
-// ../shared/types.ts
+// src/shared/types.ts
 var MatchOpCode = {
   // Client → server
   PLACE_BID: 1,
@@ -471,7 +471,7 @@ var matchLeave = (_ctx, logger, _nk, dispatcher, _tick, state, presences) => {
   dispatcher.matchLabelUpdate(encodeLabel(state.label));
   return { state };
 };
-var matchLoop = (_ctx, logger, _nk, dispatcher, _tick, state, messages) => {
+var matchLoop = (_ctx, logger, nk, dispatcher, _tick, state, messages) => {
   var _a, _b;
   if (state.phase === "ended" && Object.keys(state.presences).length === 0) {
     return null;
@@ -559,6 +559,19 @@ var matchLoop = (_ctx, logger, _nk, dispatcher, _tick, state, messages) => {
         true
       );
       state.phase = "ended";
+      if (winnerId) {
+        const winnerPresence = state.presences[winnerId];
+        try {
+          nk.leaderboardRecordWrite(
+            "liarsdice_wins",
+            winnerId,
+            winnerPresence == null ? void 0 : winnerPresence.username,
+            1
+          );
+        } catch (e) {
+          logger.warn("Failed to record leaderboard win for %s", winnerId);
+        }
+      }
     } else if (roundResolved) {
       state.pendingRoundAdvance = true;
     } else {
@@ -635,7 +648,7 @@ var rpcFindMatch = (ctx, logger, nk, payload) => {
 };
 
 // src/main.ts
-var InitModule = function(_ctx, logger, _nk, initializer) {
+var InitModule = function(_ctx, logger, nk, initializer) {
   initializer.registerMatch("liarsdice", {
     matchInit,
     matchJoinAttempt,
@@ -648,6 +661,11 @@ var InitModule = function(_ctx, logger, _nk, initializer) {
   initializer.registerRpc("create_match", rpcCreateMatch);
   initializer.registerRpc("join_match", rpcJoinMatch);
   initializer.registerRpc("find_match", rpcFindMatch);
+  try {
+    nk.leaderboardCreate("liarsdice_wins", false, "desc", "incr", null, {});
+    logger.info("Leaderboard 'liarsdice_wins' ready");
+  } catch (e) {
+  }
   logger.info("Liar's Dice server module initialized");
 };
 globalThis.InitModule = InitModule;

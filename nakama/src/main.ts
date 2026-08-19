@@ -12,7 +12,7 @@ import { rpcCreateMatch, rpcFindMatch, rpcJoinMatch } from "./rpc/match";
 const InitModule: nkruntime.InitModule = function (
   _ctx: nkruntime.Context,
   logger: nkruntime.Logger,
-  _nk: nkruntime.Nakama,
+  nk: nkruntime.Nakama,
   initializer: nkruntime.Initializer,
 ): void {
   initializer.registerMatch("liarsdice", {
@@ -28,6 +28,14 @@ const InitModule: nkruntime.InitModule = function (
   initializer.registerRpc("create_match", rpcCreateMatch);
   initializer.registerRpc("join_match", rpcJoinMatch);
   initializer.registerRpc("find_match", rpcFindMatch);
+
+  // Create the win-count leaderboard if it doesn't already exist.
+  try {
+    nk.leaderboardCreate("liarsdice_wins", false, "desc", "incr", null, {});
+    logger.info("Leaderboard 'liarsdice_wins' ready");
+  } catch {
+    // Already exists — safe to ignore.
+  }
 
   logger.info("Liar's Dice server module initialized");
 };
