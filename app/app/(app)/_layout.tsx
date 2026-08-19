@@ -39,6 +39,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="lobby"
+        options={{
+          title: "Play",
+          tabBarIcon: ({ color, size }) => <Ionicons name="dice-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",

@@ -5,7 +5,7 @@ const root = path.resolve(__dirname, "..");
 const source = path.join(root, "shared", "types.ts");
 const targets = [
   path.join(root, "app", "src", "shared", "types.ts"),
-  path.join(root, "server", "shared", "types.ts"),
+  path.join(root, "nakama", "src", "shared", "types.ts"),
 ];
 
 const content = fs.readFileSync(source, "utf8");

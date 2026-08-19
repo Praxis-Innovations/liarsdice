@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES2016",
+    "target": "ES2019",
+    "lib": ["ES2019"],
     "strict": true,
     "noImplicitReturns": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": ["@heroiclabs/nakama-runtime"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "runtime.d.ts"],
   "exclude": ["node_modules"]
 }
