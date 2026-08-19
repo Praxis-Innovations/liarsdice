@@ -3,45 +3,47 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { Button } from "../../src/components/ui/Button";
 import { TextField } from "../../src/components/ui/TextField";
 import { useAuth } from "../../src/context/AuthContext";
-import { fetchMe, updateMe } from "../../src/lib/api";
-import type { Profile } from "../../src/shared/types";
+import { nakamaClient } from "../../src/lib/nakama";
 import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function ProfileScreen() {
   const { colors, spacing, typography } = useTheme();
-  const { user, accessToken, signOut } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { session, user, signOut } = useAuth();
   const [displayName, setDisplayName] = useState("");
+  const [savedDisplayName, setSavedDisplayName] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadProfile = useCallback(async () => {
-    if (!accessToken) return;
+    if (!session) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchMe(accessToken);
-      setProfile(data);
-      setDisplayName(data.displayName);
+      const account = await nakamaClient.getAccount(session);
+      const name = account.user?.display_name ?? account.user?.username ?? "Player";
+      setDisplayName(name);
+      setSavedDisplayName(name);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load profile");
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [session]);
 
   useEffect(() => {
     void loadProfile();
   }, [loadProfile]);
 
   const handleSave = async () => {
-    if (!accessToken || saving) return;
+    if (!session || saving) return;
+    const trimmed = displayName.trim();
+    if (!trimmed) return;
     setSaving(true);
     setError(null);
     try {
-      const data = await updateMe(accessToken, { displayName });
-      setProfile(data);
+      await nakamaClient.updateAccount(session, { display_name: trimmed });
+      setSavedDisplayName(trimmed);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
@@ -62,7 +64,9 @@ export default function ProfileScreen() {
       <Text style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary, marginTop: spacing.md, fontFamily: typography.caption.fontFamily }}>
         Email
       </Text>
-      <Text style={{ fontSize: typography.body.fontSize, color: colors.textPrimary, fontFamily: typography.body.fontFamily }}>{user?.email}</Text>
+      <Text style={{ fontSize: typography.body.fontSize, color: colors.textPrimary, fontFamily: typography.body.fontFamily }}>
+        {user?.email ?? "—"}
+      </Text>
 
       <Text style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary, marginTop: spacing.md, fontFamily: typography.caption.fontFamily }}>
         Display name
@@ -76,7 +80,7 @@ export default function ProfileScreen() {
       <Button
         label="Save changes"
         loading={saving}
-        disabled={displayName === profile?.displayName}
+        disabled={displayName.trim() === savedDisplayName || !displayName.trim()}
         onPress={() => void handleSave()}
         fullWidth
         style={{ marginTop: spacing.lg }}

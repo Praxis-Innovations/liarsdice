@@ -1,15 +1,14 @@
-import type { AuthChangeEvent, Session, SupabaseClient, User } from "@supabase/supabase-js";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Session } from "@heroiclabs/nakama-js";
 import { usePathname } from "expo-router";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { Platform } from "react-native";
+import { nakamaClient } from "../lib/nakama";
 import { clientPublicEnv } from "../config/env";
-import { getOAuthRedirectUrl, getResetPasswordRedirectUrl } from "../lib/webPaths";
 
-/**
- * `@react-native-google-signin/google-signin` calls a native module getter at import time,
- * which throws immediately on web (no native module registered there). Require it lazily,
- * only on native platforms.
- */
+const SESSION_KEY = "liarsdice-nakama-session";
+const DEVICE_ID_KEY = "liarsdice-device-id";
+
 type GoogleSigninModule = typeof import("@react-native-google-signin/google-signin");
 
 function requireGoogleSignin(): GoogleSigninModule | null {
@@ -21,54 +20,23 @@ function requireGoogleSignin(): GoogleSigninModule | null {
   }
 }
 
-/** Routes that need a live Supabase client. Marketing pages skip the download. */
-const AUTH_ROUTE_PREFIXES = [
-  "/sign-in",
-  "/sign-up",
-  "/forgot-password",
-  "/reset-password",
-  "/home",
-  "/profile",
-];
-
-function urlNeedsAuthClient(pathname: string): boolean {
-  if (Platform.OS !== "web") return true;
-  if (AUTH_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-    return true;
-  }
-  if (typeof window !== "undefined") {
-    const hash = window.location.hash;
-    // OAuth / recovery redirects land on `/` with tokens in the hash.
-    if (
-      hash.includes("access_token") ||
-      hash.includes("refresh_token") ||
-      hash.includes("type=recovery")
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
-
-async function loadSupabase(): Promise<SupabaseClient | null> {
-  const { supabase } = await import("../lib/supabase");
-  return supabase;
-}
-
 interface AuthResult {
   error: string | null;
 }
 
 interface AuthContextValue {
   session: Session | null;
-  user: User | null;
+  /** Shim for components that read user.email — sourced from the Nakama account. */
+  user: { email: string | null; id: string | null } | null;
   loading: boolean;
   accessToken: string | null;
+  /** Always false for Nakama — no magic-link recovery flow. */
   isRecoveryFlow: boolean;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signUp: (email: string, password: string, displayName: string) => Promise<AuthResult>;
   signInWithGoogle: () => Promise<AuthResult>;
   signInWithApple: () => Promise<AuthResult>;
+  signInAsGuest: () => Promise<AuthResult>;
   resetPasswordForEmail: (email: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 }
@@ -86,97 +54,131 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const pathname = usePathname();
+  // expo-router's usePathname is used to match the previous lazy-init pattern; we now always
+  // initialize immediately, but keep this import so existing layout references don't break.
+  usePathname();
+
   const [session, setSession] = useState<Session | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isRecoveryFlow, setIsRecoveryFlow] = useState(false);
-  const needsClient = urlNeedsAuthClient(pathname);
 
-  useEffect(() => {
-    if (!needsClient) {
-      setLoading(false);
-      return;
+  const saveSession = useCallback(async (s: Session | null) => {
+    if (!s) {
+      await AsyncStorage.removeItem(SESSION_KEY);
+    } else {
+      await AsyncStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({ token: s.token, refresh_token: s.refresh_token }),
+      );
     }
+    setSession(s);
+  }, []);
 
-    // Re-entering an auth route from marketing must block gates until getSession
-    // finishes — otherwise (app)/_layout sees loading=false + session=null and
-    // redirects to sign-in even when a persisted session exists.
-    setLoading(true);
+  const fetchEmail = useCallback(async (s: Session) => {
+    try {
+      const account = await nakamaClient.getAccount(s);
+      setEmail(account.email ?? null);
+    } catch {
+      // Best-effort — email display is non-critical.
+    }
+  }, []);
 
+  // Restore persisted session on startup.
+  useEffect(() => {
     let cancelled = false;
-    let unsubscribe: (() => void) | undefined;
 
-    void loadSupabase().then((supabase) => {
-      if (cancelled) return;
-      if (!supabase) {
-        setLoading(false);
-        return;
-      }
+    const restore = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(SESSION_KEY);
+        if (cancelled || !raw) return;
 
-      supabase.auth.getSession().then(({ data }) => {
-        if (cancelled) return;
-        setSession(data.session);
-        setLoading(false);
-      });
+        const { token, refresh_token } = JSON.parse(raw) as {
+          token: string;
+          refresh_token: string;
+        };
 
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, newSession) => {
-        if (event === "PASSWORD_RECOVERY") setIsRecoveryFlow(true);
-        if (event === "SIGNED_OUT") {
-          setSession(null);
-          setIsRecoveryFlow(false);
-          return;
+        let s = Session.restore(token, refresh_token);
+
+        if (s.isexpired(Date.now() / 1000)) {
+          if (s.isrefreshexpired(Date.now() / 1000)) {
+            await AsyncStorage.removeItem(SESSION_KEY);
+            return;
+          }
+          s = await nakamaClient.sessionRefresh(s);
+          if (!cancelled) {
+            await AsyncStorage.setItem(
+              SESSION_KEY,
+              JSON.stringify({ token: s.token, refresh_token: s.refresh_token }),
+            );
+          }
         }
-        setSession(newSession);
-      });
-      unsubscribe = () => subscription.unsubscribe();
-    });
 
+        if (!cancelled) {
+          setSession(s);
+          void fetchEmail(s);
+        }
+      } catch {
+        await AsyncStorage.removeItem(SESSION_KEY);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void restore();
     return () => {
       cancelled = true;
-      unsubscribe?.();
     };
-  }, [needsClient]);
+  }, [fetchEmail]);
 
-  const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
-    const supabase = await loadSupabase();
-    if (!supabase) return { error: "Auth not configured" };
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
-  }, []);
+  const afterAuth = useCallback(
+    async (s: Session) => {
+      await saveSession(s);
+      void fetchEmail(s);
+    },
+    [saveSession, fetchEmail],
+  );
 
-  const signUp = useCallback(async (email: string, password: string, displayName: string): Promise<AuthResult> => {
-    const supabase = await loadSupabase();
-    if (!supabase) return { error: "Auth not configured" };
-    const trimmed_name = displayName.trim();
-    if (!trimmed_name) return { error: "Display name is required" };
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: trimmed_name } },
-    });
-    if (!error && data?.session) setSession(data.session);
-    return { error: error?.message ?? null };
-  }, []);
+  const signIn = useCallback(
+    async (emailVal: string, password: string): Promise<AuthResult> => {
+      try {
+        const s = await nakamaClient.authenticateEmail(emailVal.trim(), password, false);
+        await afterAuth(s);
+        return { error: null };
+      } catch (err) {
+        return { error: parseNakamaError(err) };
+      }
+    },
+    [afterAuth],
+  );
+
+  const signUp = useCallback(
+    async (emailVal: string, password: string, displayName: string): Promise<AuthResult> => {
+      const trimmed = displayName.trim();
+      if (!trimmed) return { error: "Display name is required" };
+      try {
+        const username = `player_${Date.now().toString(36)}`;
+        const s = await nakamaClient.authenticateEmail(emailVal.trim(), password, true, username);
+        await afterAuth(s);
+        await nakamaClient.updateAccount(s, { display_name: trimmed });
+        return { error: null };
+      } catch (err) {
+        return { error: parseNakamaError(err) };
+      }
+    },
+    [afterAuth],
+  );
 
   const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
-    const supabase = await loadSupabase();
-    if (!supabase) return { error: "Auth not configured" };
-
     if (Platform.OS === "web") {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: getOAuthRedirectUrl() },
-      });
-      // Redirects the browser away; the session arrives later via onAuthStateChange once the
-      // page reloads after the redirect completes.
-      return { error: error?.message ?? null };
+      return {
+        error:
+          "Google sign-in on web requires additional server configuration. Please sign in with email/password.",
+      };
     }
 
-    const google_signin_module = requireGoogleSignin();
-    if (!google_signin_module) return { error: "Google Sign-In isn't available in this build." };
-    const { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } = google_signin_module;
+    const googleModule = requireGoogleSignin();
+    if (!googleModule) return { error: "Google Sign-In isn't available in this build." };
+    const { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } = googleModule;
 
     try {
       GoogleSignin.configure({
@@ -188,102 +190,117 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       const response = await GoogleSignin.signIn();
       if (!isSuccessResponse(response)) return { error: null };
-      const id_token = response.data.idToken;
-      if (!id_token) return { error: "Google sign-in did not return a token. Please try again." };
+      const idToken = response.data.idToken;
+      if (!idToken) return { error: "Google sign-in did not return a token. Please try again." };
 
-      // The native Google SDK generates its own internal nonce embedded in the idToken, which
-      // can't be reproduced client-side, so "skip nonce checks" is enabled for Google in
-      // supabase/config.toml and we don't pass a nonce here.
-      const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token: id_token });
-      return { error: error?.message ?? null };
+      const s = await nakamaClient.authenticateGoogle(idToken, true);
+      await afterAuth(s);
+      return { error: null };
     } catch (err) {
       if (isErrorWithCode(err) && err.code === statusCodes.SIGN_IN_CANCELLED) return { error: null };
       return { error: err instanceof Error ? err.message : "Google sign-in failed. Please try again." };
     }
-  }, []);
+  }, [afterAuth]);
 
   const signInWithApple = useCallback(async (): Promise<AuthResult> => {
-    const supabase = await loadSupabase();
-    if (!supabase) return { error: "Auth not configured" };
-
-    if (Platform.OS === "web") {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "apple",
-        options: { redirectTo: getOAuthRedirectUrl() },
-      });
-      return { error: error?.message ?? null };
+    if (Platform.OS !== "ios") {
+      return { error: "Sign in with Apple isn't available on this device." };
     }
 
-    if (Platform.OS !== "ios") return { error: "Sign in with Apple isn't available on this device." };
-
     try {
-      // Lazy-load native-only modules so web marketing routes don't pay for them.
-      const Crypto = await import("expo-crypto");
       const AppleAuthentication = await import("expo-apple-authentication");
-      // Supabase requires the *raw* nonce here, but the *hashed* (SHA-256) nonce when asking
-      // Apple to sign in — Apple's identityToken embeds the hash, and Supabase re-hashes the
-      // raw nonce server-side to compare against it. Do not swap these.
-      const raw_nonce = Crypto.randomUUID();
-      const hashed_nonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, raw_nonce);
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
-        nonce: hashed_nonce,
       });
-      if (!credential.identityToken) return { error: "Apple sign-in did not return a token. Please try again." };
+      if (!credential.identityToken) {
+        return { error: "Apple sign-in did not return a token. Please try again." };
+      }
 
-      const { error } = await supabase.auth.signInWithIdToken({
-        provider: "apple",
-        token: credential.identityToken,
-        nonce: raw_nonce,
-      });
-      return { error: error?.message ?? null };
+      const s = await nakamaClient.authenticateApple(credential.identityToken, true);
+      await afterAuth(s);
+      return { error: null };
     } catch (err) {
       const code = (err as { code?: string } | null)?.code;
       if (code === "ERR_REQUEST_CANCELED") return { error: null };
       return { error: err instanceof Error ? err.message : "Apple sign-in failed. Please try again." };
     }
-  }, []);
+  }, [afterAuth]);
 
-  const resetPasswordForEmail = useCallback(async (email: string): Promise<AuthResult> => {
-    const supabase = await loadSupabase();
-    if (!supabase) return { error: "Auth not configured" };
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed) return { error: "Enter your email" };
-    const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
-      redirectTo: getResetPasswordRedirectUrl(),
-    });
-    return { error: error?.message ?? null };
+  const signInAsGuest = useCallback(async (): Promise<AuthResult> => {
+    try {
+      let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
+      if (!deviceId) {
+        deviceId = `${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
+        await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
+      }
+      const guestUsername = `guest_${deviceId.slice(-8)}`;
+      const s = await nakamaClient.authenticateDevice(deviceId, true, guestUsername);
+      await saveSession(s);
+      return { error: null };
+    } catch (err) {
+      return { error: parseNakamaError(err) };
+    }
+  }, [saveSession]);
+
+  const resetPasswordForEmail = useCallback(async (_emailVal: string): Promise<AuthResult> => {
+    // Password reset via email requires a custom Nakama runtime RPC + email service.
+    // This will be implemented in a future phase.
+    return {
+      error: "Password reset is not yet available. Please contact support if you've forgotten your password.",
+    };
   }, []);
 
   const signOut = useCallback(async () => {
-    const googleModule = requireGoogleSignin();
-    if (googleModule) {
+    if (session) {
       try {
-        await googleModule.GoogleSignin.signOut();
+        await nakamaClient.sessionLogout(session, session.token, session.refresh_token);
       } catch {
-        // Best-effort: ignore failures clearing the cached Google account.
+        // Best-effort.
+      }
+      const googleModule = requireGoogleSignin();
+      if (googleModule) {
+        try {
+          await googleModule.GoogleSignin.signOut();
+        } catch {}
       }
     }
-    const supabase = await loadSupabase();
-    if (supabase) await supabase.auth.signOut();
-  }, []);
+    await saveSession(null);
+    setEmail(null);
+  }, [session, saveSession]);
 
   const value: AuthContextValue = {
     session,
-    user: session?.user ?? null,
+    user: session ? { email, id: session.user_id ?? null } : null,
     loading,
-    accessToken: session?.access_token ?? null,
-    isRecoveryFlow,
+    accessToken: session?.token ?? null,
+    isRecoveryFlow: false,
     signIn,
     signUp,
     signInWithGoogle,
     signInWithApple,
+    signInAsGuest,
     resetPasswordForEmail,
     signOut,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function parseNakamaError(err: unknown): string {
+  if (!(err instanceof Error)) return "An unexpected error occurred.";
+  const msg = err.message;
+  try {
+    const body = JSON.parse(msg) as { message?: string };
+    if (body.message) return body.message;
+  } catch {}
+  if (msg.includes("401") || msg.toLowerCase().includes("invalid credentials")) {
+    return "Invalid email or password.";
+  }
+  if (msg.toLowerCase().includes("already exists") || msg.toLowerCase().includes("already in use")) {
+    return "An account with this email already exists.";
+  }
+  return msg || "An unexpected error occurred.";
 }

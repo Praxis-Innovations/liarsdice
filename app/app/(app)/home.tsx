@@ -7,7 +7,7 @@ import { useTheme } from "../../src/theme/ThemeProvider";
 export default function HomeScreen() {
   const { colors, spacing, typography } = useTheme();
   const { user } = useAuth();
-  const display_name = (user?.user_metadata?.display_name as string | undefined) || user?.email || "there";
+  const display_name = user?.email || "there";
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: spacing.lg, gap: spacing.sm }}>

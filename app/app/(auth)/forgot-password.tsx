@@ -13,7 +13,6 @@ export default function ForgotPasswordScreen() {
   const { resetPasswordForEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -23,38 +22,17 @@ export default function ForgotPasswordScreen() {
     try {
       const { error: reset_error } = await resetPasswordForEmail(email.trim());
       if (reset_error) setError(reset_error);
-      else setSent(true);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const head = (
-    <Head>
-      <title>Reset password — Liar&apos;s Dice</title>
-      <meta name="description" content="Reset the password for your Liar's Dice account." />
-    </Head>
-  );
-
-  if (sent) {
-    return (
-      <>
-        {head}
-        <AuthCard title="Check your email">
-          <Text style={{ color: colors.textSecondary, fontFamily: typography.body.fontFamily, fontSize: 19, lineHeight: 28 }}>
-            We sent a password reset link to {email.trim()}.
-          </Text>
-          <Link href="/sign-in" style={{ color: colors.primary, fontFamily: typography.bodySemibold.fontFamily, fontSize: 18 }}>
-            Back to sign in
-          </Link>
-        </AuthCard>
-      </>
-    );
-  }
-
   return (
     <>
-      {head}
+      <Head>
+        <title>Reset password — Liar&apos;s Dice</title>
+        <meta name="description" content="Reset the password for your Liar's Dice account." />
+      </Head>
       <AuthCard title="Reset password" subtitle="Enter your email and we'll send you a reset link.">
         {error ? (
           <Text style={{ color: colors.danger, fontFamily: typography.bodyMedium.fontFamily, fontSize: 18 }}>{error}</Text>

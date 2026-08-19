@@ -1,11 +1,12 @@
-function readString(value: string | undefined): string {
-  return String(value || "").trim();
+function readString(value: string | undefined, fallback = ""): string {
+  return String(value || fallback).trim();
 }
 
 export const clientPublicEnv = {
-  supabaseUrl: readString(process.env.EXPO_PUBLIC_SUPABASE_URL),
-  supabaseAnonKey: readString(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY),
-  apiUrl: readString(process.env.EXPO_PUBLIC_API_URL) || "http://localhost:3001",
+  nakamaHost: readString(process.env.EXPO_PUBLIC_NAKAMA_HOST, "localhost"),
+  nakamaPort: readString(process.env.EXPO_PUBLIC_NAKAMA_PORT, "7350"),
+  nakamaServerKey: readString(process.env.EXPO_PUBLIC_NAKAMA_SERVER_KEY, "defaultkey"),
+  nakamaUseSSL: process.env.EXPO_PUBLIC_NAKAMA_USE_SSL === "true",
   googleWebClientId: readString(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID),
   googleIosClientId: readString(process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID),
 };

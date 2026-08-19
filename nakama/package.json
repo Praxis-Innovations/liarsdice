@@ -1,0 +1,15 @@
+{
+  "name": "liarsdice-nakama",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild --bundle --format=cjs --target=es2016 --platform=node src/main.ts --outfile=data/modules/main.js",
+    "build:watch": "esbuild --bundle --format=cjs --target=es2016 --platform=node src/main.ts --outfile=data/modules/main.js --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@heroiclabs/nakama-runtime": "^1.2.0",
+    "esbuild": "^0.24.0",
+    "typescript": "~5.9.2"
+  }
+}

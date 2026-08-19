@@ -1,0 +1,15 @@
+name: "nakama1"
+
+logger:
+  level: "DEBUG"
+  stdout: true
+
+session:
+  token_expiry_sec: 7200
+  refresh_token_expiry_sec: 2592000
+
+socket:
+  server_key: "defaultkey"
+
+runtime:
+  js_entrypoint: "build/index.js"

@@ -5,7 +5,7 @@ import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function AuthLayout() {
   const { colors } = useTheme();
-  const { session, loading, isRecoveryFlow } = useAuth();
+  const { session, loading } = useAuth();
 
   if (loading) {
     return (
@@ -15,9 +15,7 @@ export default function AuthLayout() {
     );
   }
 
-  // A password-recovery link also establishes a session, but the user should land on
-  // reset-password rather than be bounced straight into the app.
-  if (session && !isRecoveryFlow) {
+  if (session) {
     return <Redirect href="/home" />;
   }
 
