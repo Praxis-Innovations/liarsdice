@@ -77,7 +77,6 @@ export function getHeroStageMetrics(
 ): HeroStageMetrics {
   const layoutWidth = resolveLayoutWidth(width);
   const bp = getBreakpoint(layoutWidth);
-  const band = getDiceBand(bp, layoutWidth);
   const box = platformBox(layoutWidth, bp);
   const vh = viewportHeight > 0 ? viewportHeight : 900;
   const heroHeight = Math.max(vh - headerOffset, bp === "phone" ? 640 : 560);

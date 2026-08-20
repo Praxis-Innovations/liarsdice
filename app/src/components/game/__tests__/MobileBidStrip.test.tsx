@@ -94,11 +94,11 @@ describe("MobileBidStrip", () => {
   it("uses a fixed height for both empty and non-empty states", async () => {
     const emptyView = await render(<MobileBidStrip state={makeStripState()} />);
     const emptyText = emptyView.getByText("Open the round");
-    // Walk up to find the container with height: 148
+    // Walk up to find the container with height: 126
     let node = emptyText.parent;
     let foundEmpty = false;
     while (node) {
-      if (flattenStyle(node.props.style).height === 148) {
+      if (flattenStyle(node.props.style).height === 126) {
         foundEmpty = true;
         break;
       }
@@ -122,7 +122,7 @@ describe("MobileBidStrip", () => {
     let bidsNode = bidsText.parent;
     let foundBids = false;
     while (bidsNode) {
-      if (flattenStyle(bidsNode.props.style).height === 148) {
+      if (flattenStyle(bidsNode.props.style).height === 126) {
         foundBids = true;
         break;
       }

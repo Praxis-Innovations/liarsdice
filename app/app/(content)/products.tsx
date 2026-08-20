@@ -17,11 +17,11 @@ const PRODUCTS = [
     logo: `${LOGO_BASE}/products/evenx-logo.png`,
   },
   {
-    title: "PlaySequence",
+    title: "AlignFive",
     category: "Multiplayer Game",
     description:
       "A cross-platform Sequence card game with real-time multiplayer, private rooms, bot practice, leaderboards, and coin rewards. Play online from any device.",
-    url: "https://playsequence.app/",
+    url: "https://alignfive.app/",
     logo: `${LOGO_BASE}/products/sequence-logo.png`,
   },
   {
