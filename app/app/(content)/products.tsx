@@ -20,9 +20,9 @@ const PRODUCTS = [
     title: "AlignFive",
     category: "Multiplayer Game",
     description:
-      "A cross-platform Sequence card game with real-time multiplayer, private rooms, bot practice, leaderboards, and coin rewards. Play online from any device.",
+      "A cross-platform five-in-a-row card game with real-time multiplayer, private rooms, bot practice, leaderboards, and coin rewards. Play online from any device.",
     url: "https://alignfive.app/",
-    logo: `${LOGO_BASE}/products/sequence-logo.png`,
+    logo: `${LOGO_BASE}/products/alignfive-logo.png`,
   },
   {
     title: "Praxis Innovations",
