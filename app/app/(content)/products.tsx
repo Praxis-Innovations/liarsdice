@@ -7,7 +7,16 @@ import { useTheme } from "../../src/theme/ThemeProvider";
 
 const LOGO_BASE = Platform.OS === "web" ? "" : "https://liars-dice.app";
 
-const PRODUCTS = [
+type Product = {
+  title: string;
+  category: string;
+  description: string;
+  url: string;
+  logo: string;
+  logoAlt?: string;
+};
+
+const PRODUCTS: readonly Product[] = [
   {
     title: "EvenX",
     category: "Mobile App",
@@ -25,6 +34,15 @@ const PRODUCTS = [
     logo: `${LOGO_BASE}/products/alignfive-logo.png`,
   },
   {
+    title: "Rules & strategy guides",
+    category: "Guides",
+    description:
+      "Free rules walkthroughs and strategy guides for five-in-a-row card and board games, from the Praxis Innovations team.",
+    url: "https://playsequence.app/rules",
+    logo: `${LOGO_BASE}/products/guides-logo.png`,
+    logoAlt: "Rules and strategy guides",
+  },
+  {
     title: "Praxis Innovations",
     category: "Software Studio",
     description:
@@ -32,22 +50,19 @@ const PRODUCTS = [
     url: "https://praxisinnovations.ca/",
     logo: `${LOGO_BASE}/products/praxis-logo.png`,
   },
-] as const;
+];
 
-function ProductCard({ title, category, description, url, logo }: (typeof PRODUCTS)[number]) {
+function ProductCard({ title, category, description, url, logo, logoAlt }: Product) {
   const { colors, spacing, typography, radii } = useTheme();
-
-  const handlePress = () => {
-    if (Platform.OS === "web") {
-      window.open(url, "_blank", "noopener,noreferrer");
-    } else {
-      Linking.openURL(url);
-    }
-  };
+  const logoSource = { uri: logo };
+  const linkProps =
+    Platform.OS === "web"
+      ? { href: url, hrefAttrs: { target: "_blank", rel: "noopener" } }
+      : { onPress: () => Linking.openURL(url) };
 
   return (
     <Pressable
-      onPress={handlePress}
+      {...linkProps}
       style={({ pressed }) => ({
         backgroundColor: colors.surface,
         borderWidth: 1,
@@ -82,7 +97,9 @@ function ProductCard({ title, category, description, url, logo }: (typeof PRODUC
           }}
         >
           <Image
-            source={{ uri: logo }}
+            source={logoSource}
+            defaultSource={Platform.OS === "web" && logoAlt ? logoSource : undefined}
+            accessibilityLabel={logoAlt}
             style={{ width: 52, height: 52 }}
             resizeMode="contain"
           />
