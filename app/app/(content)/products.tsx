@@ -39,7 +39,7 @@ const PRODUCTS: readonly Product[] = [
     description:
       "Free rules walkthroughs and strategy guides for five-in-a-row card and board games, from the Praxis Innovations team.",
     url: "https://playsequence.app/rules",
-    logo: `${LOGO_BASE}/products/playsequence-logo.png`,
+    logo: `${LOGO_BASE}/products/guides-logo.png`,
     logoAlt: "Rules and strategy guides",
   },
   {
